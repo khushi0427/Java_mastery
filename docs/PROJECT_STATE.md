@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-12
+**Last updated:** 2026-08-12 (Phase 3)
 
 ---
 
@@ -31,18 +31,18 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | FOUNDATION (Phase 2 of 6 — Website Shell) — **complete** |
+| **Project phase** | FOUNDATION (Phase 3 of 6 — Dashboard + Metadata + Search) — **complete** |
 | **Current module** | none (foundation not yet complete) |
 | **Current chapter** | none |
 | **Completed modules** | none (0 of 43) |
 | **Completed chapters** | none |
-| **Partially completed work** | none — Phase 2 finished its stated scope; Phases 3–6 not started |
-| **Next required task** | Phase 3 — Dashboard + 43-module metadata + search foundation |
-| **Completed website features** | app shell (top bar, sidebar, content region); light/dark theming with persistence and no flash; responsive drawer navigation; hash-routing scaffold with active state |
+| **Partially completed work** | none — Phase 3 finished its stated scope; Phases 4–6 not started |
+| **Next required task** | Phase 4 — Progress tracking (localStorage) + practice/hint/predict-output UI shells |
+| **Completed website features** | app shell (top bar, sidebar, content region); light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; **metadata-driven sidebar listing all 43 modules**; **dashboard structure**; **module overview and curriculum views**; **functional module/topic search** |
 | **Compiler integration status** | not started |
 | **Known bugs** | none |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | Phase 2 verified in-browser — 42/42 checks passed; see [Verification](#verification-status) |
+| **Last verification status** | Phase 3 verified in-browser — 64/64 checks passed, plus the Phase 2 suite re-run at 42/42; see [Verification](#verification-status) |
 | **Last updated** | 2026-08-12 |
 
 ---
@@ -53,24 +53,43 @@ Used throughout this file. Never substitute vague words like "done" or
 |---|---|---|
 | **1** | Documentation layer (`README.md`, `CLAUDE.md`, `docs/*`) | `CONTENT_COMPLETE` — see [Verification](#verification-status) |
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | `VERIFIED` — built and exercised in a real browser |
-| **3** | *Not yet specified by the project owner* | Awaiting specification |
-| **4** | *Not yet specified by the project owner* | Awaiting specification |
+| **3** | Dashboard + 43-module metadata layer + search foundation | `VERIFIED` — built and exercised in a real browser |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | `NOT_STARTED` |
 | **5** | Compiler / code-execution integration | `NOT_STARTED` |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
-Phases 3, 4, and 6 have **not** been defined. No agent may invent, assume, or
-act on a scope for them.
+Phase 6 has **not** been defined. No agent may invent, assume, or act on a
+scope for it. Phases 3 and 4 were specified by the project owner in due course;
+their scope above is what was actually instructed, not inferred.
 
 ---
 
 ## Curriculum status
 
-All 43 modules: `NOT_STARTED`. No module content, no chapters, and no Java
-source files exist anywhere in this repository.
+**The curriculum is LOCKED as of 2026-08-12.** The project owner confirmed at
+the start of Phase 3 that the 43 modules, names, and numbering in
+`docs/CURRICULUM.md` stand as canonical; Appendix B of that file records the
+confirmation. The Phase 1 reconciliation question is closed.
 
-`docs/CURRICULUM.md` defines the modules and their topic lists. **Defining a
-module is not the same as building it** — the curriculum document is the
-specification of work not yet done.
+All 43 modules: `NOT_STARTED`. Module **metadata** now exists
+(`data/modules.js`), but no module content, no chapters, and no Java source
+files exist anywhere in this repository. **Metadata is not content** — a module
+having a description, prerequisites, and a topic list does not make it built.
+
+### Module id convention — Phase 4 depends on this
+
+Module ids are generated from number + name:
+
+    <number>-<name, kebab-cased, truncated at any em-dash subtitle>
+
+e.g. `01-java-foundations-execution-model`, `17-concurrency-i`,
+`12-collections-framework-internal-data-structures`.
+
+**These ids are permanent keys.** Phase 4 will key `localStorage` progress
+records on them under the `jfsm.` prefix. Because ids are derived from names,
+**renaming a module changes its id and orphans stored progress** — so names are
+locked along with numbers. If a rename ever becomes unavoidable, pin the old id
+by hand in the generator rather than letting it move.
 
 | Modules | Status |
 |---|---|
@@ -84,29 +103,39 @@ Verified by direct inspection on 2026-08-12:
 
 ```
 Java_mastery/
-├── index.html                 (Phase 2 — app shell)
-├── README.md                  (Phase 1, updated Phase 2)
+├── index.html                 (Phase 2 shell, extended Phase 3)
+├── README.md                  (Phase 1, updated Phases 2–3)
 ├── CLAUDE.md                  (Phase 1)
 ├── assets/
 │   ├── css/
-│   │   ├── base.css           (Phase 2)
-│   │   ├── theme.css          (Phase 2)
-│   │   └── layout.css         (Phase 2)
+│   │   ├── base.css           (Phase 2, extended Phase 3)
+│   │   ├── theme.css          (Phase 2, status colours Phase 3)
+│   │   └── layout.css         (Phase 2, components Phase 3)
 │   └── js/
-│       ├── app.js             (Phase 2)
+│       ├── app.js             (Phase 2, extended Phase 3)
 │       ├── theme.js           (Phase 2)
-│       └── nav.js             (Phase 2)
+│       ├── nav.js             (Phase 2, module routes Phase 3)
+│       ├── dom.js             (Phase 3)
+│       ├── sidebar.js         (Phase 3)
+│       ├── dashboard.js       (Phase 3)
+│       ├── curriculum-view.js (Phase 3)
+│       ├── module-view.js     (Phase 3)
+│       ├── search.js          (Phase 3)
+│       └── progress.js        (Phase 3 — STUB, no persistence)
+├── data/
+│   └── modules.js             (Phase 3 — GENERATED, do not hand-edit)
+├── tools/
+│   └── generate-modules.mjs   (Phase 3 — dev tool, not a build step)
 └── docs/
-    ├── PROJECT_STATE.md       (Phase 1 — this file, updated Phase 2)
-    ├── ARCHITECTURE.md        (Phase 1, updated Phase 2)
-    ├── CURRICULUM.md          (Phase 1)
+    ├── PROJECT_STATE.md       (Phase 1 — this file, updated Phases 2–3)
+    ├── ARCHITECTURE.md        (Phase 1, updated Phases 2–3)
+    ├── CURRICULUM.md          (Phase 1, LOCKED Phase 3)
     └── AI_INSTRUCTIONS.md     (Phase 1)
 ```
 
-**Nothing else.** No `content/`, no `java/`, no `tools/`, no module data, no
-build files, no configuration, no dependencies. Directory names appearing in
-`README.md` §12 and `ARCHITECTURE.md` §3 beyond the tree above are **planned
-intent only**.
+**Nothing else.** No `content/`, no `java/`, no chapter files, no build files,
+no configuration, no dependencies. Directory names appearing in `README.md` §12
+and `ARCHITECTURE.md` §3 beyond the tree above are **planned intent only**.
 
 Before Phase 1, the repository contained a single 14-byte `README.md` holding
 only the line `# Java_mastery`. That stub was replaced by the full README; no
@@ -149,18 +178,51 @@ Full detail in `docs/ARCHITECTURE.md` §15.
    as a `file://` path — browsers block ES module scripts on `file://`, so the
    theme toggle and navigation would not run. This is a browser constraint, not
    a build step; nothing is compiled. A `<noscript>` block says so in the page.
-2. **No content of any kind.** Every view is a placeholder; no module metadata,
-   no chapters, no practice problems, no interview questions.
-3. **The sidebar shows seven placeholder destinations, not the 43 modules.**
-   The module tree is data-driven in Phase 3 and deliberately not hardcoded.
-4. **Search is a disabled stub.** No index, no query handling.
-5. **No progress tracking.** The only `localStorage` key in use is the theme.
-6. **Without JavaScript, only the dashboard view renders** — the other views
-   ship with `hidden` set. Full no-JS content was not a Phase 2 goal.
+2. **No learning content.** Module *metadata* exists; chapters, practice
+   problems, interview questions, and code examples do not. Every module is
+   `NOT_STARTED` with 0 chapters.
+3. **No progress tracking.** `assets/js/progress.js` is a stub with no
+   persistence; every figure it returns is a real zero. The only `localStorage`
+   key in use is `jfsm.theme`. Phase 4 wires the rest.
+4. **Search covers modules and topics only** — the only searchable data that
+   exists. The no-results state says so explicitly.
+5. **Practice, Interview, Assessments, Projects, and Revision are still
+   placeholder views.**
+6. **Without JavaScript the site does not navigate at all** — the sidebar and
+   all view bodies are built by ES modules. Full no-JS content is not a goal.
+7. **`data/modules.js` is generated.** Hand-editing it will be overwritten by
+   `node tools/generate-modules.mjs`; edit `docs/CURRICULUM.md` instead. Nothing
+   automatically enforces this — run `--check` to detect drift.
 
 ---
 
 ## Important implementation decisions
+
+Made during Phase 3:
+
+16. **`data/modules.js` is GENERATED from `docs/CURRICULUM.md`** by
+    `tools/generate-modules.mjs`, rather than hand-written. Hand-copying 43
+    modules into JavaScript would create a second source that drifts from the
+    curriculum; generation makes divergence detectable (`--check`). This
+    resolves open question 3 in `docs/ARCHITECTURE.md` §16.
+17. **`tools/` now holds development tooling generally**, not only the Phase 5
+    execution helpers it was originally reserved for. Both are "not shipped to
+    the browser", which is the distinction that matters.
+18. **Module ids are derived from names** — see the Module id convention above.
+    This is the decision Phase 4 is most exposed to.
+19. **Search indexes registered *sources*, not modules directly.** Adding
+    chapter or practice search later means registering a source; scoring,
+    rendering, and keyboard handling need no changes.
+20. **All rendering goes through `assets/js/dom.js`**, which routes text through
+    `textContent`. **No `innerHTML` anywhere in the codebase**, so no data value
+    can be parsed as markup regardless of how trusted the source is.
+21. **`[hidden] { display: none !important }` is set globally.** The UA
+    stylesheet's `hidden` rule loses to any author `display` value, so flex and
+    grid containers silently ignore `hidden` — a real bug found in Phase 3
+    testing, and a trap for every future component.
+22. **The progress stub returns real zeros, not sample data**, and the dashboard
+    labels them as such. Percentages guard the 0-of-0 case rather than yielding
+    `NaN`.
 
 Made during Phase 2:
 
@@ -233,6 +295,10 @@ Made during Phase 1:
 - **The three-file CSS split** (`base` / `theme` / `layout`) and the rule that
   colour literals live only in `theme.css`.
 - **The drawer `visibility` 0s-transition fix** — see implementation decision 14.
+- **The Phase 3 metadata layer and the generator** — extend them; do not replace
+  `data/modules.js` with a hand-maintained list, and do not hand-edit it.
+- **Module ids and numbers** — permanent keys, locked with the curriculum.
+- **The global `[hidden]` rule** — removing it silently breaks every disclosure.
 
 Non-destructive development applies throughout: inspect before overwriting, and
 never discard work you did not create (`CLAUDE.md` §8).
@@ -240,6 +306,64 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### Phase 3 — performed 2026-08-12
+
+**Method:** served with `python3 -m http.server` and driven in headless Chromium
+via Playwright. **64 automated checks, 64 passed, 0 failed.** The Phase 2 suite
+was re-run as a regression check: **42/42 passed.** Screenshots were captured
+and reviewed at desktop and mobile, in both themes.
+
+| Area | Checks that passed |
+|---|---|
+| Metadata-driven sidebar | 43 modules render; numbered 01–43 in order with no gaps or duplicates; ids unique; **sidebar content matches `data/modules.js` exactly** (asserted against the data file, not a hardcoded copy); status indicator on every row with a text equivalent, not colour alone |
+| Expand / collapse | chapter regions start collapsed; `aria-expanded` tracks state both ways; **empty state reads "No chapters yet"**; **zero chapter links are invented**; Curriculum section collapses and re-expands |
+| Module routes | `#/module/<id>` resolves to the overview; **all 43 routes verified individually**; correct link marked `aria-current`; document title tracks the module; unknown module id falls through to not-found; Module 43 renders all 42 prerequisite links |
+| Dashboard | all seven sections render; overall progress reads 0%; chapter/module stats are real zeros (`0 / 0`, `0 / 43`); practice and assessments `0 / 0`; empty states for position and recent; all 43 rows in per-module progress; recommended-next is Module 01; **no non-zero percentage appears anywhere on the page** |
+| Curriculum view | 6 parts, 43 module cards, part titles from metadata |
+| Search | results for `hashmap`; every result labelled with its source type; multi-word queries AND their tokens; a bare number ranks that module first; no-results state shown and explains coverage; empty query hides the panel; clicking a result navigates and clears the field; ArrowDown activates, Enter opens, Escape closes |
+| Phase 2 behaviour intact | theme persistence across reload; placeholder views still route; drawer opens/closes at mobile width with all 43 modules reachable; focus moves into the drawer; choosing a module closes the drawer and routes |
+| Overflow | no horizontal page scroll at 320/390/768/1024/1280/1920px across dashboard, curriculum, and module views |
+| Code hygiene | zero unused CSS classes; zero undefined or unreferenced custom properties; all three theme blocks carry identical 25-token sets; `generate-modules.mjs --check` reports in sync |
+
+**Three real bugs were found by this testing and fixed:**
+
+1. **`hidden` was being ignored on flex containers.** `.module-list` sets
+   `display: flex`, which outranks the UA stylesheet's `[hidden]` rule, so the
+   Curriculum section would not collapse. Fixed globally with
+   `[hidden] { display: none !important }` — it would have hit every future
+   flex/grid disclosure.
+2. **Topic text was silently truncated.** `CURRICULUM.md` wraps long bullets
+   across lines, and the generator captured only the first line, so items ended
+   mid-sentence ("…`Map` as a"). Fixed by joining continuation lines; caught by
+   reading a rendered screenshot, not by an assertion.
+3. **Module 43's prerequisites parsed as `["01","42"]`** instead of all 42
+   modules, because "All of Modules 01–42" was read as a number list. Fixed by
+   handling the range form explicitly.
+
+### Phase 3 — not verified
+
+- **Not verified because it does not exist:** chapter content, practice
+  problems, interview questions, code execution, and progress *persistence*
+  (`progress.js` is a stub by design — its zeros were verified, its future
+  localStorage behaviour cannot be).
+- **Not verified because it is out of scope for this environment:** real mobile
+  hardware, touch gestures, iOS/Android browsers, Safari, and Firefox. All
+  testing was headless Chromium at mobile viewport sizes, which is not the same
+  as testing on a device.
+- **Not verified:** screen-reader narration with an actual screen reader. ARIA
+  attributes, roles, and focus order were asserted programmatically; how
+  NVDA/JAWS/VoiceOver speak the 43-row tree and the search combobox was not
+  observed.
+- **Not verified:** colour-contrast ratios against WCAG thresholds, including
+  the five new status colours in both themes.
+- **Not verified:** search behaviour at content scale. The index holds 1,623
+  entries today and is built synchronously on first query; that was fast in
+  testing but was not measured, and chapter content will grow it substantially.
+- **No Java code was compiled or run — not verified because this phase produced
+  no Java code.**
+
+---
 
 ### Phase 2 — performed 2026-08-12
 
@@ -352,4 +476,5 @@ see the Phase 2 section above.)*
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-12 | 3 | Locked the curriculum (owner confirmation recorded in `CURRICULUM.md` Appendix B). Added the module metadata layer: `data/modules.js`, generated from `docs/CURRICULUM.md` by `tools/generate-modules.mjs`. Rebuilt the sidebar from metadata (43 modules, collapsible, empty chapter regions), added the dashboard structure reading a progress stub, the curriculum and module-overview views, and functional module/topic search. Verified in headless Chromium: 64/64 Phase 3 checks and 42/42 Phase 2 regression checks; three real bugs found and fixed. No progress persistence, practice UI, or code execution — those remain Phases 4–5. |
 | 2026-08-12 | 2 | Built the website shell: `index.html` plus `assets/css/{base,theme,layout}.css` and `assets/js/{app,theme,nav}.js`. App shell layout, light/dark theming with persistence and no flash, responsive drawer navigation, and a hash-routing scaffold. Verified in headless Chromium: 42/42 checks passed; two real bugs found and fixed. Updated `docs/ARCHITECTURE.md` (§2, §3, §10, §12, §14, §15, §16) and `README.md`. No module content, search, progress tracking, or execution — those remain later phases. |

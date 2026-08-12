@@ -75,17 +75,22 @@
         <path d="M20 20l-3.5-3.5" />
       </svg>
       <!--
-        Non-functional stub. Real search is Phase 3 (see docs/ARCHITECTURE.md §13).
-        Disabled rather than merely inert, so it never looks like it should work.
+        Functional as of Phase 3, over modules and topics — the only searchable
+        data that exists. Chapters, practice, and interview questions register
+        as additional sources later (assets/js/search.js).
       -->
       <input
-        id="search-stub"
+        id="search-input"
         class="topbar__search-input"
         type="search"
-        placeholder="Search — available in Phase 3"
-        aria-label="Search (not yet available — arrives in Phase 3)"
-        title="Search is not implemented yet. It arrives in Phase 3."
-        disabled>
+        placeholder="Search modules and topics…"
+        aria-label="Search modules and topics"
+        role="combobox"
+        aria-expanded="false"
+        aria-controls="search-panel"
+        aria-autocomplete="list"
+        autocomplete="off">
+      <div id="search-panel" class="search-panel" hidden></div>
     </div>
 
     <button
@@ -122,34 +127,16 @@
         </button>
       </div>
 
-      <div class="sidebar__scroll">
-        <!--
-          Placeholder navigation only. The real module/chapter tree is driven by
-          data in Phase 3 — the 43 modules are deliberately NOT hardcoded here.
-        -->
-        <p class="sidebar__group-label" id="nav-group-learn">Learn</p>
-        <ul class="nav-list" aria-labelledby="nav-group-learn">
-          <li><a class="nav-link" href="#/dashboard" data-route="dashboard">Dashboard</a></li>
-          <li><a class="nav-link" href="#/curriculum" data-route="curriculum">Curriculum</a></li>
-          <li><a class="nav-link" href="#/practice" data-route="practice">Practice</a></li>
-        </ul>
-
-        <p class="sidebar__group-label" id="nav-group-prepare">Prepare</p>
-        <ul class="nav-list" aria-labelledby="nav-group-prepare">
-          <li><a class="nav-link" href="#/interview" data-route="interview">Interview</a></li>
-          <li><a class="nav-link" href="#/assessments" data-route="assessments">Assessments</a></li>
-        </ul>
-
-        <p class="sidebar__group-label" id="nav-group-build">Build &amp; Review</p>
-        <ul class="nav-list" aria-labelledby="nav-group-build">
-          <li><a class="nav-link" href="#/projects" data-route="projects">Projects</a></li>
-          <li><a class="nav-link" href="#/revision" data-route="revision">Revision</a></li>
-        </ul>
-      </div>
+      <!--
+        Built by assets/js/sidebar.js from data/modules.js. The 43 modules are
+        deliberately NOT hardcoded here — data/modules.js is the single source
+        of module metadata, generated from docs/CURRICULUM.md.
+      -->
+      <div class="sidebar__scroll" id="sidebar-nav"></div>
 
       <div class="sidebar__footer">
-        <p class="sidebar__phase">Foundation · Phase 2 of 6</p>
-        <p class="sidebar__phase-note">Website shell</p>
+        <p class="sidebar__phase">Foundation · Phase 3 of 6</p>
+        <p class="sidebar__phase-note">Metadata, dashboard &amp; search</p>
       </div>
     </nav>
 
@@ -160,56 +147,36 @@
         than injected by JS, so the page stays readable if the module script
         fails to load (docs/ARCHITECTURE.md §2, progressive enhancement).
       -->
-      <section class="view" id="view-dashboard" data-view="dashboard" aria-labelledby="view-dashboard-title">
+      <section class="view view--wide" id="view-dashboard" data-view="dashboard" aria-labelledby="view-dashboard-title">
         <header class="view__header">
-          <p class="view__eyebrow">Foundation in progress</p>
-          <h1 class="view__title" id="view-dashboard-title">Welcome</h1>
+          <p class="view__eyebrow">Foundation · Phase 3 of 6</p>
+          <h1 class="view__title" id="view-dashboard-title">Dashboard</h1>
           <p class="view__lede">
-            This is the application shell for Java Full-Stack Mastery. Layout,
-            navigation, and theming are in place; the content that fills them
-            arrives in later phases.
+            Your position across the 43-module curriculum. Nothing has been
+            studied yet, because no chapter content has been written.
           </p>
         </header>
-
-        <div class="panel">
-          <h2 class="panel__title">What exists right now</h2>
-          <p>
-            Phase 2 built the shell only: the top bar, the sidebar and its mobile
-            drawer, light and dark themes, and hash-based view switching. No
-            learning content, no module data, no progress tracking, and no code
-            execution exist yet.
-          </p>
-          <p class="panel__note">
-            The authoritative status is <code>docs/PROJECT_STATE.md</code>. The
-            filesystem outranks any claim made in the interface.
-          </p>
-        </div>
-
-        <div class="panel-grid">
-          <div class="panel">
-            <h2 class="panel__title">Next: Phase 3</h2>
-            <p>Dashboard data, the 43-module metadata layer, and the search foundation.</p>
-          </div>
-          <div class="panel">
-            <h2 class="panel__title">Then: Phase 5</h2>
-            <p>Code execution — an online adapter with a local <code>javac</code> fallback that always works.</p>
-          </div>
-        </div>
+        <!-- Filled by assets/js/dashboard.js from metadata + the progress stub. -->
+        <div id="dashboard-body"></div>
       </section>
 
-      <section class="view" id="view-curriculum" data-view="curriculum" aria-labelledby="view-curriculum-title" hidden>
+      <section class="view view--wide" id="view-curriculum" data-view="curriculum" aria-labelledby="view-curriculum-title" hidden>
         <header class="view__header">
-          <p class="view__eyebrow">Placeholder view</p>
+          <p class="view__eyebrow">43 modules</p>
           <h1 class="view__title" id="view-curriculum-title">Curriculum</h1>
           <p class="view__lede">
-            The 43-module curriculum is specified in <code>docs/CURRICULUM.md</code>.
-            Rendering it here — module cards, chapter lists, prerequisites — is Phase 3.
+            The full curriculum, grouped into six parts. Every module is listed
+            in the sidebar; select one to see what it will cover. No module has
+            been written yet.
           </p>
         </header>
-        <div class="panel">
-          <h2 class="panel__title">Not built yet</h2>
-          <p>No module metadata is loaded by this shell. Nothing on this screen is real content.</p>
-        </div>
+        <!-- Filled by assets/js/curriculum-view.js. -->
+        <div id="curriculum-body"></div>
+      </section>
+
+      <section class="view view--wide" id="view-module" data-view="module" hidden>
+        <!-- Filled by assets/js/module-view.js for #/module/<id>. -->
+        <div id="module-body"></div>
       </section>
 
       <section class="view" id="view-practice" data-view="practice" aria-labelledby="view-practice-title" hidden>

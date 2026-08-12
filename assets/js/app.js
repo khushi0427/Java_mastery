@@ -5,17 +5,25 @@
  * shell's subsystems in a defined order and keeps that order in one readable
  * place as more are added in later phases.
  *
- * Deliberately absent, because they belong to later phases: content loading,
- * module metadata, search, progress tracking, and code execution.
+ * Order matters: the sidebar must exist in the DOM before the router runs, so
+ * the router can mark the active link and reveal a routed-to module.
+ *
+ * Deliberately absent, because they belong to later phases: progress
+ * persistence (Phase 4 — see progress.js, currently a stub), practice and hint
+ * UI, and code execution (Phase 5).
  */
 
-import { initTheme } from './theme.js';
 import { initNav } from './nav.js';
+import { initSearch } from './search.js';
+import { initSidebar } from './sidebar.js';
+import { initTheme } from './theme.js';
 
 function boot() {
   // Theme first: it only adjusts an attribute already set before paint by the
   // inline script in index.html, but doing it first keeps the order obvious.
   initTheme();
+  initSidebar();
+  initSearch();
   initNav();
 }
 

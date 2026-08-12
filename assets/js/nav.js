@@ -4,26 +4,28 @@
  * Two related jobs live here:
  *   1. The drawer: on narrow screens the sidebar overlays the content and needs
  *      open/close controls, a backdrop, Escape handling, and focus management.
- *   2. The router: a hash route (#/curriculum) selects which [data-view]
- *      section is visible and which nav link is marked current.
+ *   2. The router: a hash route selects which [data-view] section is visible
+ *      and which nav link is marked current.
  *
- * The views themselves are static markup in index.html and are toggled with the
- * `hidden` property rather than injected by JavaScript. That keeps content in
- * the document rather than in a template string, but note the limit: the
- * non-default views ship with `hidden` set, so without this module only the
- * dashboard is visible. Full content without JavaScript is not a goal here —
- * the site must be served over http regardless, because browsers block ES
- * module scripts on file:// (docs/ARCHITECTURE.md §2).
+ * Routes:
+ *   #/dashboard, #/curriculum, #/practice, …   → a static view
+ *   #/module/<id>                              → the module overview (Phase 3)
  *
- * Phase 3 note: when views gain real content and data loading, the router
- * belongs in its own module. It is here now because the shell's routing is a
- * dozen lines and a separate file would be ceremony.
+ * View sections are static markup in index.html toggled with `hidden`; the
+ * dashboard and module views have their bodies filled by their own modules.
+ * The site must be served over http regardless — browsers block ES module
+ * scripts on file:// (docs/ARCHITECTURE.md §2).
  */
+
+import { renderCurriculum } from './curriculum-view.js';
+import { renderDashboard } from './dashboard.js';
+import { renderModule } from './module-view.js';
+import { revealModule } from './sidebar.js';
 
 /** Must match the breakpoint in assets/css/layout.css §7. */
 const DESKTOP_QUERY = '(min-width: 900px)';
 
-/** Route → the document title suffix shown for it. */
+/** Static routes → the document title suffix shown for each. */
 const ROUTES = {
   dashboard: 'Dashboard',
   curriculum: 'Curriculum',
@@ -79,7 +81,10 @@ function closeDrawer(restoreFocus = true) {
 function trapFocus(event) {
   if (event.key !== 'Tab' || !isOpen() || isDesktop()) return;
 
-  const focusable = [...elements.sidebar.querySelectorAll(FOCUSABLE)];
+  // Queried per keystroke rather than cached: the sidebar's focusable set
+  // changes as module rows expand and collapse.
+  const focusable = [...elements.sidebar.querySelectorAll(FOCUSABLE)]
+    .filter((node) => node.offsetParent !== null);
   if (focusable.length === 0) return;
 
   const first = focusable[0];
@@ -126,55 +131,90 @@ function initDrawer() {
    ========================================================================== */
 
 /**
- * Read the route from the URL hash.
- * `#/curriculum` → 'curriculum'. Empty or bare `#` → the default route.
- * Anything unrecognised is returned as-is so the caller can 404 it.
+ * Parse the URL hash into a route.
  *
- * @returns {string}
+ *   ''                → { name: 'dashboard' }
+ *   '#/curriculum'    → { name: 'curriculum' }
+ *   '#/module/01-foo' → { name: 'module', param: '01-foo' }
+ *
+ * @returns {{name: string, param?: string}}
  */
-function routeFromHash() {
+function parseHash() {
   const raw = window.location.hash.replace(/^#\/?/, '').trim();
-  return raw === '' ? DEFAULT_ROUTE : raw;
+  if (raw === '') return { name: DEFAULT_ROUTE };
+
+  const [name, ...rest] = raw.split('/');
+  return rest.length > 0 ? { name, param: rest.join('/') } : { name };
 }
 
-/**
- * Show the view for `route` and mark the matching nav link current.
- * @param {string} route
- * @param {boolean} moveFocus - focus the content region (navigation, not load)
- */
-function showRoute(route, moveFocus) {
-  const known = Object.hasOwn(ROUTES, route);
-  const viewName = known ? route : NOT_FOUND_VIEW;
-
-  for (const view of elements.views) {
-    view.hidden = view.dataset.view !== viewName;
-  }
-
-  for (const link of elements.navLinks) {
-    if (known && link.dataset.route === route) {
+/** Mark the matching sidebar link current; clear the rest. */
+function setActiveLink(routeKey) {
+  for (const link of document.querySelectorAll('.nav-link, .module-link')) {
+    if (routeKey !== null && link.dataset.route === routeKey) {
       link.setAttribute('aria-current', 'page');
     } else {
       link.removeAttribute('aria-current');
     }
   }
+}
 
-  document.title = known ? `${ROUTES[route]} · ${SITE_NAME}` : `Not found · ${SITE_NAME}`;
+/**
+ * Show the view for `route`.
+ * @param {{name: string, param?: string}} route
+ * @param {boolean} moveFocus - focus the content region (navigation, not load)
+ */
+function showRoute(route, moveFocus) {
+  let viewName;
+  let title;
+  let activeKey = null;
+
+  if (route.name === 'module' && route.param) {
+    // Render first: an unknown module id must fall through to the 404 view
+    // rather than showing an empty module page.
+    if (renderModule(route.param)) {
+      viewName = 'module';
+      activeKey = `module/${route.param}`;
+      title = document.querySelector('#module-body .view__title')?.textContent ?? 'Module';
+      revealModule(route.param);
+    } else {
+      viewName = NOT_FOUND_VIEW;
+      title = 'Not found';
+    }
+  } else if (Object.hasOwn(ROUTES, route.name)) {
+    viewName = route.name;
+    activeKey = route.name;
+    title = ROUTES[route.name];
+    if (route.name === 'dashboard') renderDashboard();
+    if (route.name === 'curriculum') renderCurriculum();
+  } else {
+    viewName = NOT_FOUND_VIEW;
+    title = 'Not found';
+  }
+
+  for (const view of document.querySelectorAll('[data-view]')) {
+    view.hidden = view.dataset.view !== viewName;
+  }
+
+  setActiveLink(activeKey);
+  document.title = `${title} · ${SITE_NAME}`;
 
   if (moveFocus) {
     // tabindex="-1" on <main> makes this possible without adding a tab stop.
     elements.main?.focus();
+    elements.main?.scrollTo?.(0, 0);
+    window.scrollTo(0, 0);
   }
 }
 
 function initRouter() {
   window.addEventListener('hashchange', () => {
-    showRoute(routeFromHash(), true);
+    showRoute(parseHash(), true);
     // On narrow screens the drawer covers the content it just navigated to.
     closeDrawer(false);
   });
 
   // Initial render: no focus move, so the page opens at the top as expected.
-  showRoute(routeFromHash(), false);
+  showRoute(parseHash(), false);
 }
 
 /* ==========================================================================
@@ -190,8 +230,6 @@ export function initNav() {
     navClose: document.getElementById('nav-close'),
     backdrop: document.getElementById('nav-backdrop'),
     main: document.getElementById('main'),
-    navLinks: document.querySelectorAll('.nav-link'),
-    views: document.querySelectorAll('[data-view]'),
   };
 
   if (!elements.sidebar) {

@@ -42,17 +42,17 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 2 of 6 (Website shell) complete |
-| **What exists** | The documentation layer and the website shell |
-| **Website** | Shell only — layout, navigation, theming, routing. No content |
-| **Module content** | Does not exist yet (Phase 3 onward) |
+| **Phase** | FOUNDATION — Phase 3 of 6 (Dashboard + metadata + search) complete |
+| **What exists** | Documentation, the website shell, and the module metadata layer |
+| **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
+| **Module content** | Metadata only — no chapters, exercises, or examples exist |
 | **Code execution / compiler** | Does not exist yet (Phase 5) |
 | **Modules completed** | 0 of 43 |
 
-The site renders a navigable, themeable shell with placeholder views. There is
-no learning content, no module data, no search, and no progress tracking behind
-it. See [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative
-status.
+The site navigates all 43 modules, shows what each will cover, and searches
+module names and topics. **There is no learning content** — every module is
+`NOT_STARTED` with zero chapters — and no progress tracking. See
+[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
 ### Running it
 
@@ -142,9 +142,12 @@ vanilla JavaScript only**.
 TypeScript, jQuery, Tailwind, Bootstrap, or any other frontend framework,
 build step, transpiler, or bundler.
 
-Rationale: the platform must remain readable, debuggable, and runnable by
-opening a file — permanently, with zero toolchain rot, by a single learner
-maintaining it alone.
+Rationale: the platform must remain readable, debuggable, and runnable from a
+plain static file server — permanently, with zero toolchain rot, by a single
+learner maintaining it alone. (One caveat found in practice: because the site
+uses ES modules, browsers require it to be *served* rather than opened as a
+`file://` path. Nothing is compiled either way — see
+[Running it](#running-it).)
 
 ### This restriction applies to the UI only
 
@@ -372,14 +375,21 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   visible focus states, `aria-expanded` / `aria-current`, a focus trap in the
   drawer, and `prefers-reduced-motion` support.
 
+- **Module metadata:** `data/modules.js` is the single source of module data —
+  generated from `docs/CURRICULUM.md`, never hand-maintained. The sidebar,
+  dashboard, curriculum view, module overview, and search all read from it.
+- **Search:** client-side, no library, over module names, descriptions, and
+  topic keywords. Built from registered *sources* so chapters and practice can
+  be added later without a rewrite.
+
 **Still to come:**
 
-- **Content model:** chapter content as structured data rendered by a small
-  vanilla-JS renderer, keeping content and presentation separable (Phase 3).
+- **Chapter content** as structured data rendered by a small vanilla-JS
+  renderer, keeping content and presentation separable.
 - **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
   chapter, resume-where-you-left-off.
-- **Search:** client-side index over modules, chapters, and topics — currently a
-  disabled stub in the top bar.
+- **Progress tracking** (Phase 4) — `assets/js/progress.js` is currently a stub
+  returning real zeros.
 - **Code blocks:** syntax highlighting, copy-to-clipboard, and — from Phase 5 —
   a run affordance.
 
@@ -443,13 +453,13 @@ The project is being built in **6 foundation phases**. The specified phases are:
 |---|---|---|
 | **1** | Documentation layer (README, CLAUDE.md, `docs/*`) | Complete |
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Complete and verified |
-| **3** | *Not yet specified by the project owner* | Awaiting specification |
-| **4** | *Not yet specified by the project owner* | Awaiting specification |
+| **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Not started |
 | **5** | Compiler / code-execution integration | Not started |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
-Phases 3, 4, and 6 have **not** been defined. No agent may invent, assume, or
-act on a scope for them; wait for an explicit instruction. Each phase is
+Phase 6 has **not** been defined. No agent may invent, assume, or act on a
+scope for it; wait for an explicit instruction. Each phase is
 delivered on explicit instruction only, and each ends with a STOP.
 
 ### After the foundation
@@ -503,8 +513,19 @@ Java_mastery/
 │   │   └── layout.css         ← topbar, sidebar, drawer, content
 │   └── js/
 │       ├── app.js             ← bootstrap / entry point
+│       ├── dom.js             ← element builder (no innerHTML)
 │       ├── theme.js           ← theme resolution, toggle, persistence
-│       └── nav.js             ← drawer behaviour + hash router
+│       ├── nav.js             ← drawer behaviour + hash router
+│       ├── sidebar.js         ← 43-module tree, built from metadata
+│       ├── dashboard.js       ← dashboard cards
+│       ├── curriculum-view.js ← all modules, grouped by part
+│       ├── module-view.js     ← module overview
+│       ├── search.js          ← search index + UI
+│       └── progress.js        ← progress accessors (stub until Phase 4)
+├── data/
+│   └── modules.js             ← GENERATED module metadata — do not hand-edit
+├── tools/
+│   └── generate-modules.mjs   ← regenerates data/modules.js from CURRICULUM.md
 └── docs/
     ├── PROJECT_STATE.md       ← authoritative current status
     ├── ARCHITECTURE.md        ← system design (partly built, partly planned)
@@ -517,12 +538,11 @@ reconcile with `docs/ARCHITECTURE.md` before creating any of it):
 
 ```
 Java_mastery/
-├── content/                   ← module & chapter content as data
+├── content/                   ← chapter content, once chapters are written
 │   └── modules/
 │       └── module-01/
-├── java/                      ← runnable Java sources, per module
-│   └── module-01/
-└── tools/                     ← Phase 5: execution adapters / helpers
+└── java/                      ← runnable Java sources, per module
+    └── module-01/
 ```
 
 ---

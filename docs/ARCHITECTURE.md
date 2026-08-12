@@ -1,10 +1,12 @@
 # ARCHITECTURE.md — System Architecture
 
-**Status of this document:** created as a skeleton in Phase 1; the frontend,
-file structure, navigation, theming, and responsive sections were filled in from
-what was actually built in Phase 2. Many sections still describe systems that
-**do not exist yet** and are marked accordingly. Real today: the documentation
-layer and the website shell — nothing else.
+**Status of this document:** created as a skeleton in Phase 1; filled in from
+what was actually built in Phase 2 (frontend, file structure, navigation,
+theming, responsive) and Phase 3 (data architecture, module architecture,
+search, dashboard). Many sections still describe systems that **do not exist
+yet** and are marked accordingly. Real today: the documentation layer, the
+website shell, and the module metadata layer with the views over it — no
+learning content, no progress persistence, no code execution.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -27,16 +29,16 @@ section becomes real, move it out of *Planned* — and only then.
 1. [Documentation layer](#1-documentation-layer) — **IMPLEMENTED**
 2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED** (shell only)
 3. [File structure](#3-file-structure) — PARTIAL
-4. [Data architecture](#4-data-architecture) — PLANNED (Phase 3)
-5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL
+4. [Data architecture](#4-data-architecture) — PARTIAL (module metadata built)
+5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL (modules built, chapters not)
 6. [Practice architecture](#6-practice-architecture) — PLANNED
 7. [Interview-question architecture](#7-interview-question-architecture) — PLANNED
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
-9. [Progress system](#9-progress-system) — PLANNED (Phase 3)
+9. [Progress system](#9-progress-system) — PLANNED (Phase 4)
 10. [localStorage usage](#10-localstorage-usage) — PARTIAL (theme only)
 11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — PLANNED (Phase 5)
 12. [Navigation](#12-navigation) — **IMPLEMENTED** (shell only)
-13. [Search](#13-search) — PLANNED (Phase 3)
+13. [Search](#13-search) — **IMPLEMENTED** (modules + topics)
 14. [Responsive behaviour](#14-responsive-behaviour) — **IMPLEMENTED**
 15. [Cross-cutting decisions already fixed](#15-cross-cutting-decisions-already-fixed)
 16. [Open questions](#16-open-questions)
@@ -45,8 +47,7 @@ section becomes real, move it out of *Planned* — and only then.
 
 ## 1. Documentation layer
 
-**Status: IMPLEMENTED (Phase 1).** This is the only part of the system that
-currently exists.
+**Status: IMPLEMENTED (Phase 1), maintained since.**
 
 ### Purpose
 
@@ -105,17 +106,24 @@ practice, execution — is still PLANNED.
 
 ### As built
 
-- **ES modules** (`<script type="module">`), three of them, each with one job:
-  `app.js` (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router).
-  No globals; modules communicate by import, not by shared window state.
+- **ES modules** (`<script type="module">`), each with one job — `app.js`
+  (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router),
+  `sidebar.js`, `dashboard.js`, `curriculum-view.js`, `module-view.js`,
+  `search.js`, `progress.js` (stub), and `dom.js` (element builder). No globals;
+  modules communicate by import, not by shared window state.
 - **Three stylesheets** with a strict division of responsibility:
   `base.css` (reset, non-colour tokens, typography, focus primitives),
   `theme.css` (the entire colour system — and nothing else),
   `layout.css` (app-shell structure and breakpoints).
   *Rule: no colour literal may appear outside `theme.css`.*
-- **Views are static markup**, toggled with the `hidden` property rather than
-  injected as template strings. Content lives in the document, and no phase of
-  this project needs `innerHTML` to render a view.
+- **Views are static markup**, toggled with the `hidden` property. View
+  *bodies* that render from data are built with `assets/js/dom.js`, which routes
+  all text through `textContent`. **No `innerHTML` anywhere**, so no data value
+  can ever be parsed as markup — kept regardless of how trusted the current data
+  happens to be.
+- **`[hidden] { display: none !important }`** in `base.css`. The UA stylesheet's
+  `hidden` rule loses to any author `display` value, so a flex or grid container
+  silently ignores `hidden` — a real bug found in Phase 3 testing.
 - **Semantic landmarks**: `<header>`, `<nav aria-label="Main">`, `<main>`, a
   skip link, `aria-expanded` on the drawer toggle, `aria-current="page"` for the
   active nav item, and a focus trap while the drawer overlays the page.
@@ -135,8 +143,8 @@ declined in Phase 2 because module scoping matters more as the codebase grows.
 
 ### Still PLANNED
 
-Content rendering from data (Phase 3), search (§13), progress (§9), practice
-(§6), execution (§11), syntax highlighting (§16 open question 9), and any
+Chapter content rendering, progress persistence (§9, Phase 4), practice (§6),
+execution (§11, Phase 5), syntax highlighting (§16 open question 9), and any
 service worker / offline support.
 
 ---
@@ -156,11 +164,22 @@ Java_mastery/
 │   ├── css/
 │   │   ├── base.css       ← reset, non-colour tokens, typography, focus
 │   │   ├── theme.css      ← the complete colour system, light + dark
-│   │   └── layout.css     ← app shell: topbar, sidebar, drawer, content
+│   │   └── layout.css     ← app shell + Phase 3 components
 │   └── js/
 │       ├── app.js         ← bootstrap / entry point
+│       ├── dom.js         ← element builder (no innerHTML)
 │       ├── theme.js       ← theme resolution, toggle, persistence
-│       └── nav.js         ← drawer behaviour + hash router
+│       ├── nav.js         ← drawer behaviour + hash router
+│       ├── sidebar.js     ← module tree, built from metadata
+│       ├── dashboard.js   ← dashboard cards
+│       ├── curriculum-view.js ← all 43 modules, grouped by part
+│       ├── module-view.js ← module overview
+│       ├── search.js      ← source-based search index + UI
+│       └── progress.js    ← progress accessors (STUB until Phase 4)
+├── data/
+│   └── modules.js         ← GENERATED module metadata (single source)
+├── tools/
+│   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
     ├── PROJECT_STATE.md
     ├── ARCHITECTURE.md
@@ -186,15 +205,18 @@ below are still intent.
 
 ```
 Java_mastery/
-├── content/               ← module & chapter content (Phase 3+)
+├── content/               ← chapter content, once chapters are written
 │   └── modules/
 │       └── module-01/
-│           ├── module.json      ← module metadata & chapter index
-│           └── chapters/        ← per-chapter content
+│           └── chapters/
 ├── java/                  ← runnable Java sources, per module
 │   └── module-01/
-└── tools/                 ← Phase 5: execution adapters/helpers
+└── tools/                 ← Phase 5 adds execution adapters here
 ```
+
+Note that `tools/` now exists — Phase 1 had reserved it for Phase 5 execution
+helpers, and Phase 3 put the curriculum generator there first. Both belong to
+"development tooling that is not shipped to the browser", so they share it.
 
 **Naming conventions (decided now, so later phases are consistent):**
 
@@ -207,7 +229,8 @@ Java_mastery/
 
 ## 4. Data architecture
 
-**Status: PLANNED — not yet implemented.**
+**Status: PARTIAL.** The module metadata layer exists (Phase 3). Chapter,
+practice, and interview data do not.
 
 ### Principle (decided)
 
@@ -217,24 +240,60 @@ markup. This keeps the 43 modules uniform, makes search indexable, makes
 progress trackable per section, and lets presentation change without rewriting
 content.
 
-### Intended data objects
+### The metadata layer, as built
 
-| Object | Holds |
+`data/modules.js` is an ES module exporting a `MODULES` array — **the single
+source of module metadata for the application.** The sidebar, dashboard,
+curriculum view, module overview, and search index all read from it, and
+nothing hardcodes a module list anywhere else.
+
+Per module:
+
+| Field | Meaning |
 |---|---|
-| **Curriculum index** | The 43 modules: number, name, part, prerequisites, chapter list |
-| **Module** | Metadata, learning outcomes, chapter index, cross-links to other modules |
+| `number` | `"01"`–`"43"`, matching `CURRICULUM.md`. **Permanent key.** |
+| `id` | URL slug, e.g. `12-collections-framework-internal-data-structures`. **Permanent key** — Phase 4 progress records are keyed on it |
+| `name` | Module name, verbatim from `CURRICULUM.md` |
+| `part` / `partNumber` | Presentation grouping (Part I–VI) |
+| `description` | The module's Purpose line |
+| `prerequisites` | Array of module numbers |
+| `owns` | The concepts this module teaches in depth (§5 single ownership) |
+| `topics` | `[{ group, items[] }]` — the coverage specification, **not** taught content |
+| `status` | One of the five status tokens. All 43 are `NOT_STARTED` |
+| `chapterCount` / `chapters` | `0` and `[]` — no chapter content exists |
+
+### Generated, not hand-maintained — resolves open question 3
+
+`docs/CURRICULUM.md` is authoritative for humans; hand-copying the same 43
+modules into JavaScript would create a second source that drifts. So
+`data/modules.js` is **derived** from `CURRICULUM.md` by
+`tools/generate-modules.mjs`:
+
+```bash
+node tools/generate-modules.mjs           # regenerate after editing CURRICULUM.md
+node tools/generate-modules.mjs --check   # verify in sync; exits 1 if not
+```
+
+This is a **development tool, not a build step** — the site runs directly from
+the committed `data/modules.js` with no toolchain. The generator refuses to emit
+unless it finds exactly 43 modules numbered 01–43 with unique ids, a name, a
+description, and topics on every one.
+
+### Still PLANNED
+
+| Object | Phase |
+|---|---|
 | **Chapter** | The 15 workflow sections (concept, examples, predict-output, lab, practice, hints, execution, solutions, interview Qs, mistakes, revision, integration) |
-| **Code example** | Source, language, filename, expected output, runnable flag, required Java version |
-| **Practice problem** | Prompt, difficulty, starter code, hints (ordered), solution, expected output |
-| **Interview question** | Question, model answer, depth level, related module numbers |
-| **Progress record** | Per-learner state (browser-local only — see §9, §10) |
+| **Code example** | Source, filename, expected output, runnable flag, required Java version |
+| **Practice problem** | Prompt, difficulty, starter code, ordered hints, solution, expected output |
+| **Interview question** | Question, model answer, depth, related modules |
+| **Progress record** | Per-learner state — Phase 4 (§9, §10) |
 
 ### Not yet decided — UNDECIDED
 
-Serialization format (JSON vs Markdown-with-front-matter vs a hybrid); whether
-content loads per chapter or as bundles; whether the curriculum index is
-generated from `CURRICULUM.md` or maintained separately (it must not diverge
-from it either way).
+Serialization format for *chapter* content (JSON vs Markdown-with-front-matter
+vs hybrid); whether chapter content loads per chapter or in bundles. The module
+metadata question is settled above.
 
 ---
 
@@ -248,9 +307,17 @@ within modules is planned.
 - **Exactly 43 modules, numbered 01–43, frozen.** See
   [`CURRICULUM.md`](CURRICULUM.md). Modules are never added, removed, merged,
   split, renamed, renumbered, or reordered.
+- **LOCKED as of 2026-08-12 (Phase 3).** The project owner confirmed the module
+  set as canonical; `CURRICULUM.md` Appendix B records the confirmation. The
+  reconciliation question raised in Phase 1 is closed.
 - **Module numbers are permanent identifiers** — used by navigation, progress
   keys, and cross-references. This is *why* the set is frozen: renumbering
   invalidates stored learner progress.
+- **Module ids are derived from names**, so names are locked too. The id is
+  `<number>-<kebab-cased name up to any em-dash subtitle>`, e.g.
+  `17-concurrency-i`. Renaming a module changes its id and orphans any progress
+  stored against it. If a rename ever becomes unavoidable, pin the old id by
+  hand rather than letting the generator move it.
 - **Modules are grouped into six parts** for navigation only. Parts are a
   presentation grouping; they carry no identity and no progress state.
 - **Each module is split into chapters**; the chapter is the unit of delivery
@@ -259,6 +326,20 @@ within modules is planned.
   chapter data model mirrors those steps one-to-one (§4).
 - **Single primary ownership.** Each concept is taught in exactly one module;
   others cross-link. `CURRICULUM.md` records ownership per module.
+
+### As built (Phase 3)
+
+Module metadata is rendered in three places, all reading `data/modules.js`:
+
+- **Sidebar** — all 43 modules under a collapsible Curriculum section, each row
+  carrying a status dot and its own disclosure for chapters.
+- **Curriculum view** (`#/curriculum`) — module cards grouped under the six
+  parts.
+- **Module overview** (`#/module/<id>`) — description, status, prerequisites as
+  links, primary ownership, the empty chapter region, and the topic groups.
+
+The module overview labels its topic list as *the coverage specification*, not
+as taught content, so a long list never implies the module has been written.
 
 ### Not yet decided — UNDECIDED
 
@@ -336,7 +417,14 @@ exist at part boundaries; whether assessment results are exportable.
 
 ## 9. Progress system
 
-**Status: PLANNED — not yet implemented.**
+**Status: PLANNED — Phase 4.** Phase 3 added `assets/js/progress.js` as a
+**stub with no persistence**: every accessor returns the true current state of
+an empty repository (zeros and empty arrays), and the dashboard reads through
+it. The function shapes there are the contract Phase 4 must honour, so wiring
+real `localStorage` should not require rewriting the dashboard.
+
+Progress records will be keyed on module `id` from `data/modules.js` under the
+`jfsm.` prefix (§10). Those ids are permanent — see §5.
 
 ### Decided (fixed architectural decisions)
 
@@ -445,19 +533,29 @@ providers accept a single file — the local fallback covers this case regardles
 
 ## 12. Navigation
 
-**Status: IMPLEMENTED for the shell (Phase 2).** The chrome and the routing
-mechanism exist; the module/chapter tree that will fill the sidebar does not.
+**Status: IMPLEMENTED (Phase 2 shell, Phase 3 module tree).** The chapter level
+does not exist because chapters do not.
 
 ### As built
 
 - **Persistent shell**: a fixed top bar plus a sidebar, on a single page.
-- **Sidebar** carries seven placeholder destinations in three groups — Learn
-  (Dashboard, Curriculum, Practice), Prepare (Interview, Assessments), and
-  Build & Review (Projects, Revision). **The 43 modules are deliberately not
-  hardcoded**; that tree is data-driven in Phase 3.
-- **Routing is hash-based** — `#/dashboard`, `#/curriculum`, … — resolving
-  §16 open question 2 (see below). A bare URL falls back to `#/dashboard`; an
-  unrecognised route renders a "not found" view and clears the active state.
+- **Sidebar** carries seven destinations in three groups — Learn (Dashboard,
+  Curriculum, Practice), Prepare (Interview, Assessments), and Build & Review
+  (Projects, Revision) — and, under Curriculum, **all 43 modules built from
+  `data/modules.js`** (§4). Nothing about the module list is hardcoded in the
+  sidebar.
+- **Two levels of disclosure**: the Curriculum section collapses as a whole, and
+  each module row has its own chevron revealing that module's chapter region.
+  Both use `<button aria-expanded aria-controls>`; each module toggle carries an
+  `aria-label` naming its module, so 43 toggles are not all called "expand".
+- **Empty chapter regions say "No chapters yet"** rather than rendering
+  placeholder links. `chapterCount` is genuinely 0.
+- **Routing is hash-based** — `#/dashboard`, `#/curriculum`, `#/module/<id>` —
+  resolving §16 open question 2 (see below). A bare URL falls back to
+  `#/dashboard`; an unrecognised route *or an unknown module id* renders the
+  "not found" view and clears the active state.
+- **Routing to a module reveals it** in the tree (expanding the Curriculum
+  section and scrolling the row into view) so the sidebar reflects the location.
 - **Active state** is expressed with `aria-current="page"`, and the CSS
   highlight keys off that attribute, so the accessible name and the visible
   highlight cannot disagree.
@@ -469,29 +567,83 @@ mechanism exist; the module/chapter tree that will fill the sidebar does not.
 
 ### Still PLANNED
 
-Three-level drill-down (part → module → chapter), breadcrumbs, previous/next
-chapter controls crossing module boundaries, resume-where-you-left-off (§9), and
-progress indication in the module list. Whether prerequisites gate navigation or
-merely advise remains UNDECIDED.
+The chapter level of the tree, breadcrumbs, previous/next chapter controls
+crossing module boundaries, resume-where-you-left-off (§9), and real progress
+indication in the module list — the sidebar currently shows module *status*
+(all `NOT_STARTED`), not learner progress. Whether prerequisites gate navigation
+or merely advise remains UNDECIDED.
+
+---
+
+## 12a. Dashboard
+
+**Status: IMPLEMENTED as structure (Phase 3); values arrive with Phase 4.**
+
+Seven sections, each reading `data/modules.js` and the `progress.js` stub — no
+duplicated module list, no hardcoded figures:
+
+| Section | Current state |
+|---|---|
+| Overall progress | 0%, 0/0 chapters, 0/43 modules |
+| Current position | "Not started" |
+| Recommended next | Module 01, as the curriculum entry point |
+| Recently studied | "Nothing yet" |
+| Practice | 0 / 0 |
+| Assessments | 0 / 0 |
+| Progress by module | All 43, each `Not started`, 0/0 chapters |
+
+A banner states plainly that progress tracking is not implemented and the zeros
+are real values from an empty repository. Percentages guard the 0-of-0 case
+rather than rendering `NaN`.
 
 ---
 
 ## 13. Search
 
-**Status: PLANNED — not yet implemented.**
+**Status: IMPLEMENTED over the data that exists (Phase 3).** Modules and topics
+are searchable. Chapters, practice, interview questions, and revision notes are
+not — because they do not exist.
 
-### Intended
+### Source-based design — the part that matters
 
-- **Client-side only** — consistent with "no backend". No search server.
-- Indexes module names, chapter titles, topics, and concept keywords.
-- Results grouped by module, showing module number and chapter.
-- Keyboard-accessible, with a keyboard shortcut to focus the field.
+The index is **not** built from modules directly. It is built from registered
+*sources*, each a function returning entries in a shared shape:
+
+```js
+registerSearchSource('chapter', () => chapters.map(toEntry));
+```
+
+Adding chapter or practice search in a later phase means registering a source.
+Scoring, rendering, keyboard handling, result grouping, and the empty and
+no-results states all work off the shared entry shape and need no changes.
+
+Entry shape: `{ type, title, subtitle, route, keywords }` — `type` is the
+human-facing source label shown on each result ("Module", "Topic").
+
+### As built
+
+- **Client-side only**, no library, no index file. The index is built lazily on
+  first query and invalidated when a source registers.
+- Two sources today: **Module** (number, name, description, ownership) and
+  **Topic** (both group headings and individual topic items) — 43 + 250 + 1330
+  entries.
+- **Scoring**: query tokens are ANDed, so `virtual threads` will not match an
+  entry containing only "thread". Exact title, prefix, and substring matches
+  score in that order; a bare number ranks the matching module first (`12` →
+  Module 12); shorter titles win ties as the more precise hit.
+- **Every result is labelled with its source type** and navigates to the
+  relevant module route on selection.
+- **Keyboard**: `/` focuses the field, ↑/↓ move through results, Enter opens the
+  active one (or the top hit), Escape closes. `role="combobox"` on the input
+  with `aria-activedescendant` tracking the active option.
+- **Empty query** hides the panel; **no results** explains what search currently
+  covers, so a miss is not mistaken for a broken feature.
 
 ### Not yet decided — UNDECIDED
 
-Whether the index is prebuilt (committed) or built at runtime; whether full
-chapter body text is indexed or only titles/topics/keywords (a size vs
-usefulness trade-off); fuzzy matching and ranking strategy.
+Whether full chapter body text gets indexed once chapters exist (a size vs
+usefulness trade-off); fuzzy matching; whether the index should be prebuilt and
+committed if it grows large enough to matter.
 
 ---
 
@@ -564,6 +716,10 @@ from the project owner:
 | 13 | **`jfsm.` prefix** for every `localStorage` key | §10 |
 | 14 | **Colour literals live only in `theme.css`**; all three theme blocks carry identical token sets | §2, §14 |
 | 15 | **The site is served over http**, not opened as `file://` (ES modules) | §2 |
+| 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md` | §4 |
+| 17 | **Module ids are permanent keys** derived from names; Phase 4 progress keys on them | §5 |
+| 18 | **Search indexes registered sources**, so new content types need no rewrite | §13 |
+| 19 | **No `innerHTML`** — all rendering goes through `assets/js/dom.js` and `textContent` | §2 |
 
 ---
 
@@ -580,8 +736,11 @@ assumption — resolve them explicitly, record the resolution here and in
    subdirectory, and keeps deep links working without configuration. The cost —
    hash URLs are less tidy, and the fragment is unavailable for in-page anchors
    — is accepted. Revisit only if chapter deep-linking demands real paths. (§12)
-3. **Curriculum index** — generated from `CURRICULUM.md` or maintained
-   separately (and if separate, how is divergence prevented)? (§4)
+3. ~~**Curriculum index** — generated from `CURRICULUM.md` or maintained
+   separately?~~ **RESOLVED in Phase 3: generated.** `data/modules.js` is
+   derived from `docs/CURRICULUM.md` by `tools/generate-modules.mjs`, with a
+   `--check` mode that fails when the two diverge. Divergence is therefore
+   detectable rather than merely discouraged. (§4)
 4. **Search index** — prebuilt and committed, or built at runtime? Body text or
    titles only? (§13)
 5. **Execution provider** — which service, and does it require a key (and hence
