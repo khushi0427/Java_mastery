@@ -1,8 +1,10 @@
 # ARCHITECTURE.md — System Architecture
 
-**Status of this document:** skeleton, created in Phase 1. Most sections
-describe systems that **do not exist yet** and are marked accordingly. Only the
-documentation layer is real today.
+**Status of this document:** created as a skeleton in Phase 1; the frontend,
+file structure, navigation, theming, and responsive sections were filled in from
+what was actually built in Phase 2. Many sections still describe systems that
+**do not exist yet** and are marked accordingly. Real today: the documentation
+layer and the website shell — nothing else.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -23,19 +25,19 @@ section becomes real, move it out of *Planned* — and only then.
 ## Table of contents
 
 1. [Documentation layer](#1-documentation-layer) — **IMPLEMENTED**
-2. [Frontend architecture](#2-frontend-architecture) — PLANNED (Phase 2)
+2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED** (shell only)
 3. [File structure](#3-file-structure) — PARTIAL
-4. [Data architecture](#4-data-architecture) — PLANNED
+4. [Data architecture](#4-data-architecture) — PLANNED (Phase 3)
 5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL
 6. [Practice architecture](#6-practice-architecture) — PLANNED
 7. [Interview-question architecture](#7-interview-question-architecture) — PLANNED
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
-9. [Progress system](#9-progress-system) — PLANNED
-10. [localStorage usage](#10-localstorage-usage) — PLANNED
+9. [Progress system](#9-progress-system) — PLANNED (Phase 3)
+10. [localStorage usage](#10-localstorage-usage) — PARTIAL (theme only)
 11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — PLANNED (Phase 5)
-12. [Navigation](#12-navigation) — PLANNED (Phase 2)
-13. [Search](#13-search) — PLANNED
-14. [Responsive behaviour](#14-responsive-behaviour) — PLANNED (Phase 2)
+12. [Navigation](#12-navigation) — **IMPLEMENTED** (shell only)
+13. [Search](#13-search) — PLANNED (Phase 3)
+14. [Responsive behaviour](#14-responsive-behaviour) — **IMPLEMENTED**
 15. [Cross-cutting decisions already fixed](#15-cross-cutting-decisions-already-fixed)
 16. [Open questions](#16-open-questions)
 
@@ -88,33 +90,54 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 
 ## 2. Frontend architecture
 
-**Status: PLANNED — not yet implemented (Phase 2).** No website code exists.
+**Status: IMPLEMENTED for the application shell (Phase 2).** Layout, theming,
+navigation, and routing exist and were verified in a real browser. Everything
+the shell *contains* — module data, content rendering, search, progress,
+practice, execution — is still PLANNED.
 
 ### Fixed constraints (decided, not negotiable)
 
 - **HTML + CSS + vanilla JavaScript only.** No React/Angular/Vue/Svelte, no
   TypeScript, no jQuery, no CSS framework, no bundler, transpiler, preprocessor,
   or package-managed frontend dependency.
-- **No build step.** The site must run by opening files or serving the directory
-  statically. What is in the repository is what runs in the browser.
+- **No build step.** What is in the repository is what runs in the browser.
 - **Static delivery.** No server-side rendering; no application server.
 
-### Intended shape (Phase 2 will decide the details)
+### As built
 
-- ES modules (`<script type="module">`) for structure without a bundler.
-- A small set of focused modules — router, content renderer, progress store,
-  theme controller, search — rather than one large script.
-- Plain CSS with custom properties for theming; CSS Grid and Flexbox for layout.
-- Semantic HTML as the accessibility baseline: real landmarks and headings,
-  keyboard navigability, visible focus states, adequate contrast in both themes.
-- Progressive enhancement: content readable even if a non-essential script fails.
+- **ES modules** (`<script type="module">`), three of them, each with one job:
+  `app.js` (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router).
+  No globals; modules communicate by import, not by shared window state.
+- **Three stylesheets** with a strict division of responsibility:
+  `base.css` (reset, non-colour tokens, typography, focus primitives),
+  `theme.css` (the entire colour system — and nothing else),
+  `layout.css` (app-shell structure and breakpoints).
+  *Rule: no colour literal may appear outside `theme.css`.*
+- **Views are static markup**, toggled with the `hidden` property rather than
+  injected as template strings. Content lives in the document, and no phase of
+  this project needs `innerHTML` to render a view.
+- **Semantic landmarks**: `<header>`, `<nav aria-label="Main">`, `<main>`, a
+  skip link, `aria-expanded` on the drawer toggle, `aria-current="page"` for the
+  active nav item, and a focus trap while the drawer overlays the page.
+- **`prefers-reduced-motion`** is honoured by zeroing the motion tokens.
 
-### Not yet decided — UNDECIDED
+### Serving requirement — a real constraint, discovered by testing
 
-Routing strategy (hash-based vs History API vs one HTML file per chapter);
-whether content is fetched as data and rendered client-side or pre-written as
-HTML; syntax-highlighting approach; whether a service worker is used for offline
-support.
+**The site must be served over http**, e.g. `python3 -m http.server`. Opening
+`index.html` as a `file://` path renders the page and its styles, but browsers
+block ES module scripts on `file://` under CORS policy, so the theme toggle and
+navigation do not run. A `<noscript>` block states this in the page itself.
+
+This is a browser constraint, not a build step — there is still nothing to
+compile. If double-click-to-open is ever required, the fix is to convert the
+three modules to classic `<script defer>` files; that trade was considered and
+declined in Phase 2 because module scoping matters more as the codebase grows.
+
+### Still PLANNED
+
+Content rendering from data (Phase 3), search (§13), progress (§9), practice
+(§6), execution (§11), syntax highlighting (§16 open question 9), and any
+service worker / offline support.
 
 ---
 
@@ -126,8 +149,18 @@ support.
 
 ```
 Java_mastery/
+├── index.html             ← the app shell (Phase 2)
 ├── README.md
 ├── CLAUDE.md
+├── assets/
+│   ├── css/
+│   │   ├── base.css       ← reset, non-colour tokens, typography, focus
+│   │   ├── theme.css      ← the complete colour system, light + dark
+│   │   └── layout.css     ← app shell: topbar, sidebar, drawer, content
+│   └── js/
+│       ├── app.js         ← bootstrap / entry point
+│       ├── theme.js       ← theme resolution, toggle, persistence
+│       └── nav.js         ← drawer behaviour + hash router
 └── docs/
     ├── PROJECT_STATE.md
     ├── ARCHITECTURE.md
@@ -135,19 +168,25 @@ Java_mastery/
     └── AI_INSTRUCTIONS.md
 ```
 
-### Planned — not yet implemented
+#### Deviation from the Phase 1 plan — recorded deliberately
 
-Directory names below are **intent**, not commitments; Phase 2 confirms them,
-and this section must be updated when it does.
+Phase 1 sketched a `site/` directory containing `index.html`, `css/`, and `js/`.
+**Phase 2 placed `index.html` at the repository root with assets under
+`assets/`** instead. Reasons:
+
+1. A root `index.html` is what static hosts serve by default (GitHub Pages, and
+   `python3 -m http.server` from the repository root), with no extra path.
+2. It removes one level of nesting for the only entry point the project has.
+
+The Phase 1 text explicitly labelled that tree "intent, not commitments; Phase 2
+confirms them" — this is that confirmation. `content/`, `java/`, and `tools/`
+below are still intent.
+
+### Planned — not yet implemented
 
 ```
 Java_mastery/
-├── site/                  ← Phase 2: the website
-│   ├── index.html
-│   ├── css/               ← theme tokens, layout, components
-│   ├── js/                ← router, renderer, progress, theme, search
-│   └── pages/             ← static pages (about, how-to-use, …)
-├── content/               ← module & chapter content
+├── content/               ← module & chapter content (Phase 3+)
 │   └── modules/
 │       └── module-01/
 │           ├── module.json      ← module metadata & chapter index
@@ -324,12 +363,27 @@ Whether completion is manual, inferred from activity, or both; granularity
 
 ## 10. localStorage usage
 
-**Status: PLANNED — not yet implemented.**
+**Status: PARTIAL.** Exactly one key is in use — the theme preference, written
+in Phase 2. Progress storage is still PLANNED (§9).
+
+### In use today
+
+| Key | Values | Written by |
+|---|---|---|
+| `jfsm.theme` | `"light"` \| `"dark"` | `assets/js/theme.js` |
+
+The key is read in two places that must stay in step: `theme.js` and the inline
+anti-FOUC script in `index.html`. Both treat any value other than exactly
+`"light"` or `"dark"` as absent, and both wrap access in `try/catch`.
+
+**Note:** the prefix convention is `jfsm.` (dot), not the `jfsm:` shown
+illustratively in Phase 1. Phase 2 fixed the actual convention when it wrote the
+first real key; all future keys use `jfsm.`.
 
 ### Decided
 
-- **Namespaced keys.** All keys carry a common prefix (e.g. `jfsm:`) so the
-  project never collides with anything else on the same origin.
+- **Namespaced keys.** All keys carry the `jfsm.` prefix so the project never
+  collides with anything else on the same origin.
 - **Versioned schema.** A stored schema version accompanies the data.
 - **Non-destructive migrations.** A version bump must migrate existing progress
   forward. Wiping learner progress on upgrade is a destructive change and is
@@ -391,24 +445,34 @@ providers accept a single file — the local fallback covers this case regardles
 
 ## 12. Navigation
 
-**Status: PLANNED — not yet implemented (Phase 2).**
+**Status: IMPLEMENTED for the shell (Phase 2).** The chrome and the routing
+mechanism exist; the module/chapter tree that will fill the sidebar does not.
 
-### Intended
+### As built
 
-- **Persistent shell** present on every page.
-- **Three levels:** part → module → chapter, with drill-down.
-- **Breadcrumbs** showing position in the hierarchy.
-- **Previous/next chapter** controls that cross module boundaries correctly
-  (last chapter of module *N* → first chapter of module *N+1*).
-- **Resume**: a visible entry point back to the last position (§9).
-- **Progress indication** in the module list (per the §7 status vocabulary
-  concept, adapted for learner-facing display).
-- **Keyboard navigable**, with visible focus states.
+- **Persistent shell**: a fixed top bar plus a sidebar, on a single page.
+- **Sidebar** carries seven placeholder destinations in three groups — Learn
+  (Dashboard, Curriculum, Practice), Prepare (Interview, Assessments), and
+  Build & Review (Projects, Revision). **The 43 modules are deliberately not
+  hardcoded**; that tree is data-driven in Phase 3.
+- **Routing is hash-based** — `#/dashboard`, `#/curriculum`, … — resolving
+  §16 open question 2 (see below). A bare URL falls back to `#/dashboard`; an
+  unrecognised route renders a "not found" view and clears the active state.
+- **Active state** is expressed with `aria-current="page"`, and the CSS
+  highlight keys off that attribute, so the accessible name and the visible
+  highlight cannot disagree.
+- **Document title** updates per route (`Curriculum · Java Full-Stack Mastery`).
+- **Focus management**: navigating moves focus to `<main>` (which carries
+  `tabindex="-1"`) so keyboard users land in the new content; opening the drawer
+  moves focus into it and traps Tab there; closing returns focus to the toggle.
+- **Escape** closes the drawer.
 
-### Not yet decided — UNDECIDED
+### Still PLANNED
 
-Sidebar vs top-nav vs both at different breakpoints; whether prerequisites gate
-navigation or merely advise; URL scheme (tied to the §2 routing decision).
+Three-level drill-down (part → module → chapter), breadcrumbs, previous/next
+chapter controls crossing module boundaries, resume-where-you-left-off (§9), and
+progress indication in the module list. Whether prerequisites gate navigation or
+merely advise remains UNDECIDED.
 
 ---
 
@@ -431,28 +495,50 @@ usefulness trade-off); fuzzy matching and ranking strategy.
 
 ---
 
-## 14. Responsive behaviour
+## 14. Responsive behaviour and theming
 
-**Status: PLANNED — not yet implemented (Phase 2).**
+**Status: IMPLEMENTED (Phase 2).**
 
-### Decided
+### Breakpoints as built
 
-- The site must be **usable on a phone**, comfortable on a laptop, and
-  wide-screen aware.
-- **CSS Grid and Flexbox** for layout; relative units; no fixed-pixel page
-  layouts.
-- **Code blocks scroll horizontally within their own container** — the page body
-  must never scroll horizontally. Code samples are the main overflow risk in a
-  programming curriculum.
-- **Dark and light themes**, user-toggled, preference persisted in
-  `localStorage`, defaulting to `prefers-color-scheme`.
-- Theme implemented with **CSS custom properties**, defined once and overridden
-  per theme — never with duplicated stylesheets.
+| Width | Behaviour |
+|---|---|
+| **≥ 900px** | Sidebar docked beside the content, sticky and independently scrollable. The hamburger, drawer close button, and backdrop are `display: none`, so they leave the accessibility tree entirely rather than sitting there inert. |
+| **< 900px** | Sidebar becomes an overlay drawer: off-canvas by default, slid in over a dimmed backdrop, dismissible by backdrop click, close button, Escape, or following a link. |
+| **≤ 560px** | Brand wordmark hides so the search field keeps usable width; heading scale and panel padding step down. |
 
-### Not yet decided — UNDECIDED
+Verified with no horizontal page scroll at 320, 390, 768, 1024, 1280, and
+1920px. Layout uses Flexbox and Grid with relative units throughout.
 
-Breakpoint values; navigation collapse behaviour on small screens; typography
-scale.
+**Drawer visibility detail worth preserving:** the closed drawer uses
+`visibility: hidden` to keep its links out of the tab order, switched with a
+**0s** transition (delayed on close, immediate on open) rather than an animated
+one. An animated `visibility` transition still computes as `hidden` at the
+instant the open class lands, which makes `.focus()` fail silently. This was a
+real bug caught by browser testing in Phase 2 — do not "tidy" it back into the
+`transform` transition.
+
+### Theming as built
+
+- **Three-block token system** in `theme.css`: the complete light palette on
+  `:root`; a dark override on `:root[data-theme="dark"]`; and the same dark
+  values under `@media (prefers-color-scheme: dark)` guarded by
+  `:root:not([data-theme="light"])`, so an explicit light choice always beats a
+  dark OS setting. All three blocks carry identical token sets (20 each) — a
+  token added to one must be added to all.
+- **Resolution order**: stored choice → `prefers-color-scheme` → light.
+- **No flash of wrong theme**: a synchronous inline script in `<head>` applies
+  the resolved theme before `<body>` exists. Verified by MutationObserver trace,
+  not by eye.
+- `color-scheme` is set per theme so native controls and scrollbars match.
+- The toggle's icon and `aria-label` describe the **action** (moon + "Switch to
+  dark theme" while light), not the current state.
+
+### Still PLANNED
+
+Code blocks scrolling within their own container — the decision stands, but the
+rule arrives with the content it applies to. Typography scale may be revisited
+when real content exists.
 
 ---
 
@@ -473,6 +559,11 @@ from the project owner:
 | 8 | **Single primary ownership** of each concept; others cross-link | §5 |
 | 9 | **Local execution fallback always works**, with or without a network | §11 |
 | 10 | **Repository is the source of truth**; the filesystem outranks the docs | §1 |
+| 11 | **Hash-based routing** (`#/route`) — resolved in Phase 2 | §12, §16 |
+| 12 | **`index.html` at the repository root**, assets under `assets/` | §3 |
+| 13 | **`jfsm.` prefix** for every `localStorage` key | §10 |
+| 14 | **Colour literals live only in `theme.css`**; all three theme blocks carry identical token sets | §2, §14 |
+| 15 | **The site is served over http**, not opened as `file://` (ES modules) | §2 |
 
 ---
 
@@ -483,7 +574,12 @@ assumption — resolve them explicitly, record the resolution here and in
 `PROJECT_STATE.md`.
 
 1. **Content format** — JSON, Markdown with front-matter, or hybrid? (§4)
-2. **Routing** — hash-based, History API, or one HTML file per chapter? (§2, §12)
+2. ~~**Routing** — hash-based, History API, or one HTML file per chapter?~~
+   **RESOLVED in Phase 2: hash-based routing** (`#/dashboard`). Chosen because
+   it needs no server rewrite rules, works from any static host and any
+   subdirectory, and keeps deep links working without configuration. The cost —
+   hash URLs are less tidy, and the fragment is unavailable for in-page anchors
+   — is accepted. Revisit only if chapter deep-linking demands real paths. (§12)
 3. **Curriculum index** — generated from `CURRICULUM.md` or maintained
    separately (and if separate, how is divergence prevented)? (§4)
 4. **Search index** — prebuilt and committed, or built at runtime? Body text or
