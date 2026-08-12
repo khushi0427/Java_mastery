@@ -3515,7 +3515,28 @@ full-stack scope recorded in [`../README.md`](../README.md).
    documentation when authoring each module**, and never present an unverified
    claim as fact (`AI_INSTRUCTIONS.md` §4).
 
-**Status:** awaiting the project owner's confirmation.
+**Status: CONFIRMED AND LOCKED — 2026-08-12.**
+
+The project owner reviewed this question at the start of Phase 3 and confirmed
+that the 43 modules, names, and numbering in this document **stand as canonical**.
+The reconciliation described above is closed; no master brief supersedes this file.
+
+From this point the freeze in rule 1 applies without exception:
+
+- Module **numbers 01–43 are permanent identifiers**. Phase 3 derived the
+  application's module ids and routes from them, and Phase 4 will key
+  `localStorage` progress records on those ids. Renumbering now destroys stored
+  learner progress.
+- Module **names are locked** too, because the id slugs are derived from them
+  (`docs/ARCHITECTURE.md` §5). Renaming a module changes its id unless the id is
+  pinned by hand.
+
+One note for the record: the Phase 3 instruction contained an illustrative route
+`#/module/08-hashing-hashmap`, which does not correspond to Module 08 of this
+curriculum ("Immutability, Records & Data-Oriented Design"). That discrepancy was
+raised before locking and the owner confirmed this list regardless; the example
+is understood to have been illustrative. Hashing is taught in Module 07
+(`equals`/`hashCode` contracts) and Module 12 (`HashMap` internals).
 
 ---
 

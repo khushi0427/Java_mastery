@@ -1,0 +1,184 @@
+/* ==========================================================================
+   theme.css — the complete colour system, in one file
+
+   How theming works here:
+
+   1. `:root` carries the COMPLETE light palette. Every colour token the app
+      uses is defined once, here. No token may have its only definition inside
+      a media query or an attribute selector.
+   2. `:root[data-theme="dark"]` redefines only the tokens that change, so an
+      explicit user choice always wins.
+   3. `@media (prefers-color-scheme: dark)`, guarded by
+      `:root:not([data-theme="light"])`, covers the case where the inline
+      anti-FOUC script did not run (JavaScript disabled). The guard keeps an
+      explicit light choice from being overridden by a dark OS setting.
+
+   Rule for future phases: add a new colour to ALL of these blocks, or to none.
+   A token defined in only one theme is a bug that surfaces only for the other
+   half of users.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Light — the base palette
+   -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-hover: #eceef2;
+
+  /* Text */
+  --color-text: #3d4450;
+  --color-text-strong: #14181f;
+  --color-text-muted: #666e7d;
+  --color-text-inverse: #ffffff;
+
+  /* Lines */
+  --color-border: #dcdfe5;
+
+  /* Accent — used for active state, links, and the brand mark */
+  --color-accent: #b4531a;
+  --color-accent-subtle: #fbf0e8;
+
+  /* Links */
+  --color-link: #b4531a;
+  --color-link-hover: #9a4415;
+
+  /* Focus ring */
+  --color-focus: #b4531a;
+
+  /* Inline code */
+  --color-code-bg: #eceef2;
+  --color-code-text: #14181f;
+
+  /* Overlay behind the mobile drawer */
+  --color-backdrop: rgba(20, 24, 31, 0.45);
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(20, 24, 31, 0.06);
+  --shadow-md: 0 4px 12px rgba(20, 24, 31, 0.1);
+  --shadow-lg: 0 12px 32px rgba(20, 24, 31, 0.16);
+
+  /* Status vocabulary (docs/PROJECT_STATE.md) */
+  --color-status-not-started: #7c8494;
+  --color-status-foundation-only: #8a6410;
+  --color-status-in-progress: #1a63a4;
+  --color-status-content-complete: #6340ad;
+  --color-status-verified: #24704a;
+}
+
+/* --------------------------------------------------------------------------
+   Dark — explicit user choice
+   -------------------------------------------------------------------------- */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #14171c;
+  --color-surface: #1b1f26;
+  --color-surface-raised: #222730;
+  --color-surface-hover: #272d37;
+
+  --color-text: #c2c8d2;
+  --color-text-strong: #f2f4f7;
+  --color-text-muted: #8b94a3;
+  --color-text-inverse: #14171c;
+
+  --color-border: #2c323c;
+
+  --color-accent: #e8905a;
+  --color-accent-subtle: #2a2019;
+
+  --color-link: #e8905a;
+  --color-link-hover: #f2a878;
+
+  --color-focus: #e8905a;
+
+  --color-code-bg: #272d37;
+  --color-code-text: #f2f4f7;
+
+  --color-backdrop: rgba(0, 0, 0, 0.6);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  --color-status-not-started: #8b94a3;
+  --color-status-foundation-only: #d3a03a;
+  --color-status-in-progress: #63aeea;
+  --color-status-content-complete: #a98bea;
+  --color-status-verified: #56c08d;
+}
+
+/* --------------------------------------------------------------------------
+   Dark — OS preference, JavaScript-disabled fallback
+
+   Mirrors the block above. The `:not([data-theme="light"])` guard means an
+   explicit light choice is never overridden by a dark system setting.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg: #14171c;
+    --color-surface: #1b1f26;
+    --color-surface-raised: #222730;
+    --color-surface-hover: #272d37;
+
+    --color-text: #c2c8d2;
+    --color-text-strong: #f2f4f7;
+    --color-text-muted: #8b94a3;
+    --color-text-inverse: #14171c;
+
+    --color-border: #2c323c;
+
+    --color-accent: #e8905a;
+    --color-accent-subtle: #2a2019;
+
+    --color-link: #e8905a;
+    --color-link-hover: #f2a878;
+
+    --color-focus: #e8905a;
+
+    --color-code-bg: #272d37;
+    --color-code-text: #f2f4f7;
+
+    --color-backdrop: rgba(0, 0, 0, 0.6);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+    /* Status vocabulary (docs/PROJECT_STATE.md) */
+    --color-status-not-started: #8b94a3;
+    --color-status-foundation-only: #d3a03a;
+    --color-status-in-progress: #63aeea;
+    --color-status-content-complete: #a98bea;
+    --color-status-verified: #56c08d;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Theme-toggle icon swap
+
+   One button, two icons: show the icon for the theme the click will switch TO,
+   so the control advertises its outcome rather than the current state.
+   -------------------------------------------------------------------------- */
+
+/* Light theme → clicking goes dark → show the moon. */
+.icon--moon { display: block; }
+.icon--sun  { display: none; }
+
+/* Dark theme → clicking goes light → show the sun. */
+:root[data-theme="dark"] .icon--moon { display: none; }
+:root[data-theme="dark"] .icon--sun  { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon--moon { display: none; }
+  :root:not([data-theme="light"]) .icon--sun  { display: block; }
+}

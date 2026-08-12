@@ -42,16 +42,28 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 1 of 6 (Documentation layer) |
-| **What exists** | This documentation layer only |
-| **Website** | Does not exist yet (Phase 2) |
-| **Module content** | Does not exist yet |
+| **Phase** | FOUNDATION — Phase 3 of 6 (Dashboard + metadata + search) complete |
+| **What exists** | Documentation, the website shell, and the module metadata layer |
+| **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
+| **Module content** | Metadata only — no chapters, exercises, or examples exist |
 | **Code execution / compiler** | Does not exist yet (Phase 5) |
 | **Modules completed** | 0 of 43 |
 
-Nothing beyond the six documentation files has been built. Any claim to the
-contrary is wrong. See [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the
-authoritative status.
+The site navigates all 43 modules, shows what each will cover, and searches
+module names and topics. **There is no learning content** — every module is
+`NOT_STARTED` with zero chapters — and no progress tracking. See
+[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
+
+### Running it
+
+```bash
+python3 -m http.server 8000    # from the repository root
+# then open http://localhost:8000
+```
+
+**It must be served over http.** Opening `index.html` as a `file://` path
+renders the page but leaves the JavaScript inert — browsers block ES module
+scripts on `file://`. Nothing is compiled either way; there is no build step.
 
 ---
 
@@ -130,9 +142,12 @@ vanilla JavaScript only**.
 TypeScript, jQuery, Tailwind, Bootstrap, or any other frontend framework,
 build step, transpiler, or bundler.
 
-Rationale: the platform must remain readable, debuggable, and runnable by
-opening a file — permanently, with zero toolchain rot, by a single learner
-maintaining it alone.
+Rationale: the platform must remain readable, debuggable, and runnable from a
+plain static file server — permanently, with zero toolchain rot, by a single
+learner maintaining it alone. (One caveat found in practice: because the site
+uses ES modules, browsers require it to be *served* rather than opened as a
+`file://` path. Nothing is compiled either way — see
+[Running it](#running-it).)
 
 ### This restriction applies to the UI only
 
@@ -340,28 +355,46 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
 
 ## 7. Website architecture summary
 
-> **Status: planned. No website code exists yet — this is Phase 2.**
+> **Status: the shell is built (Phase 2). Everything it will contain is not.**
 
-- **Stack:** static HTML + CSS + vanilla JavaScript (ES modules). No framework,
-  no bundler, no transpiler, no build step.
-- **Delivery:** static files, openable directly or served by any static file
-  server. No server-side rendering.
-- **Shell:** persistent navigation across the 43 modules, module → chapter
-  drill-down, breadcrumb, and previous/next chapter navigation.
-- **Theming:** dark and light modes, user-toggled, preference persisted in
-  `localStorage`, honouring `prefers-color-scheme` as the initial default.
-- **Layout:** responsive — usable on a phone, comfortable on a laptop,
-  wide-screen-aware. CSS Grid/Flexbox, relative units, no fixed pixel layouts.
-- **Content model:** chapter content is data (structured files) rendered by a
-  small vanilla-JS renderer, so content and presentation stay separable.
-- **Search:** client-side index over modules, chapters, and topics.
-- **Code blocks:** syntax-highlighted (own lightweight highlighter or a single
-  dependency-free script), copy-to-clipboard, and — from Phase 5 — a run
-  affordance.
-- **Accessibility:** semantic HTML, keyboard navigability, visible focus
-  states, adequate contrast in both themes.
+**Built and verified:**
 
-Detail and open questions: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+- **Stack:** static HTML + CSS + vanilla JavaScript (three ES modules). No
+  framework, no bundler, no transpiler, no build step, no dependencies.
+- **Delivery:** static files served by any static file server (see
+  [Running it](#running-it)). No server-side rendering.
+- **Shell:** fixed top bar, sidebar navigation, and a content region, with
+  seven placeholder destinations. Hash-based routing (`#/curriculum`).
+- **Theming:** light and dark, user-toggled, persisted in `localStorage` under
+  `jfsm.theme`, defaulting to `prefers-color-scheme`, with no flash of the
+  wrong theme on load.
+- **Layout:** responsive — the sidebar docks beside the content at ≥900px and
+  becomes an overlay drawer below that. Verified with no horizontal scrolling
+  from 320px to 1920px.
+- **Accessibility:** semantic landmarks, skip link, keyboard navigability,
+  visible focus states, `aria-expanded` / `aria-current`, a focus trap in the
+  drawer, and `prefers-reduced-motion` support.
+
+- **Module metadata:** `data/modules.js` is the single source of module data —
+  generated from `docs/CURRICULUM.md`, never hand-maintained. The sidebar,
+  dashboard, curriculum view, module overview, and search all read from it.
+- **Search:** client-side, no library, over module names, descriptions, and
+  topic keywords. Built from registered *sources* so chapters and practice can
+  be added later without a rewrite.
+
+**Still to come:**
+
+- **Chapter content** as structured data rendered by a small vanilla-JS
+  renderer, keeping content and presentation separable.
+- **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
+  chapter, resume-where-you-left-off.
+- **Progress tracking** (Phase 4) — `assets/js/progress.js` is currently a stub
+  returning real zeros.
+- **Code blocks:** syntax highlighting, copy-to-clipboard, and — from Phase 5 —
+  a run affordance.
+
+Detail, decisions, and open questions:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -418,15 +451,15 @@ The project is being built in **6 foundation phases**. The specified phases are:
 
 | Phase | Scope | Status |
 |---|---|---|
-| **1** | Documentation layer (README, CLAUDE.md, `docs/*`) | **In progress — this phase** |
-| **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Not started |
-| **3** | *Not yet specified by the project owner* | Awaiting specification |
-| **4** | *Not yet specified by the project owner* | Awaiting specification |
+| **1** | Documentation layer (README, CLAUDE.md, `docs/*`) | Complete |
+| **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Complete and verified |
+| **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Not started |
 | **5** | Compiler / code-execution integration | Not started |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
-Phases 3, 4, and 6 have **not** been defined. No agent may invent, assume, or
-act on a scope for them; wait for an explicit instruction. Each phase is
+Phase 6 has **not** been defined. No agent may invent, assume, or act on a
+scope for it; wait for an explicit instruction. Each phase is
 delivered on explicit instruction only, and each ends with a STOP.
 
 ### After the foundation
@@ -466,15 +499,36 @@ was.** This rule is absolute and applies to every agent and every phase.
 
 ## 12. Project folder structure
 
-Current (Phase 1 — everything that actually exists today):
+Everything that actually exists today (Phases 1–2):
 
 ```
 Java_mastery/
+├── index.html                 ← the app shell
 ├── README.md                  ← this file
 ├── CLAUDE.md                  ← permanent rules for Claude Code
+├── assets/
+│   ├── css/
+│   │   ├── base.css           ← reset, non-colour tokens, typography, focus
+│   │   ├── theme.css          ← the complete colour system, light + dark
+│   │   └── layout.css         ← topbar, sidebar, drawer, content
+│   └── js/
+│       ├── app.js             ← bootstrap / entry point
+│       ├── dom.js             ← element builder (no innerHTML)
+│       ├── theme.js           ← theme resolution, toggle, persistence
+│       ├── nav.js             ← drawer behaviour + hash router
+│       ├── sidebar.js         ← 43-module tree, built from metadata
+│       ├── dashboard.js       ← dashboard cards
+│       ├── curriculum-view.js ← all modules, grouped by part
+│       ├── module-view.js     ← module overview
+│       ├── search.js          ← search index + UI
+│       └── progress.js        ← progress accessors (stub until Phase 4)
+├── data/
+│   └── modules.js             ← GENERATED module metadata — do not hand-edit
+├── tools/
+│   └── generate-modules.mjs   ← regenerates data/modules.js from CURRICULUM.md
 └── docs/
     ├── PROJECT_STATE.md       ← authoritative current status
-    ├── ARCHITECTURE.md        ← system design (mostly planned)
+    ├── ARCHITECTURE.md        ← system design (partly built, partly planned)
     ├── CURRICULUM.md          ← the 43 modules, full topic lists
     └── AI_INSTRUCTIONS.md     ← rules for any AI agent
 ```
@@ -484,17 +538,11 @@ reconcile with `docs/ARCHITECTURE.md` before creating any of it):
 
 ```
 Java_mastery/
-├── site/                      ← Phase 2: the learning website
-│   ├── index.html
-│   ├── css/
-│   ├── js/
-│   └── pages/
-├── content/                   ← module & chapter content as data
+├── content/                   ← chapter content, once chapters are written
 │   └── modules/
 │       └── module-01/
-├── java/                      ← runnable Java sources, per module
-│   └── module-01/
-└── tools/                     ← Phase 5: execution adapters / helpers
+└── java/                      ← runnable Java sources, per module
+    └── module-01/
 ```
 
 ---
