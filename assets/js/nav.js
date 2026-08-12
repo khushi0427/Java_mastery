@@ -20,6 +20,7 @@
 import { renderCurriculum } from './curriculum-view.js';
 import { renderDashboard } from './dashboard.js';
 import { renderModule } from './module-view.js';
+import { renderPractice } from './practice-view.js';
 import { revealModule } from './sidebar.js';
 
 /** Must match the breakpoint in assets/css/layout.css §7. */
@@ -186,6 +187,7 @@ function showRoute(route, moveFocus) {
     title = ROUTES[route.name];
     if (route.name === 'dashboard') renderDashboard();
     if (route.name === 'curriculum') renderCurriculum();
+    if (route.name === 'practice') renderPractice();
   } else {
     viewName = NOT_FOUND_VIEW;
     title = 'Not found';

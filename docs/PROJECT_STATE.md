@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-12 (curriculum realignment, post-Phase 3)
+**Last updated:** 2026-08-12 (Phase 4 — progress tracking + practice shells)
 
 ---
 
@@ -31,18 +31,18 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | FOUNDATION — Phase 3 complete; **curriculum realigned to `docs/MASTER_BRIEF.md`** |
+| **Project phase** | FOUNDATION (Phase 4 of 6 — Progress tracking + practice/hint/predict shells) — **complete** |
 | **Current module** | none (foundation not yet complete) |
 | **Current chapter** | none |
 | **Completed modules** | none (0 of 43) |
 | **Completed chapters** | none |
-| **Partially completed work** | none — realignment finished its stated scope; Phases 4–6 not started |
-| **Next required task** | Phase 4 — Progress tracking (localStorage) + practice/hint/predict-output UI shells |
-| **Completed website features** | app shell (top bar, sidebar, content region); light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; **metadata-driven sidebar listing all 43 modules**; **dashboard structure**; **module overview and curriculum views**; **functional module/topic search** |
+| **Partially completed work** | none — Phase 4 finished its stated scope; Phases 5–6 not started |
+| **Next required task** | Phase 5 — Java execution architecture (editor + execution-service abstraction + local `javac`/`java` fallback) |
+| **Completed website features** | app shell; light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; metadata-driven sidebar listing all 43 modules; module overview and curriculum views; functional module/topic search; **real `localStorage` progress persistence**; **dashboard wired to stored progress**; **practice / progressive-hint / predict-the-output UI shells** |
 | **Compiler integration status** | not started |
 | **Known bugs** | none |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | Realignment verified in-browser — 33/33 realignment checks, plus Phase 3 at 64/64 and Phase 2 at 42/42; see [Verification](#verification-status) |
+| **Last verification status** | Phase 4 verified in-browser — 63/63 Phase 4 checks, plus 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2 (202 total); see [Verification](#verification-status) |
 | **Last updated** | 2026-08-12 |
 
 ---
@@ -54,8 +54,8 @@ Used throughout this file. Never substitute vague words like "done" or
 | **1** | Documentation layer (`README.md`, `CLAUDE.md`, `docs/*`) | `CONTENT_COMPLETE` — see [Verification](#verification-status) |
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | `VERIFIED` — built and exercised in a real browser |
 | **3** | Dashboard + 43-module metadata layer + search foundation | `VERIFIED` — built and exercised in a real browser |
-| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | `NOT_STARTED` |
-| **5** | Compiler / code-execution integration | `NOT_STARTED` |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | `VERIFIED` — built and exercised in a real browser |
+| **5** | Java execution architecture — editor UI, execution-service abstraction, local fallback | `NOT_STARTED` |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
 Phase 6 has **not** been defined. No agent may invent, assume, or act on a
@@ -127,6 +127,45 @@ named projects are carried in `subsections`.
 
 ---
 
+## Progress storage — the contract Phase 5+ must not break
+
+**Namespace:** every key carries the `jfsm.` prefix.
+
+| Key | Contents |
+|---|---|
+| `jfsm.theme` | `"light"` or `"dark"` |
+| `jfsm.progress` | the single aggregate progress record |
+
+**`schemaVersion: 1`.** Bumping it requires a migration branch in
+`progress.js`; wiping learner records on upgrade is not acceptable. A record
+written by a **future** version is left completely untouched and treated as "no
+progress this session", rather than overwritten.
+
+**Keys inside the record are the permanent module ids** (e.g.
+`08-hashing-hashmap-internals`) — never an array index or display position.
+
+Full schema in `docs/ARCHITECTURE.md` §10.
+
+### Two status axes — do not conflate
+
+| Axis | Source | Values |
+|---|---|---|
+| Content | `data/modules.js` | `NOT_STARTED` … `VERIFIED` — what exists in the repo |
+| Learner | the progress store | `NOT_STARTED` / `IN_PROGRESS` / `COMPLETED` |
+
+### TEMPORARY SCAFFOLDING — remove when chapters land
+
+The module page carries a **manual "mark started / in progress / completed"
+control**, visibly tagged `TEMPORARY SCAFFOLDING`. It exists only because Phase 4
+built persistence before any chapters or exercises existed to complete — without
+it there would be no way to exercise or verify the store.
+
+**Replace it** when chapters arrive: completion should then follow from actually
+finishing chapters and exercises, via `setChapterComplete` / `setExerciseSolved`,
+which already exist and are already tested.
+
+---
+
 ## What actually exists in this repository
 
 Verified by direct inspection on 2026-08-12:
@@ -151,9 +190,15 @@ Java_mastery/
 │       ├── curriculum-view.js (Phase 3)
 │       ├── module-view.js     (Phase 3)
 │       ├── search.js          (Phase 3)
-│       └── progress.js        (Phase 3 — STUB, no persistence)
+│       ├── storage.js         (Phase 4 — the ONLY localStorage gateway)
+│       ├── progress.js        (Phase 4 — real persistence, one progress API)
+│       ├── practice-view.js   (Phase 4)
+│       ├── exercise-shell.js  (Phase 4 — exercise + progressive hints)
+│       └── predict-shell.js   (Phase 4 — predict-the-output)
 ├── data/
-│   └── modules.js             (GENERATED from CURRICULUM.md — do not hand-edit)
+│   ├── modules.js             (GENERATED from CURRICULUM.md — do not hand-edit)
+│   ├── exercises.js           (Phase 4 — contract + 1 labelled placeholder)
+│   └── predict-output.js      (Phase 4 — contract + 1 labelled placeholder)
 ├── tools/
 │   └── generate-modules.mjs   (dev tool, not a build step; --check guards both hops)
 └── docs/
@@ -229,10 +274,50 @@ Full detail in `docs/ARCHITECTURE.md` §15.
    state any. Navigation therefore cannot gate on prerequisites.
 9. **Module descriptions are mechanical topic restatements**, not written
    summaries. They read as "Topics include: …" by design.
+10. **No real practice content.** `data/exercises.js` and
+    `data/predict-output.js` each hold exactly ONE placeholder, labelled as such
+    in the UI and excluded from every count. Phase 4 built shells, not exercises.
+11. **Completion is currently manual.** The temporary scaffolding control on the
+    module page is the only way to record progress, because no chapters or
+    exercises exist to complete. See the scaffolding note above.
+12. **Progress is per-browser.** No account system, and no export/import yet —
+    clearing site data clears progress.
+13. **No code execution.** Run controls in the practice shells are disabled and
+    labelled "Phase 5".
 
 ---
 
 ## Important implementation decisions
+
+Made during Phase 4 (2026-08-12):
+
+28. **One storage gateway.** `assets/js/storage.js` is the only module that
+    touches `localStorage`; `theme.js` and `progress.js` both go through it. The
+    single exception is the anti-FOUC script inlined in `index.html`, which must
+    run before any module loads — documented in both files.
+29. **One aggregate progress record**, not a key per module. Resolves the Phase 1
+    open question: one read, one write, no key scanning, no half-updated sets.
+30. **Two status axes kept separate** — content status (what exists in the repo)
+    vs learner status (what the learner did). Conflating them would make
+    "NOT_STARTED" ambiguous. `getModuleProgress` returns both.
+31. **Two percentages, both honest.** `modulePercent` over 43 modules (a real
+    denominator today) and `chapterPercent` over chapters (`0 / 0`). The
+    dashboard labels which is which rather than showing one number.
+32. **A future-schema record is never overwritten.** If stored data claims a
+    newer `schemaVersion`, this build treats the session as having no progress
+    rather than destroying data a newer build owns.
+33. **Reset preserves the theme.** Clearing study progress should not also flip
+    the site's appearance.
+34. **The module view is not subscribed to progress changes.** Rendering it
+    records a visit, which writes and notifies — subscribing would loop. Only
+    the sidebar and the visible dashboard re-render on change.
+35. **`recordVisit` is idempotent for an unchanged position**, so re-rendering a
+    page does not amplify writes.
+36. **Disclosure = one persistent toggle.** Hints, solutions, and predict answers
+    keep a single button whose `aria-expanded` tracks state, rather than swapping
+    the trigger out — which would strand the state on a detached element.
+37. **Placeholders are excluded from counts** via `realExerciseCount()` /
+    `realPredictionCount()`, so demo scaffolding can never inflate progress.
 
 Made during the curriculum realignment (2026-08-12):
 
@@ -358,6 +443,13 @@ Made during Phase 1:
 - **The realignment to `docs/MASTER_BRIEF.md`** — the curriculum is canonical as
   transcribed. Do not "restore" the Phase 1 authored modules, and do not edit
   module blocks in `CURRICULUM.md` directly.
+- **The progress storage contract** — key namespace, `schemaVersion`, and the
+  permanent-id keying. Changing any of it without a migration orphans learner
+  progress.
+- **The single progress API and the single storage gateway.** Do not add direct
+  `localStorage` access anywhere else.
+- **The practice/hint/predict data contracts** — extend them additively; real
+  exercises must fit them rather than the shells being rewritten per module.
 
 Non-destructive development applies throughout: inspect before overwriting, and
 never discard work you did not create (`CLAUDE.md` §8).
@@ -365,6 +457,59 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### Phase 4 — performed 2026-08-12
+
+**Method:** served with `python3 -m http.server` and driven in headless Chromium.
+**63 Phase 4 checks passed, 0 failed**, with all earlier suites re-run as
+regressions: realignment 33/33, Phase 3 64/64, Phase 2 42/42 — **202 checks
+total, all passing.**
+
+| Area | Verified |
+|---|---|
+| Fresh state | a new browser reads 0%, 0/43 modules, recommends Module 01, and writes **no** progress key until something happens |
+| Persistence | marking a module in progress → **survives reload**; marking complete moves overall to 2% (1 of 43); chapters stay honestly 0/0 |
+| Permanent-id keying | the stored record is keyed `08-hashing-hashmap-internals`; **every key matches `^\d{2}-[a-z]`** — no index-shaped keys |
+| Schema | `schemaVersion: 1` recorded; `startedAt`/`completedAt` timestamps written |
+| Position & recent | visiting a module records position and recent activity, and the dashboard renders them |
+| Sidebar | status dot and its screen-reader text reflect **stored** state, live-updating without a reload |
+| Reset | confirm→accept clears progress, **preserves `jfsm.theme`** (verified dark stayed dark), dashboard returns to 0%, sidebar dot resets; confirm→cancel changes nothing |
+| Corrupt storage | malformed JSON, a JSON scalar, `null`, wrong-shaped objects, missing `schemaVersion`, and a future `schemaVersion` **each degrade to empty state with zero console errors** |
+| Future schema | a record claiming `schemaVersion: 9999` is left **byte-identical** — not clobbered |
+| Storage blocked | `localStorage` throwing on access still renders all 43 modules with no errors |
+| Hints | nothing visible before asking; each click reveals **exactly one** more; button advertises "hint 2 of 3"; no further button once exhausted |
+| Solutions | hidden by default; one persistent toggle with `aria-expanded` flipping both ways |
+| Predict-output | answer hidden by default; reveals and hides via the same toggle |
+| Placeholders | both labelled `PLACEHOLDER` in the UI; practice banner states **0 real exercises** |
+| Run controls | every one is `disabled` and labelled "Phase 5" |
+| Exercise completion | "Mark as solved" writes through the progress API and **survives reload** |
+| Regression | 43 modules, search, mobile drawer, theming, and no horizontal scroll at 320–1920px all intact |
+
+**Two real bugs were found by this testing and fixed:** the reveal controls
+replaced their own trigger, stranding `aria-expanded` on a detached element (now
+one persistent toggle); and the dashboard's "current position" card reused the
+`.recommend` component, making it indistinguishable from "recommended next" to
+any selector (now carries a modifier class).
+
+### Phase 4 — not verified
+
+- **Not verified because it does not exist:** chapter content, real exercises,
+  real predict-the-output questions, assessments, and code execution. The
+  `setChapterComplete` and `recordAssessmentScore` paths are exercised only by
+  the API, not by real content flowing through them.
+- **Not verified because out of scope for this environment:** real mobile
+  hardware, touch, Safari, Firefox — all testing was headless Chromium.
+- **Not verified:** screen-reader narration of the hint ladder and disclosure
+  toggles with an actual screen reader; measured contrast ratios for the new
+  learner-status and danger colours.
+- **Not verified:** `localStorage` quota-exhaustion behaviour. Writes are
+  wrapped and return `false` on failure, but a genuinely full quota was not
+  simulated end to end.
+- **Not verified:** progress surviving a real browser restart (as opposed to a
+  page reload) or behaviour across multiple tabs writing concurrently.
+- **No Java code was compiled or run — not verified because none was produced.**
+
+---
 
 ### Curriculum realignment — performed 2026-08-12
 
@@ -575,6 +720,7 @@ see the Phase 2 section above.)*
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-12 | 4 | Replaced the progress stub with real `localStorage` persistence: `assets/js/storage.js` (single storage gateway) and a rewritten `assets/js/progress.js` (single progress API, `schemaVersion: 1`, keyed on permanent module ids, defensive against corrupt/blocked/future-version storage, reset that preserves the theme). Wired real progress into the dashboard, sidebar, curriculum, and module views, with change notification. Added the practice/hint/predict-output shells (`practice-view.js`, `exercise-shell.js`, `predict-shell.js`) plus their data contracts (`data/exercises.js`, `data/predict-output.js`) holding one labelled placeholder each. Added a clearly-tagged temporary manual completion control. Verified in-browser: 63/63 Phase 4 checks and 202 total across all suites; two real bugs found and fixed. No real exercises, no chapters, no code execution. |
 | 2026-08-12 | realign | Added `docs/MASTER_BRIEF.md` (verbatim, owner-supplied) as the canonical curriculum source. Rewrote `docs/CURRICULUM.md` as a byte-identical transcription of its Section 12, replacing the Phase 1 authored curriculum — only 2 of 43 names had matched. Regenerated `data/modules.js` (43 modules, 848 topics, 19 emphasis notes, 7 project subsections); 41 of 43 module ids changed. Adapted the module, curriculum, and search views to the flat topic shape. `description` derived mechanically; `prerequisites` left empty — neither invented. Verified in-browser: 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2. |
 | 2026-08-12 | 3 | Locked the curriculum (owner confirmation recorded in `CURRICULUM.md` Appendix B). Added the module metadata layer: `data/modules.js`, generated from `docs/CURRICULUM.md` by `tools/generate-modules.mjs`. Rebuilt the sidebar from metadata (43 modules, collapsible, empty chapter regions), added the dashboard structure reading a progress stub, the curriculum and module-overview views, and functional module/topic search. Verified in headless Chromium: 64/64 Phase 3 checks and 42/42 Phase 2 regression checks; three real bugs found and fixed. No progress persistence, practice UI, or code execution — those remain Phases 4–5. |
 | 2026-08-12 | 2 | Built the website shell: `index.html` plus `assets/css/{base,theme,layout}.css` and `assets/js/{app,theme,nav}.js`. App shell layout, light/dark theming with persistence and no flash, responsive drawer navigation, and a hash-routing scaffold. Verified in headless Chromium: 42/42 checks passed; two real bugs found and fixed. Updated `docs/ARCHITECTURE.md` (§2, §3, §10, §12, §14, §15, §16) and `README.md`. No module content, search, progress tracking, or execution — those remain later phases. |

@@ -1,12 +1,13 @@
 # ARCHITECTURE.md — System Architecture
 
-**Status of this document:** created as a skeleton in Phase 1; filled in from
-what was actually built in Phase 2 (frontend, file structure, navigation,
-theming, responsive) and Phase 3 (data architecture, module architecture,
-search, dashboard). Many sections still describe systems that **do not exist
-yet** and are marked accordingly. Real today: the documentation layer, the
-website shell, and the module metadata layer with the views over it — no
-learning content, no progress persistence, no code execution.
+**Status of this document:** created as a skeleton in Phase 1 and filled in from
+what was actually built — Phase 2 (frontend, file structure, navigation,
+theming, responsive), Phase 3 (data architecture, module architecture, search,
+dashboard), Phase 4 (progress system, localStorage schema, practice/hint/
+predict-output shells). Sections that still describe systems which **do not
+exist yet** are marked accordingly. Real today: the documentation layer, the
+website shell, the module metadata layer, persisted progress, and the practice
+shells — **no learning content and no code execution**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -31,11 +32,11 @@ section becomes real, move it out of *Planned* — and only then.
 3. [File structure](#3-file-structure) — PARTIAL
 4. [Data architecture](#4-data-architecture) — PARTIAL (module metadata built)
 5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL (modules built, chapters not)
-6. [Practice architecture](#6-practice-architecture) — PLANNED
+6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells; no content)
 7. [Interview-question architecture](#7-interview-question-architecture) — PLANNED
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
-9. [Progress system](#9-progress-system) — PLANNED (Phase 4)
-10. [localStorage usage](#10-localstorage-usage) — PARTIAL (theme only)
+9. [Progress system](#9-progress-system) — **IMPLEMENTED**
+10. [localStorage usage](#10-localstorage-usage) — **IMPLEMENTED** (theme + progress)
 11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — PLANNED (Phase 5)
 12. [Navigation](#12-navigation) — **IMPLEMENTED** (shell only)
 13. [Search](#13-search) — **IMPLEMENTED** (modules + topics)
@@ -110,7 +111,8 @@ practice, execution — is still PLANNED.
 - **ES modules** (`<script type="module">`), each with one job — `app.js`
   (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router),
   `sidebar.js`, `dashboard.js`, `curriculum-view.js`, `module-view.js`,
-  `search.js`, `progress.js` (stub), and `dom.js` (element builder). No globals;
+  `search.js`, `practice-view.js`, `exercise-shell.js`, `predict-shell.js`,
+  `progress.js`, `storage.js`, and `dom.js` (element builder). No globals;
   modules communicate by import, not by shared window state.
 - **Three stylesheets** with a strict division of responsibility:
   `base.css` (reset, non-colour tokens, typography, focus primitives),
@@ -144,7 +146,7 @@ declined in Phase 2 because module scoping matters more as the codebase grows.
 
 ### Still PLANNED
 
-Chapter content rendering, progress persistence (§9, Phase 4), practice (§6),
+Chapter content rendering, real exercises and questions to fill the §6 shells,
 execution (§11, Phase 5), syntax highlighting (§16 open question 9), and any
 service worker / offline support.
 
@@ -368,29 +370,49 @@ navigation or advisory only.
 
 ## 6. Practice architecture
 
-**Status: PLANNED — not yet implemented.**
+**Status: IMPLEMENTED as shells (Phase 4); NO content.** The components exist
+and are verified; `data/exercises.js` and `data/predict-output.js` hold one
+labelled placeholder each and nothing else. Real exercises are authored per
+module through `CONTINUE`.
 
-### Decided (from the methodology)
+### Exercise contract (`data/exercises.js`)
 
-- Practice is **mandatory in every chapter**, not an optional appendix.
-- Problems are **graded by difficulty** within a chapter.
-- **Hints are progressive and stored separately from solutions**, so a hint can
-  be revealed without spoiling the answer.
-- **Solutions are revealed deliberately** by learner action, never shown by
-  default.
-- Every problem carries **expected output**, so correctness is checkable — by
-  the learner locally, and by the execution layer once Phase 5 exists.
-- **Predict-output questions are a distinct type** from practice problems: they
-  are answered *before* running code and record prediction accuracy (§9), which
-  is the primary signal of genuine understanding in this methodology.
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | unique within its module |
+| `moduleId` | string | **permanent** id from `data/modules.js` |
+| `title`, `objective`, `problem` | string | |
+| `difficulty` | string | ladder: Warm-up → Easy → Applied → Medium → Challenge → Interview (§18) |
+| `requirements`, `constraints`, `edgeCases` | string[] | optional; omitted fields render nothing |
+| `sampleInput`, `sampleOutput` | string | optional |
+| `testCases` | `[{ input, expected }]` | optional |
+| `hints` | string[] | ordered; revealed **one at a time** |
+| `solution` | `{ language, code, explanation, complexity }` | hidden by default |
+| `isPlaceholder` | boolean | true only for demo scaffolding; excluded from counts |
 
-### Not yet decided — UNDECIDED
+### Predict-the-output contract (`data/predict-output.js`)
 
-Whether answers are auto-checked (string comparison of program output) or
-self-assessed; whether starter code is provided per problem or per chapter;
-spaced-repetition scheduling for revision.
+`{ id, moduleId, prompt, language, code, answer, explanation, isPlaceholder }` —
+`answer` is hidden until revealed (§19).
 
----
+### Rules enforced structurally, not by convention
+
+- **Hints reveal one at a time.** The button for hint *n+1* does not exist until
+  hint *n* is revealed, so "reveal everything" is never one click away (§20).
+- **Solutions and answers are hidden by default**, behind a single persistent
+  toggle whose `aria-expanded` tracks state. Replacing the trigger on reveal
+  would strand that state on a detached element.
+- **Placeholders are labelled in the UI** and excluded from every count, so demo
+  scaffolding can never inflate progress or be mistaken for curriculum.
+- **Completion flows through the progress API** (§9) — `setExerciseSolved` — so
+  solving an exercise counts the moment real exercises exist.
+- **Run controls are disabled**, labelled "Phase 5". A Run button that looked
+  live would be a lie about what the platform can currently do.
+
+### Still PLANNED
+
+Real exercises and questions; auto-checking answers against expected output
+(still UNDECIDED — it may remain self-assessed); spaced-repetition revision.
 
 ## 7. Interview-question architecture
 
@@ -434,78 +456,125 @@ exist at part boundaries; whether assessment results are exportable.
 
 ## 9. Progress system
 
-**Status: PLANNED — Phase 4.** Phase 3 added `assets/js/progress.js` as a
-**stub with no persistence**: every accessor returns the true current state of
-an empty repository (zeros and empty arrays), and the dashboard reads through
-it. The function shapes there are the contract Phase 4 must honour, so wiring
-real `localStorage` should not require rewriting the dashboard.
+**Status: IMPLEMENTED (Phase 4).** Progress is persisted in `localStorage`
+through `assets/js/progress.js`, which is the **only** progress API — no view
+touches storage directly, and no view keeps its own copy of progress state.
 
-Progress records will be keyed on module `id` from `data/modules.js` under the
-`jfsm.` prefix (§10). Those ids are permanent — see §5.
+### Two status axes — do not conflate them
 
-### Decided (fixed architectural decisions)
+| Axis | Source | Vocabulary |
+|---|---|---|
+| **Content status** | `data/modules.js` | `NOT_STARTED` / `FOUNDATION_ONLY` / `IN_PROGRESS` / `CONTENT_COMPLETE` / `VERIFIED` — what exists in the repository |
+| **Learner status** | the progress store | `NOT_STARTED` / `IN_PROGRESS` / `COMPLETED` — what the learner has done |
 
-- **Browser-local only.** Progress lives in `localStorage`. There is **no
-  backend, no database, and no user account system.** This is a deliberate
-  permanent decision, not a temporary shortcut.
-- **Keyed by permanent identifiers** — module number and chapter ID (§3
-  conventions). This is a primary reason the 43-module set is frozen.
-- **Consequences are accepted:** progress is per-browser, per-device, and lost
-  if site data is cleared. Mitigated by JSON export/import, not by a server.
+A module can be content-`NOT_STARTED` and learner-`IN_PROGRESS` at once.
+`getModuleProgress()` returns both, named distinctly; the ambiguous `status`
+field is retained only as a deprecated alias.
 
-### Intended tracked state
+### Keys
 
-Chapter completion; module completion; practice problems attempted and solved;
-predict-output accuracy; theme preference; last position (resume where you left
-off); revision flags/bookmarks.
+Progress is keyed on the **permanent module ids** from `data/modules.js` (e.g.
+`08-hashing-hashmap-internals`), never on array index or display order. This is
+why the curriculum is locked to `MASTER_BRIEF.md` (§5).
 
-### Not yet decided — UNDECIDED
+### API
 
-Whether completion is manual, inferred from activity, or both; granularity
-(chapter-level vs section-level); export/import file format details.
+| Group | Functions |
+|---|---|
+| Reads | `getModuleProgress`, `getOverallProgress`, `getCurrentPosition`, `getRecentActivity`, `getRecommendedNext`, `getPracticeProgress`, `getAssessmentProgress`, `isExerciseSolved`, `getStorageInfo` |
+| Writes | `setModuleStatus`, `setChapterComplete`, `toggleChapterComplete`, `setExerciseSolved`, `recordAssessmentScore`, `recordVisit`, `resetProgress` |
+| Events | `onProgressChange(listener)` → unsubscribe |
 
----
+Writes validate the module id against the curriculum and ignore unknown ids, so
+a stale link cannot inject junk records.
+
+### Two percentages, because they answer different questions
+
+`modulePercent` is completed modules over 43 — a denominator that exists today.
+`chapterPercent` is completed chapters over total chapters, which is `0 / 0`
+until chapters are written. Neither is invented, and the dashboard says which is
+which rather than showing one number and hoping.
+
+### Reset
+
+`resetProgress()` removes the progress record only. **The theme key is
+deliberately untouched** — clearing what you have studied should not also flip
+the site back to light mode. The UI gates it behind a confirm.
+
+### Change notification
+
+Views subscribe via `onProgressChange`. `app.js` refreshes the sidebar and, when
+visible, the dashboard. The module view is deliberately **not** subscribed:
+rendering it records a visit, which writes and notifies, so re-rendering from a
+notification would loop.
+
+### Still PLANNED
+
+Export/import of progress as JSON (§9 of `README.md`); chapter- and
+exercise-level completion driven by real content rather than the temporary
+manual control (§6).
 
 ## 10. localStorage usage
 
-**Status: PARTIAL.** Exactly one key is in use — the theme preference, written
-in Phase 2. Progress storage is still PLANNED (§9).
+**Status: IMPLEMENTED (Phase 4).**
 
-### In use today
+### Keys in use
 
-| Key | Values | Written by |
+| Key | Shape | Written by |
 |---|---|---|
 | `jfsm.theme` | `"light"` \| `"dark"` | `assets/js/theme.js` |
+| `jfsm.progress` | JSON record, below | `assets/js/progress.js` |
 
-The key is read in two places that must stay in step: `theme.js` and the inline
-anti-FOUC script in `index.html`. Both treat any value other than exactly
-`"light"` or `"dark"` as absent, and both wrap access in `try/catch`.
+All keys carry the `jfsm.` prefix. **One aggregate record** holds all progress
+rather than a key per module — this resolves the Phase 1 open question. One read
+and one write, no key scanning, and no possibility of a half-updated set of keys.
+The dataset is small (43 modules), so the write cost is irrelevant.
 
-**Note:** the prefix convention is `jfsm.` (dot), not the `jfsm:` shown
-illustratively in Phase 1. Phase 2 fixed the actual convention when it wrote the
-first real key; all future keys use `jfsm.`.
+### Schema — `jfsm.progress`, `schemaVersion: 1`
 
-### Decided
+```json
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-12T12:00:00.000Z",
+  "modules": {
+    "08-hashing-hashmap-internals": {
+      "status": "IN_PROGRESS",
+      "startedAt": "2026-08-12T11:00:00.000Z",
+      "completedAt": null,
+      "chapters":  { "<chapterId>":  { "completedAt": "…" } },
+      "exercises": { "<exerciseId>": { "solvedAt": "…" } }
+    }
+  },
+  "assessments": { "<assessmentId>": { "score": 0, "max": 0, "takenAt": "…" } },
+  "position": { "moduleId": "…", "chapterId": null, "visitedAt": "…" },
+  "recent":   [ { "moduleId": "…", "chapterId": null, "visitedAt": "…" } ]
+}
+```
 
-- **Namespaced keys.** All keys carry the `jfsm.` prefix so the project never
-  collides with anything else on the same origin.
-- **Versioned schema.** A stored schema version accompanies the data.
-- **Non-destructive migrations.** A version bump must migrate existing progress
-  forward. Wiping learner progress on upgrade is a destructive change and is
-  not acceptable (`CLAUDE.md` §8).
-- **Defensive reads.** All reads are wrapped: `localStorage` may be
-  unavailable (private mode), full, or hold corrupted JSON. The site must
-  degrade to "no saved progress" rather than break.
-- **No sensitive data.** Only learning progress and preferences. No credentials,
-  no personal data, no tokens.
+`recent` is capped at 8 entries, most recent first, de-duplicated on
+module+chapter.
 
-### Not yet decided — UNDECIDED
+### Versioning and migration
 
-Exact key layout (one aggregate record vs per-module records — a trade-off
-between write cost and quota granularity); quota handling strategy; whether
-`sessionStorage` or IndexedDB is used for anything.
+`SCHEMA_VERSION` is exported from `progress.js`. Bumping it requires adding a
+migration branch in `migrate()` — **never** wiping the record. Two cases are
+handled explicitly:
 
----
+- **Unrecognisable or older record** → migrated forward, or treated as empty.
+- **A record from a FUTURE version** → left **completely untouched** and treated
+  as "no progress this session". Overwriting data a newer build owns would
+  destroy it; refusing to read it only costs one session.
+
+### Defensive access
+
+All storage goes through `assets/js/storage.js`, the single place that touches
+`localStorage`. It survives: storage being unavailable entirely (private mode,
+blocked cookies), quota-exceeded writes, malformed JSON, JSON scalars, and
+foreign objects. Every path degrades to "no saved data" rather than throwing.
+
+**One sanctioned exception:** the anti-FOUC script inlined in `index.html` reads
+`jfsm.theme` directly, because it must run before any module loads. Keep the two
+in step.
 
 ## 11. Compiler / execution abstraction
 
@@ -736,6 +805,11 @@ from the project owner:
 | 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md`, which is verbatim from `MASTER_BRIEF.md` §12 | §4 |
 | 20 | **`docs/MASTER_BRIEF.md` is the canonical curriculum**; the chain is brief → curriculum → metadata, and `--check` guards both hops | §4, §5 |
 | 21 | **Nothing the brief does not supply is invented** — `description` is derived, `prerequisites` is empty | §4 |
+| 22 | **One progress API** (`progress.js`); one storage gateway (`storage.js`). No view touches `localStorage` | §9, §10 |
+| 23 | **Progress is keyed on permanent module ids**, never index or order | §9 |
+| 24 | **Progress storage is versioned**; a future-version record is left untouched rather than overwritten | §10 |
+| 25 | **Reset clears progress but preserves the theme** | §9 |
+| 26 | **Hints reveal one at a time; solutions and answers hidden by default** | §6 |
 | 17 | **Module ids are permanent keys** derived from names; Phase 4 progress keys on them | §5 |
 | 18 | **Search indexes registered sources**, so new content types need no rewrite | §13 |
 | 19 | **No `innerHTML`** — all rendering goes through `assets/js/dom.js` and `textContent` | §2 |

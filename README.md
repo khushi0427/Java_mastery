@@ -45,17 +45,19 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 3 complete; curriculum realigned to the master brief |
+| **Phase** | FOUNDATION — Phase 4 of 6 (progress tracking + practice shells) complete |
 | **What exists** | Documentation, the website shell, and the module metadata layer |
 | **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
 | **Module content** | Metadata only — no chapters, exercises, or examples exist |
+| **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
 | **Code execution / compiler** | Does not exist yet (Phase 5) |
 | **Modules completed** | 0 of 43 |
 
 The site navigates all 43 modules **as defined by
 [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
 searches module names and topics. **There is no learning content** — every module is
-`NOT_STARTED` with zero chapters — and no progress tracking. See
+`NOT_STARTED` with zero chapters, and the practice components are shells holding
+one labelled placeholder each. Progress you record is saved in this browser. See
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
 ### Running it
@@ -359,6 +361,13 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
 - **Search:** client-side, no library, over module names, descriptions, and
   topic keywords. Built from registered *sources* so chapters and practice can
   be added later without a rewrite.
+- **Progress tracking:** persisted in `localStorage` under `jfsm.progress`
+  (`schemaVersion: 1`), keyed on permanent module ids, behind a single API in
+  `assets/js/progress.js`. Reset clears progress but keeps your theme.
+- **Practice shells:** exercise, progressive-hint (one at a time), and
+  predict-the-output components, rendering from documented data contracts. They
+  currently hold one labelled placeholder each — real exercises are authored per
+  module.
 
 **Still to come:**
 
@@ -366,8 +375,6 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   renderer, keeping content and presentation separable.
 - **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
   chapter, resume-where-you-left-off.
-- **Progress tracking** (Phase 4) — `assets/js/progress.js` is currently a stub
-  returning real zeros.
 - **Code blocks:** syntax highlighting, copy-to-clipboard, and — from Phase 5 —
   a run affordance.
 
@@ -432,8 +439,8 @@ The project is being built in **6 foundation phases**. The specified phases are:
 | **1** | Documentation layer (README, CLAUDE.md, `docs/*`) | Complete |
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Complete and verified |
 | **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
-| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Not started |
-| **5** | Compiler / code-execution integration | Not started |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Complete and verified |
+| **5** | Java execution architecture — editor, execution-service abstraction, local fallback | Not started |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
 Phase 6 has **not** been defined. No agent may invent, assume, or act on a
@@ -499,9 +506,15 @@ Java_mastery/
 │       ├── curriculum-view.js ← all modules, grouped by part
 │       ├── module-view.js     ← module overview
 │       ├── search.js          ← search index + UI
-│       └── progress.js        ← progress accessors (stub until Phase 4)
+│       ├── storage.js         ← the only localStorage gateway
+│       ├── progress.js        ← the only progress API
+│       ├── practice-view.js   ← practice route
+│       ├── exercise-shell.js  ← exercise + progressive hints
+│       └── predict-shell.js   ← predict-the-output
 ├── data/
-│   └── modules.js             ← GENERATED module metadata — do not hand-edit
+│   ├── modules.js             ← GENERATED module metadata — do not hand-edit
+│   ├── exercises.js           ← exercise contract (1 placeholder)
+│   └── predict-output.js      ← predict contract (1 placeholder)
 ├── tools/
 │   └── generate-modules.mjs   ← regenerates data/modules.js from CURRICULUM.md
 └── docs/

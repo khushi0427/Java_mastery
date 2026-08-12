@@ -11,14 +11,27 @@
 
 import { MODULES } from '../../data/modules.js';
 import { el, replaceChildren } from './dom.js';
-import { getModuleProgress } from './progress.js';
+import {
+  LEARNER_STATUS,
+  getModuleProgress,
+  recordVisit,
+  setModuleStatus,
+} from './progress.js';
 
-const STATUS_LABEL = {
+/** Learner-side labels — see progress.js on the two status axes. */
+const LEARNER_LABEL = {
   NOT_STARTED: 'Not started',
-  FOUNDATION_ONLY: 'Foundation only',
   IN_PROGRESS: 'In progress',
-  CONTENT_COMPLETE: 'Content complete',
-  VERIFIED: 'Verified',
+  COMPLETED: 'Completed',
+};
+
+/** Content-side labels — what exists in the repository, from data/modules.js. */
+const CONTENT_LABEL = {
+  NOT_STARTED: 'Not written',
+  FOUNDATION_ONLY: 'Foundation only',
+  IN_PROGRESS: 'Being written',
+  CONTENT_COMPLETE: 'Written, unverified',
+  VERIFIED: 'Written and verified',
 };
 
 /** @param {string} id @returns {object|undefined} */
@@ -94,6 +107,61 @@ function notesSection(module) {
   ]);
 }
 
+/**
+ * ============================ TEMPORARY SCAFFOLDING ============================
+ * A manual "mark this module started/complete" control.
+ *
+ * It exists ONLY because Phase 4 built progress persistence before any chapters
+ * or exercises exist to complete — without it there would be no way to exercise
+ * or verify the store. It is deliberately conspicuous rather than tucked away,
+ * so it cannot quietly become a feature.
+ *
+ * REPLACE THIS when chapters land: completion should then follow from actually
+ * finishing chapters and exercises, via setChapterComplete / setExerciseSolved.
+ * Recorded as temporary in docs/PROJECT_STATE.md.
+ * ==============================================================================
+ */
+function devProgressControl(module, progress) {
+  const button = (label, status, current) => el('button', {
+    class: `button button--subtle${current === status ? ' is-active' : ''}`,
+    type: 'button',
+    'aria-pressed': String(current === status),
+    text: label,
+    dataset: { devStatus: status },
+    on: {
+      click: () => {
+        setModuleStatus(module.id, status);
+        // Re-render this view so the badge and control reflect the new state.
+        renderModule(module.id);
+      },
+    },
+  });
+
+  const current = progress.learnerStatus;
+
+  return el('section', { class: 'dev-control' }, [
+    el('p', { class: 'dev-control__tag', text: 'TEMPORARY SCAFFOLDING' }),
+    el('h2', { class: 'dev-control__title', text: 'Mark your progress manually' }),
+    el('p', { class: 'dev-control__note' }, [
+      'No chapters or exercises exist yet, so there is nothing to complete '
+      + 'normally. These buttons write to the same progress store real completion '
+      + 'will use, so persistence can be verified now. They are removed once '
+      + 'chapters land.',
+    ]),
+    el('div', { class: 'dev-control__buttons' }, [
+      button('Not started', LEARNER_STATUS.NOT_STARTED, current),
+      button('In progress', LEARNER_STATUS.IN_PROGRESS, current),
+      button('Completed', LEARNER_STATUS.COMPLETED, current),
+    ]),
+    progress.startedAt
+      ? el('p', { class: 'dev-control__stamp', text: `Started ${new Date(progress.startedAt).toLocaleString()}` })
+      : null,
+    progress.completedAt
+      ? el('p', { class: 'dev-control__stamp', text: `Completed ${new Date(progress.completedAt).toLocaleString()}` })
+      : null,
+  ]);
+}
+
 function chapterSection(module) {
   return el('section', { class: 'module-section' }, [
     el('h2', { class: 'module-section__title', text: 'Chapters' }),
@@ -116,8 +184,13 @@ export function renderModule(id) {
   const module = findModule(id);
   if (!module) return false;
 
+  // Visiting a module is the trackable event that exists today, so it drives
+  // "current position" and "recently visited" on the dashboard.
+  recordVisit(module.id);
+
   const progress = getModuleProgress(module.id);
-  const statusLabel = STATUS_LABEL[progress.status] ?? progress.status;
+  const learnerLabel = LEARNER_LABEL[progress.learnerStatus] ?? progress.learnerStatus;
+  const contentLabel = CONTENT_LABEL[progress.contentStatus] ?? progress.contentStatus;
   const topicCount = module.topics.length;
 
   replaceChildren(container, [
@@ -130,9 +203,11 @@ export function renderModule(id) {
       el('p', { class: 'view__lede', text: module.description }),
       el('div', { class: 'module-badges' }, [
         el('span', {
-          class: `status-pill status-pill--${progress.status.toLowerCase()}`,
-          text: statusLabel,
+          class: `status-pill status-pill--${progress.learnerStatus.toLowerCase()}`,
+          text: learnerLabel,
+          title: 'Your progress',
         }),
+        el('span', { class: 'badge', text: contentLabel, title: 'What exists in the repository' }),
         el('span', { class: 'badge', text: `${module.chapterCount} chapters` }),
         el('span', { class: 'badge', text: `${topicCount} topics` }),
       ]),
@@ -149,6 +224,7 @@ export function renderModule(id) {
       ]),
     ]),
 
+    devProgressControl(module, progress),
     notesSection(module),
     chapterSection(module),
     subsectionSection(module),

@@ -8,8 +8,10 @@
  * Keep THEME_KEY and the resolution order in sync with that inline script.
  */
 
+import { KEY_PREFIX, readString, writeString } from './storage.js';
+
 /** localStorage key. Namespaced with `jfsm.` — see docs/ARCHITECTURE.md §10. */
-export const THEME_KEY = 'jfsm.theme';
+export const THEME_KEY = `${KEY_PREFIX}theme`;
 
 const LIGHT = 'light';
 const DARK = 'dark';
@@ -17,33 +19,25 @@ const DARK = 'dark';
 /**
  * Read a stored theme.
  *
- * localStorage can throw (disabled cookies, private browsing) and can hold a
- * value written by an older or unrelated build, so both cases are handled:
- * anything that is not exactly 'light' or 'dark' is treated as absent.
+ * Storage access is wrapped by storage.js. A value written by an older or
+ * unrelated build is still possible, so anything that is not exactly 'light' or
+ * 'dark' is treated as absent.
  *
  * @returns {'light'|'dark'|null}
  */
 function readStoredTheme() {
-  try {
-    const stored = localStorage.getItem(THEME_KEY);
-    return stored === LIGHT || stored === DARK ? stored : null;
-  } catch {
-    return null;
-  }
+  const stored = readString(THEME_KEY);
+  return stored === LIGHT || stored === DARK ? stored : null;
 }
 
 /**
- * Persist the chosen theme. Failure is non-fatal: the theme still applies for
- * this page view, it just will not survive a reload.
- *
+ * Persist the chosen theme.
  * @param {'light'|'dark'} theme
  */
 function storeTheme(theme) {
-  try {
-    localStorage.setItem(THEME_KEY, theme);
-  } catch {
-    /* Quota exceeded or storage unavailable — the UI stays correct regardless. */
-  }
+  // Failure is non-fatal: the theme still applies for this page view, it just
+  // will not survive a reload.
+  writeString(THEME_KEY, theme);
 }
 
 /** @returns {'light'|'dark'} the OS-level preference, defaulting to light. */

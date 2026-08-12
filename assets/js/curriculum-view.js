@@ -12,17 +12,16 @@ import { MODULES } from '../../data/modules.js';
 import { el, replaceChildren } from './dom.js';
 import { getModuleProgress } from './progress.js';
 
-const STATUS_LABEL = {
+/** Learner-side labels — see progress.js on the two status axes. */
+const LEARNER_LABEL = {
   NOT_STARTED: 'Not started',
-  FOUNDATION_ONLY: 'Foundation only',
   IN_PROGRESS: 'In progress',
-  CONTENT_COMPLETE: 'Content complete',
-  VERIFIED: 'Verified',
+  COMPLETED: 'Completed',
 };
 
 function moduleCard(module) {
   const progress = getModuleProgress(module.id);
-  const statusLabel = STATUS_LABEL[progress.status] ?? progress.status;
+  const statusLabel = LEARNER_LABEL[progress.learnerStatus] ?? progress.learnerStatus;
   const topicCount = module.topics.length;
 
   return el('li', {}, [
@@ -30,7 +29,7 @@ function moduleCard(module) {
       el('div', { class: 'module-card__head' }, [
         el('span', { class: 'module-card__number', text: module.number }),
         el('span', {
-          class: `status-pill status-pill--${progress.status.toLowerCase()}`,
+          class: `status-pill status-pill--${progress.learnerStatus.toLowerCase()}`,
           text: statusLabel,
         }),
       ]),
