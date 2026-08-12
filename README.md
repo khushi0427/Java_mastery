@@ -29,8 +29,11 @@ changing anything**:
    right now
 5. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the system is/will be
    built
-6. [`docs/CURRICULUM.md`](docs/CURRICULUM.md) — the authoritative 43-module
-   curriculum with full topic lists
+6. [`docs/CURRICULUM.md`](docs/CURRICULUM.md) — the 43-module curriculum with
+   full topic lists, transcribed verbatim from the master brief
+7. [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md) — **the canonical project
+   brief**, written by the project owner. Its Section 12 is the authoritative
+   curriculum; `CURRICULUM.md` is a transcription of it
 
 Then **inspect the actual repository** (`git status`, list the directories, open
 the files) and reconcile what you see against `docs/PROJECT_STATE.md`. The
@@ -42,15 +45,16 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 3 of 6 (Dashboard + metadata + search) complete |
+| **Phase** | FOUNDATION — Phase 3 complete; curriculum realigned to the master brief |
 | **What exists** | Documentation, the website shell, and the module metadata layer |
 | **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
 | **Module content** | Metadata only — no chapters, exercises, or examples exist |
 | **Code execution / compiler** | Does not exist yet (Phase 5) |
 | **Modules completed** | 0 of 43 |
 
-The site navigates all 43 modules, shows what each will cover, and searches
-module names and topics. **There is no learning content** — every module is
+The site navigates all 43 modules **as defined by
+[`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
+searches module names and topics. **There is no learning content** — every module is
 `NOT_STARTED` with zero chapters — and no progress tracking. See
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
@@ -195,81 +199,54 @@ removed, merged, split, renumbered, or renamed. Module numbers are permanent
 identifiers used by the website, the progress system, and every cross-reference
 in this repository.
 
-Full topic lists for each module live in
-**[`docs/CURRICULUM.md`](docs/CURRICULUM.md)** — that file is authoritative for
-what each module must eventually cover. The list below is the index only.
-
-### Part I — Java Language Core (01–14)
+Full topic lists live in **[`docs/CURRICULUM.md`](docs/CURRICULUM.md)**, which
+transcribes **[`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)** §12 verbatim —
+the brief is canonical. The list below is the index only.
 
 | # | Module |
 |---|---|
 | 01 | Java Foundations & Execution Model |
-| 02 | Types, Operators, Control Flow & Method Semantics |
-| 03 | Arrays, Strings & Text Processing |
-| 04 | Classes, Objects & Object Lifecycle |
-| 05 | Inheritance, Polymorphism & Dynamic Dispatch |
-| 06 | Interfaces, Abstraction & Composition |
-| 07 | Object Contracts — equals, hashCode, toString & Ordering |
-| 08 | Immutability, Records & Data-Oriented Design |
-| 09 | Enums, Sealed Types & Pattern Matching |
-| 10 | Exceptions, Errors & Resource Management |
-| 11 | Generics & Type Erasure |
-| 12 | Collections Framework & Internal Data Structures |
-| 13 | Nested Classes, Lambdas & Functional Interfaces |
-| 14 | Streams, Optional & Functional Data Processing |
-
-### Part II — JVM Internals, Concurrency & Performance (15–20)
-
-| # | Module |
-|---|---|
-| 15 | JVM Architecture, Memory Areas & Garbage Collection |
-| 16 | Class Loading, Reflection, Annotations & Bytecode |
-| 17 | Concurrency I — Threads, Shared State & the Java Memory Model |
-| 18 | Concurrency II — Executors, Futures & Asynchronous Composition |
-| 19 | Concurrency III — Concurrent Collections, Locks & Virtual Threads |
-| 20 | Performance Engineering, Profiling & Benchmarking |
-
-### Part III — Platform, I/O & Tooling (21–25)
-
-| # | Module |
-|---|---|
-| 21 | Files, I/O, NIO.2 & Serialization |
-| 22 | Date, Time, Formatting & Internationalization |
-| 23 | Networking, HTTP Clients & JSON Processing |
-| 24 | Build Systems, Dependency Management & Packaging |
-| 25 | Testing with JUnit 5, Mockito & Test Design |
-
-### Part IV — Design & Architecture (26–27)
-
-| # | Module |
-|---|---|
-| 26 | Design Patterns & SOLID in Idiomatic Java |
-| 27 | Application Architecture, Clean Code & Domain Modeling |
-
-### Part V — Data & Persistence (28–32)
-
-| # | Module |
-|---|---|
-| 28 | Relational Database Design & SQL Foundations |
-| 29 | Advanced SQL — Joins, Aggregation, Window Functions & Query Tuning |
-| 30 | JDBC, Connection Pooling & Transaction Management |
-| 31 | JPA & Hibernate I — Entities, Mapping & the Persistence Context |
-| 32 | JPA & Hibernate II — Relationships, Fetching, Caching & Performance |
-
-### Part VI — Spring, Spring Boot & Full-Stack Delivery (33–43)
-
-| # | Module |
-|---|---|
-| 33 | Spring Framework Core — IoC Container, Beans & Dependency Injection |
-| 34 | Spring AOP, Configuration, Profiles & Application Context Lifecycle |
-| 35 | Spring Boot — Auto-Configuration, Starters & Application Structure |
-| 36 | Spring Data JPA — Repositories, Queries, Projections & Migrations |
-| 37 | REST API Development with Spring Web MVC |
-| 38 | API Contracts — Validation, Error Handling, Versioning & Documentation |
-| 39 | Spring Security — Authentication, Authorization, JWT & OAuth2 |
-| 40 | Asynchronous Processing, Caching, Scheduling & Messaging |
-| 41 | Testing Spring Boot Applications — Slices, MockMvc & Testcontainers |
-| 42 | Production Readiness — Observability, Containers & Deployment |
+| 02 | OOP in Java |
+| 03 | Java Language Fundamentals |
+| 04 | Strings, Wrappers & Object Fundamentals |
+| 05 | Exception Handling |
+| 06 | Generics |
+| 07 | Java Collections Framework |
+| 08 | Hashing & HashMap Internals |
+| 09 | Functional Java & Lambda Expressions |
+| 10 | Stream API |
+| 11 | Optional, Date/Time & Modern Java APIs |
+| 12 | Annotations, Enums & Reflection |
+| 13 | Java I/O & NIO |
+| 14 | JVM Memory & Garbage Collection |
+| 15 | Multithreading Fundamentals |
+| 16 | Concurrency & Synchronization |
+| 17 | Executors & Advanced Concurrency |
+| 18 | DSA Foundations in Java |
+| 19 | Hashing DSA Patterns |
+| 20 | Two Pointers & Sliding Window |
+| 21 | Linked Lists, Stack, Queue & Deque |
+| 22 | Trees, BST & Heaps |
+| 23 | Graphs |
+| 24 | Binary Search, Recursion & Backtracking |
+| 25 | Greedy & Dynamic Programming |
+| 26 | SQL Fundamentals |
+| 27 | Advanced SQL & Database Concepts |
+| 28 | JDBC |
+| 29 | Maven & Java Project Management |
+| 30 | JPA Fundamentals |
+| 31 | Hibernate Internals & Advanced ORM |
+| 32 | Spring Core |
+| 33 | Spring Boot Fundamentals |
+| 34 | Spring MVC & REST APIs |
+| 35 | Spring Data JPA |
+| 36 | Spring Security |
+| 37 | Testing Java & Spring Applications |
+| 38 | Production-Grade Spring Boot |
+| 39 | Backend Architecture & Design |
+| 40 | Java Full-Stack Integration |
+| 41 | Debugging, Performance & Problem Solving |
+| 42 | Projects & Interview Engineering |
 | 43 | Final Full-Stack Capstone & Mastery Assessment |
 
 ---
@@ -376,7 +353,8 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   drawer, and `prefers-reduced-motion` support.
 
 - **Module metadata:** `data/modules.js` is the single source of module data —
-  generated from `docs/CURRICULUM.md`, never hand-maintained. The sidebar,
+  generated from `docs/CURRICULUM.md`, which is itself a verbatim transcription
+  of `docs/MASTER_BRIEF.md` §12. Never hand-maintained at either hop. The sidebar,
   dashboard, curriculum view, module overview, and search all read from it.
 - **Search:** client-side, no library, over module names, descriptions, and
   topic keywords. Built from registered *sources* so chapters and practice can
@@ -527,6 +505,7 @@ Java_mastery/
 ├── tools/
 │   └── generate-modules.mjs   ← regenerates data/modules.js from CURRICULUM.md
 └── docs/
+    ├── MASTER_BRIEF.md        ← CANONICAL curriculum source (owner-written)
     ├── PROJECT_STATE.md       ← authoritative current status
     ├── ARCHITECTURE.md        ← system design (partly built, partly planned)
     ├── CURRICULUM.md          ← the 43 modules, full topic lists

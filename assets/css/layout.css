@@ -997,3 +997,93 @@ body.nav-open .nav-backdrop {
     right: calc(-1 * var(--space-3));
   }
 }
+
+/* --------------------------------------------------------------------------
+   16. Realignment additions
+
+   The master brief's topic lists are flat (no groups), and it attaches
+   per-module emphasis notes and, for Module 42, named project sub-sections.
+   -------------------------------------------------------------------------- */
+
+/* Flat topic list — multi-column on wide screens so 40+ keywords stay scannable.
+   `display: block` is required: the base .topic-list is a flex container, and
+   CSS multi-column has no effect on a flex container. */
+.topic-list--flat {
+  display: block;
+  columns: 2;
+  column-gap: var(--space-5);
+}
+
+@media (min-width: 1100px) {
+  .topic-list--flat { columns: 3; }
+}
+
+@media (max-width: 620px) {
+  .topic-list--flat { columns: 1; }
+}
+
+.topic-list--flat li {
+  break-inside: avoid;
+  margin-bottom: var(--space-2);
+}
+
+/* Emphasis carried verbatim from the master brief — a requirement, not an aside. */
+.module-note {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background-color: var(--color-accent-subtle);
+}
+
+.module-note__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+}
+
+.module-note__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-strong);
+}
+
+/* Module 42's seven named projects. */
+.subsection-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-raised);
+}
+
+.subsection__heading {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.subsection__text {
+  font-weight: 650;
+  color: var(--color-text-strong);
+}
+
+.module-meta__value--muted {
+  color: var(--color-text-muted);
+  font-style: italic;
+}

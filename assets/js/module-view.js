@@ -28,7 +28,12 @@ export function findModule(id) {
 
 function prerequisiteList(module) {
   if (module.prerequisites.length === 0) {
-    return el('p', { class: 'module-meta__value', text: 'None' });
+    // The master brief's Section 12 states no per-module prerequisites, and they
+    // are deliberately not inferred from module order. See data/modules.js.
+    return el('p', {
+      class: 'module-meta__value module-meta__value--muted',
+      text: 'Not specified by the master brief',
+    });
   }
 
   const links = [];
@@ -46,23 +51,46 @@ function prerequisiteList(module) {
 }
 
 function topicSection(module) {
-  const groups = module.topics.map((group) =>
-    el('div', { class: 'topic-group' }, [
-      el('h3', { class: 'topic-group__title', text: group.group }),
-      group.items.length > 0
-        ? el('ul', { class: 'topic-list' },
-          group.items.map((item) => el('li', { text: item })))
-        : null,
-    ]));
-
   return el('section', { class: 'module-section' }, [
     el('h2', { class: 'module-section__title', text: 'Topics this module will cover' }),
     el('p', { class: 'module-section__note' }, [
-      'This is the coverage specification from ',
-      el('code', { text: 'docs/CURRICULUM.md' }),
-      ' — what the module must teach when it is written. It is not the lesson itself.',
+      'The coverage specification from ',
+      el('code', { text: 'docs/MASTER_BRIEF.md' }),
+      ' \u00a7 12 — what the module must teach when it is written. It is not the lesson itself.',
     ]),
-    el('div', { class: 'topic-groups' }, groups),
+    el('ul', { class: 'topic-list topic-list--flat' },
+      module.topics.map((topic) => el('li', { text: topic }))),
+  ]);
+}
+
+/**
+ * Sub-sections the brief attaches to a module. Only Module 42 uses these today
+ * (its seven named projects), so the section is omitted entirely when empty.
+ */
+function subsectionSection(module) {
+  if (module.subsections.length === 0) return null;
+
+  return el('section', { class: 'module-section' }, [
+    el('h2', { class: 'module-section__title', text: 'Projects' }),
+    el('ol', { class: 'subsection-list' }, module.subsections.map((sub) =>
+      el('li', { class: 'subsection' }, [
+        el('span', { class: 'subsection__heading', text: sub.heading }),
+        sub.text ? el('span', { class: 'subsection__text', text: sub.text }) : null,
+      ]))),
+  ]);
+}
+
+/**
+ * Emphasis the master brief attaches to this module — e.g. Module 08's extra
+ * depth requirement. These are requirements, so they are shown, not hidden.
+ */
+function notesSection(module) {
+  if (module.notes.length === 0) return null;
+
+  return el('section', { class: 'module-note' }, [
+    el('h2', { class: 'module-note__title', text: 'From the master brief' }),
+    el('ul', { class: 'module-note__list' },
+      module.notes.map((note) => el('li', { text: note }))),
   ]);
 }
 
@@ -90,11 +118,11 @@ export function renderModule(id) {
 
   const progress = getModuleProgress(module.id);
   const statusLabel = STATUS_LABEL[progress.status] ?? progress.status;
-  const topicCount = module.topics.reduce((n, g) => n + g.items.length, 0);
+  const topicCount = module.topics.length;
 
   replaceChildren(container, [
     el('header', { class: 'module-header' }, [
-      el('p', { class: 'view__eyebrow', text: module.part ?? 'Curriculum' }),
+      el('p', { class: 'view__eyebrow', text: `Module ${module.number} of 43` }),
       el('h1', { class: 'view__title' }, [
         el('span', { class: 'module-header__number', text: module.number }),
         module.name,
@@ -106,7 +134,6 @@ export function renderModule(id) {
           text: statusLabel,
         }),
         el('span', { class: 'badge', text: `${module.chapterCount} chapters` }),
-        el('span', { class: 'badge', text: `${module.topics.length} topic groups` }),
         el('span', { class: 'badge', text: `${topicCount} topics` }),
       ]),
     ]),
@@ -117,12 +144,14 @@ export function renderModule(id) {
         prerequisiteList(module),
       ]),
       el('div', {}, [
-        el('h2', { class: 'module-meta__label', text: 'Primary ownership' }),
-        el('p', { class: 'module-meta__value', text: module.owns || '—' }),
+        el('h2', { class: 'module-meta__label', text: 'Position' }),
+        el('p', { class: 'module-meta__value', text: `Module ${module.number} in curriculum order` }),
       ]),
     ]),
 
+    notesSection(module),
     chapterSection(module),
+    subsectionSection(module),
     topicSection(module),
   ]);
 

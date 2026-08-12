@@ -59,16 +59,17 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 
 | File | Role | Change frequency |
 |---|---|---|
+| `docs/MASTER_BRIEF.md` | **Canonical project brief and curriculum**, written by the project owner | Only by the owner |
 | `README.md` | Complete project description; entry point for humans and agents | Rarely — when project shape/status changes |
 | `CLAUDE.md` | Permanent operating rules for Claude Code | Rarely — rules are meant to be stable |
 | `docs/AI_INSTRUCTIONS.md` | Same rules, agent-neutral, plus workflow protocols | Rarely |
 | `docs/PROJECT_STATE.md` | Authoritative current status | **Every unit of work** |
 | `docs/ARCHITECTURE.md` | This file — system design | When a structural decision is made |
-| `docs/CURRICULUM.md` | The 43 modules and their full topic lists | Topic clarification only; never structural |
+| `docs/CURRICULUM.md` | The 43 modules, transcribed verbatim from `MASTER_BRIEF.md` §12 | Only by re-transcription after the brief changes |
 
 ### Design decisions (fixed in Phase 1)
 
-1. **Six files, flat structure.** `README.md` and `CLAUDE.md` at the root
+1. **Seven files, flat structure.** `README.md` and `CLAUDE.md` at the root
    (conventional discovery locations); the four detail documents under `docs/`.
    No deeper nesting — discoverability beats taxonomy at this size.
 2. **`PROJECT_STATE.md` is the single mutable status file.** Status is not
@@ -254,20 +255,20 @@ Per module:
 | `number` | `"01"`–`"43"`, matching `CURRICULUM.md`. **Permanent key.** |
 | `id` | URL slug, e.g. `12-collections-framework-internal-data-structures`. **Permanent key** — Phase 4 progress records are keyed on it |
 | `name` | Module name, verbatim from `CURRICULUM.md` |
-| `part` / `partNumber` | Presentation grouping (Part I–VI) |
-| `description` | The module's Purpose line |
-| `prerequisites` | Array of module numbers |
-| `owns` | The concepts this module teaches in depth (§5 single ownership) |
-| `topics` | `[{ group, items[] }]` — the coverage specification, **not** taught content |
+| `notes` | The brief's per-module emphasis, verbatim — requirements, not commentary |
+| `subsections` | Named sub-parts (only Module 42's seven projects today) |
+| `description` | DERIVED from the first five topics; never authored |
+| `prerequisites` | Empty for all 43 — the brief specifies none |
+| `topics` | Flat `string[]` — the coverage specification, **not** taught content |
 | `status` | One of the five status tokens. All 43 are `NOT_STARTED` |
 | `chapterCount` / `chapters` | `0` and `[]` — no chapter content exists |
 
 ### Generated, not hand-maintained — resolves open question 3
 
-`docs/CURRICULUM.md` is authoritative for humans; hand-copying the same 43
-modules into JavaScript would create a second source that drifts. So
-`data/modules.js` is **derived** from `CURRICULUM.md` by
-`tools/generate-modules.mjs`:
+**`docs/MASTER_BRIEF.md` is canonical**, `docs/CURRICULUM.md` is a verbatim
+transcription of its Section 12, and `data/modules.js` is generated from that.
+Hand-copying 43 modules at either hop would create a source that drifts, so
+`tools/generate-modules.mjs` owns both and `--check` guards both:
 
 ```bash
 node tools/generate-modules.mjs           # regenerate after editing CURRICULUM.md
@@ -276,8 +277,23 @@ node tools/generate-modules.mjs --check   # verify in sync; exits 1 if not
 
 This is a **development tool, not a build step** — the site runs directly from
 the committed `data/modules.js` with no toolchain. The generator refuses to emit
-unless it finds exactly 43 modules numbered 01–43 with unique ids, a name, a
-description, and topics on every one.
+unless the curriculum is byte-identical to the brief's Section 12 **and** it
+finds exactly 43 modules numbered 01–43 with unique ids, a name, and topics.
+
+#### Two fields the brief does not supply
+
+The brief gives module names and topic bullets only. Neither of these is
+invented:
+
+- **`description`** — derived mechanically as `Topics include: <first five
+  topics>.`, flagged `descriptionDerived: true`.
+- **`prerequisites`** — **empty for all 43 modules.** The brief states none;
+  module order is not evidence of a prerequisite.
+
+Conversely, the brief's per-module emphasis **is** carried: `notes` holds it
+verbatim (Module 08's extra depth, Module 14's JVM-spec-vs-HotSpot distinction,
+Module 30's JPA-vs-Hibernate framing), and `subsections` holds Module 42's seven
+named projects. Those lines are requirements, and the module view renders them.
 
 ### Still PLANNED
 
@@ -307,15 +323,15 @@ within modules is planned.
 - **Exactly 43 modules, numbered 01–43, frozen.** See
   [`CURRICULUM.md`](CURRICULUM.md). Modules are never added, removed, merged,
   split, renamed, renumbered, or reordered.
-- **LOCKED as of 2026-08-12 (Phase 3).** The project owner confirmed the module
-  set as canonical; `CURRICULUM.md` Appendix B records the confirmation. The
-  reconciliation question raised in Phase 1 is closed.
+- **REALIGNED and (re)LOCKED to `docs/MASTER_BRIEF.md` on 2026-08-12.** The
+  Phase 3 lock was superseded: the brief arrived after Phase 3 and the authored
+  curriculum matched it on only 2 of 43 names. `CURRICULUM.md` Appendix B
+  records the full history.
 - **Module numbers are permanent identifiers** — used by navigation, progress
   keys, and cross-references. This is *why* the set is frozen: renumbering
   invalidates stored learner progress.
 - **Module ids are derived from names**, so names are locked too. The id is
-  `<number>-<kebab-cased name up to any em-dash subtitle>`, e.g.
-  `17-concurrency-i`. Renaming a module changes its id and orphans any progress
+  `<number>-<kebab-cased name>`, e.g. `08-hashing-hashmap-internals`. Renaming a module changes its id and orphans any progress
   stored against it. If a rename ever becomes unavoidable, pin the old id by
   hand rather than letting the generator move it.
 - **Modules are grouped into six parts** for navigation only. Parts are a
@@ -327,16 +343,17 @@ within modules is planned.
 - **Single primary ownership.** Each concept is taught in exactly one module;
   others cross-link. `CURRICULUM.md` records ownership per module.
 
-### As built (Phase 3)
+### As built
 
 Module metadata is rendered in three places, all reading `data/modules.js`:
 
 - **Sidebar** — all 43 modules under a collapsible Curriculum section, each row
   carrying a status dot and its own disclosure for chapters.
-- **Curriculum view** (`#/curriculum`) — module cards grouped under the six
-  parts.
-- **Module overview** (`#/module/<id>`) — description, status, prerequisites as
-  links, primary ownership, the empty chapter region, and the topic groups.
+- **Curriculum view** (`#/curriculum`) — 43 module cards in curriculum order.
+  The brief defines no part groupings, so none are invented.
+- **Module overview** (`#/module/<id>`) — description, status, prerequisites,
+  the brief's emphasis notes, the empty chapter region, any subsections
+  (Module 42's projects), and the flat topic list.
 
 The module overview labels its topic list as *the coverage specification*, not
 as taught content, so a long list never implies the module has been written.
@@ -716,7 +733,9 @@ from the project owner:
 | 13 | **`jfsm.` prefix** for every `localStorage` key | §10 |
 | 14 | **Colour literals live only in `theme.css`**; all three theme blocks carry identical token sets | §2, §14 |
 | 15 | **The site is served over http**, not opened as `file://` (ES modules) | §2 |
-| 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md` | §4 |
+| 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md`, which is verbatim from `MASTER_BRIEF.md` §12 | §4 |
+| 20 | **`docs/MASTER_BRIEF.md` is the canonical curriculum**; the chain is brief → curriculum → metadata, and `--check` guards both hops | §4, §5 |
+| 21 | **Nothing the brief does not supply is invented** — `description` is derived, `prerequisites` is empty | §4 |
 | 17 | **Module ids are permanent keys** derived from names; Phase 4 progress keys on them | §5 |
 | 18 | **Search indexes registered sources**, so new content types need no rewrite | §13 |
 | 19 | **No `innerHTML`** — all rendering goes through `assets/js/dom.js` and `textContent` | §2 |

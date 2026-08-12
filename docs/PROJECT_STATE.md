@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-12 (Phase 3)
+**Last updated:** 2026-08-12 (curriculum realignment, post-Phase 3)
 
 ---
 
@@ -31,18 +31,18 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | FOUNDATION (Phase 3 of 6 — Dashboard + Metadata + Search) — **complete** |
+| **Project phase** | FOUNDATION — Phase 3 complete; **curriculum realigned to `docs/MASTER_BRIEF.md`** |
 | **Current module** | none (foundation not yet complete) |
 | **Current chapter** | none |
 | **Completed modules** | none (0 of 43) |
 | **Completed chapters** | none |
-| **Partially completed work** | none — Phase 3 finished its stated scope; Phases 4–6 not started |
+| **Partially completed work** | none — realignment finished its stated scope; Phases 4–6 not started |
 | **Next required task** | Phase 4 — Progress tracking (localStorage) + practice/hint/predict-output UI shells |
 | **Completed website features** | app shell (top bar, sidebar, content region); light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; **metadata-driven sidebar listing all 43 modules**; **dashboard structure**; **module overview and curriculum views**; **functional module/topic search** |
 | **Compiler integration status** | not started |
 | **Known bugs** | none |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | Phase 3 verified in-browser — 64/64 checks passed, plus the Phase 2 suite re-run at 42/42; see [Verification](#verification-status) |
+| **Last verification status** | Realignment verified in-browser — 33/33 realignment checks, plus Phase 3 at 64/64 and Phase 2 at 42/42; see [Verification](#verification-status) |
 | **Last updated** | 2026-08-12 |
 
 ---
@@ -66,30 +66,60 @@ their scope above is what was actually instructed, not inferred.
 
 ## Curriculum status
 
-**The curriculum is LOCKED as of 2026-08-12.** The project owner confirmed at
-the start of Phase 3 that the 43 modules, names, and numbering in
-`docs/CURRICULUM.md` stand as canonical; Appendix B of that file records the
-confirmation. The Phase 1 reconciliation question is closed.
+**The curriculum is REALIGNED and (re)LOCKED to `docs/MASTER_BRIEF.md` — 2026-08-12.**
 
-All 43 modules: `NOT_STARTED`. Module **metadata** now exists
-(`data/modules.js`), but no module content, no chapters, and no Java source
-files exist anywhere in this repository. **Metadata is not content** — a module
-having a description, prerequisites, and a topic list does not make it built.
+`docs/MASTER_BRIEF.md` is the **canonical source** of the curriculum. It was
+added to the repository after Phase 3, and the 43 modules Phase 1 had authored
+turned out **not** to match it — only 2 of 43 names agreed (Modules 01 and 43,
+the two endpoints Phase 1 had been given). `docs/CURRICULUM.md` was therefore
+rewritten as a verbatim transcription of the brief's Section 12, and
+`data/modules.js` regenerated from it.
 
-### Module id convention — Phase 4 depends on this
+**This supersedes the Phase 3 lock entirely.** Full history is recorded in
+`docs/CURRICULUM.md` Appendix B.
 
-Module ids are generated from number + name:
+### The chain of truth — do not break it
 
-    <number>-<name, kebab-cased, truncated at any em-dash subtitle>
+    docs/MASTER_BRIEF.md §12   canonical, owner-written
+           ↓ verbatim transcription
+    docs/CURRICULUM.md         readable curriculum, stable parse target
+           ↓ tools/generate-modules.mjs
+    data/modules.js            the single source the application reads
 
-e.g. `01-java-foundations-execution-model`, `17-concurrency-i`,
-`12-collections-framework-internal-data-structures`.
+`node tools/generate-modules.mjs --check` verifies **both** hops and exits
+non-zero on drift. Never hand-edit `data/modules.js`, and never edit a module
+block in `CURRICULUM.md` — change the brief and re-transcribe.
 
-**These ids are permanent keys.** Phase 4 will key `localStorage` progress
-records on them under the `jfsm.` prefix. Because ids are derived from names,
-**renaming a module changes its id and orphans stored progress** — so names are
-locked along with numbers. If a rename ever becomes unavoidable, pin the old id
-by hand in the generator rather than letting it move.
+All 43 modules: `NOT_STARTED`. Module **metadata** exists; no module content, no
+chapters, and no Java source files exist. **Metadata is not content.**
+
+### Module id convention — Phase 4 keys on this
+
+    <number>-<name, kebab-cased>
+
+e.g. `08-hashing-hashmap-internals`, `23-graphs`, `32-spring-core`. **41 of 43
+ids changed in the realignment.** Nothing was orphaned because no progress had
+been stored — which is exactly why this had to happen before Phase 4.
+
+Ids derive from names, so **renaming a module in the brief moves its id**. If a
+rename ever becomes unavoidable, pin the old id by hand in the generator.
+
+### Two metadata fields the brief does not supply
+
+The brief's Section 12 gives module names and topic bullets only. Neither of the
+following was invented:
+
+- **`description`** — DERIVED mechanically as `Topics include: <first five
+  topics>.` Every record carries `descriptionDerived: true`. No editorial prose
+  was written for 43 modules.
+- **`prerequisites`** — **empty for all 43.** The brief states no per-module
+  prerequisites, and inferring them from module order would be a guess. The UI
+  shows "Not specified by the master brief" rather than a bare "None".
+
+The brief's per-module emphasis IS carried, verbatim, in a `notes` field —
+Module 08's extra-depth requirement, Module 14's JVM-spec-vs-HotSpot
+distinction, Module 30's JPA-vs-Hibernate framing, and others. Module 42's seven
+named projects are carried in `subsections`.
 
 | Modules | Status |
 |---|---|
@@ -123,13 +153,14 @@ Java_mastery/
 │       ├── search.js          (Phase 3)
 │       └── progress.js        (Phase 3 — STUB, no persistence)
 ├── data/
-│   └── modules.js             (Phase 3 — GENERATED, do not hand-edit)
+│   └── modules.js             (GENERATED from CURRICULUM.md — do not hand-edit)
 ├── tools/
-│   └── generate-modules.mjs   (Phase 3 — dev tool, not a build step)
+│   └── generate-modules.mjs   (dev tool, not a build step; --check guards both hops)
 └── docs/
-    ├── PROJECT_STATE.md       (Phase 1 — this file, updated Phases 2–3)
-    ├── ARCHITECTURE.md        (Phase 1, updated Phases 2–3)
-    ├── CURRICULUM.md          (Phase 1, LOCKED Phase 3)
+    ├── MASTER_BRIEF.md        (CANONICAL curriculum source — owner-written)
+    ├── PROJECT_STATE.md       (Phase 1 — this file, updated through realignment)
+    ├── ARCHITECTURE.md        (Phase 1, updated through realignment)
+    ├── CURRICULUM.md          (REALIGNED — verbatim from MASTER_BRIEF.md §12)
     └── AI_INSTRUCTIONS.md     (Phase 1)
 ```
 
@@ -190,13 +221,38 @@ Full detail in `docs/ARCHITECTURE.md` §15.
    placeholder views.**
 6. **Without JavaScript the site does not navigate at all** — the sidebar and
    all view bodies are built by ES modules. Full no-JS content is not a goal.
-7. **`data/modules.js` is generated.** Hand-editing it will be overwritten by
-   `node tools/generate-modules.mjs`; edit `docs/CURRICULUM.md` instead. Nothing
-   automatically enforces this — run `--check` to detect drift.
+7. **`data/modules.js` is generated.** Hand-editing it will be overwritten. Edit
+   `docs/MASTER_BRIEF.md`, re-transcribe into `docs/CURRICULUM.md`, then
+   regenerate. Nothing enforces this automatically — run
+   `node tools/generate-modules.mjs --check`, which guards both hops.
+8. **No module has prerequisites recorded**, because the master brief does not
+   state any. Navigation therefore cannot gate on prerequisites.
+9. **Module descriptions are mechanical topic restatements**, not written
+   summaries. They read as "Topics include: …" by design.
 
 ---
 
 ## Important implementation decisions
+
+Made during the curriculum realignment (2026-08-12):
+
+23. **`docs/MASTER_BRIEF.md` is canonical; `docs/CURRICULUM.md` is a verbatim
+    transcription of its Section 12.** The module blocks are byte-identical, and
+    `generate-modules.mjs --check` fails if they ever diverge. This closes the
+    failure mode that produced the misalignment in the first place: a curriculum
+    that lived only in chat history.
+24. **`description` is DERIVED, never authored** — `Topics include: <first five
+    topics>.`, flagged `descriptionDerived: true`. The brief has no description
+    field; writing editorial prose for 43 modules would be fabrication.
+25. **`prerequisites` is empty for all 43 modules.** The brief states none, and
+    module order is not evidence of a prerequisite. The UI says "Not specified by
+    the master brief" rather than implying there are none.
+26. **The brief's per-module emphasis is data, not decoration.** `notes` carries
+    it verbatim and the module view renders it in a highlighted block, because
+    lines like Module 08's "must receive extra depth" are requirements.
+27. **Topics are a flat list; no part groupings are invented.** The brief
+    presents 43 modules as one ordered sequence, so the curriculum view lists
+    them in order rather than inventing section headings.
 
 Made during Phase 3:
 
@@ -299,6 +355,9 @@ Made during Phase 1:
   `data/modules.js` with a hand-maintained list, and do not hand-edit it.
 - **Module ids and numbers** — permanent keys, locked with the curriculum.
 - **The global `[hidden]` rule** — removing it silently breaks every disclosure.
+- **The realignment to `docs/MASTER_BRIEF.md`** — the curriculum is canonical as
+  transcribed. Do not "restore" the Phase 1 authored modules, and do not edit
+  module blocks in `CURRICULUM.md` directly.
 
 Non-destructive development applies throughout: inspect before overwriting, and
 never discard work you did not create (`CLAUDE.md` §8).
@@ -306,6 +365,46 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### Curriculum realignment — performed 2026-08-12
+
+**Method:** served with `python3 -m http.server` and driven in headless
+Chromium. **33 realignment checks passed, 0 failed**, plus both earlier suites
+re-run as regressions: **Phase 3 at 64/64** and **Phase 2 at 42/42**.
+
+| Area | Verified |
+|---|---|
+| Transcription | `CURRICULUM.md` module blocks are **byte-identical** to `MASTER_BRIEF.md` §12; all 49 brief sections (0–48) present; 43 modules numbered 01–43 |
+| Metadata | exactly 43 modules; ids unique; all `NOT_STARTED`; all `chapterCount` 0; all `prerequisites` empty; all descriptions flagged derived; 848 topics with **no mid-sentence truncation** and no markdown leftovers |
+| Chain integrity | `generate-modules.mjs --check` verifies **both** hops and exits non-zero on drift |
+| Sidebar | 43 realigned names, matching `data/modules.js` exactly; spot-checked 08, 02, 07, 10, 18, 20, 21, 22, 23, 24, 25, 32, 42 |
+| Routes | **all 43 module routes resolve**; unknown ids still 404 |
+| Module 08 | renders "Hashing & HashMap Internals" with its **extra-depth requirement shown**, 31 topics, 0 chapters |
+| Emphasis | Module 14's JVM-spec-vs-HotSpot and Module 30's JPA-vs-Hibernate notes render; Module 42 lists all **7 named projects** |
+| Dashboard | 7 sections, 0%, 43 rows, recommends Module 01; **no non-zero percentage anywhere** |
+| Search | finds `hashmap`, `sliding window`, `dijkstra`, `backtracking`; ranks Module 08 first for "08"; results labelled by source type; no-results handled; navigation works |
+| Phase 2/3 behaviour | theme persistence, mobile drawer with 43 modules, drawer-closes-on-selection, no horizontal scroll at 320–1920px, no console errors |
+
+**Two real bugs were found by this work and fixed:** the generator's block
+extractor had no upper bound, so the last module swallowed the brief's Sections
+13–48 (and later the curriculum's appendices) — caught by the new `--check`
+guard, which correctly refused to write; and the flat topic list rendered
+single-column because CSS multi-column has no effect on a flex container.
+
+### Realignment — not verified
+
+- **Not verified because it does not exist:** chapter content, practice,
+  interview questions, execution, progress persistence.
+- **Not verified because out of scope for this environment:** real mobile
+  hardware, touch, Safari, Firefox — all testing was headless Chromium.
+- **Not verified:** screen-reader narration; measured contrast ratios.
+- **Not verified:** that the transcription matches the owner's *intent* beyond
+  byte-equality with the supplied text. Fidelity to the supplied brief is
+  machine-checked; whether the brief itself is what the owner wants is theirs
+  to judge.
+- **No Java code was compiled or run — not verified because none was produced.**
+
+---
 
 ### Phase 3 — performed 2026-08-12
 
@@ -476,5 +575,6 @@ see the Phase 2 section above.)*
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-12 | realign | Added `docs/MASTER_BRIEF.md` (verbatim, owner-supplied) as the canonical curriculum source. Rewrote `docs/CURRICULUM.md` as a byte-identical transcription of its Section 12, replacing the Phase 1 authored curriculum — only 2 of 43 names had matched. Regenerated `data/modules.js` (43 modules, 848 topics, 19 emphasis notes, 7 project subsections); 41 of 43 module ids changed. Adapted the module, curriculum, and search views to the flat topic shape. `description` derived mechanically; `prerequisites` left empty — neither invented. Verified in-browser: 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2. |
 | 2026-08-12 | 3 | Locked the curriculum (owner confirmation recorded in `CURRICULUM.md` Appendix B). Added the module metadata layer: `data/modules.js`, generated from `docs/CURRICULUM.md` by `tools/generate-modules.mjs`. Rebuilt the sidebar from metadata (43 modules, collapsible, empty chapter regions), added the dashboard structure reading a progress stub, the curriculum and module-overview views, and functional module/topic search. Verified in headless Chromium: 64/64 Phase 3 checks and 42/42 Phase 2 regression checks; three real bugs found and fixed. No progress persistence, practice UI, or code execution — those remain Phases 4–5. |
 | 2026-08-12 | 2 | Built the website shell: `index.html` plus `assets/css/{base,theme,layout}.css` and `assets/js/{app,theme,nav}.js`. App shell layout, light/dark theming with persistence and no flash, responsive drawer navigation, and a hash-routing scaffold. Verified in headless Chromium: 42/42 checks passed; two real bugs found and fixed. Updated `docs/ARCHITECTURE.md` (§2, §3, §10, §12, §14, §15, §16) and `README.md`. No module content, search, progress tracking, or execution — those remain later phases. |

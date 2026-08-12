@@ -69,9 +69,9 @@ registerSearchSource('module', () =>
   MODULES.map((module) => ({
     type: 'Module',
     title: `${module.number} · ${module.name}`,
-    subtitle: module.part ?? '',
+    subtitle: `Module ${Number(module.number)} of 43`,
     route: `#/module/${module.id}`,
-    keywords: `${module.description} ${module.owns} module ${Number(module.number)}`,
+    keywords: `${module.description} ${module.notes.join(' ')} module ${Number(module.number)}`,
     moduleNumber: module.number,
   })));
 
@@ -79,25 +79,17 @@ registerSearchSource('topic', () => {
   const entries = [];
   for (const module of MODULES) {
     const context = `Module ${module.number} — ${module.name}`;
-    for (const group of module.topics) {
+    // The brief's topics are a flat keyword list per module, so each topic is a
+    // single entry pointing at its module.
+    for (const topic of module.topics) {
       entries.push({
         type: 'Topic',
-        title: group.group,
+        title: topic,
         subtitle: context,
-        route: `#/module/${module.id}`,
         keywords: '',
+        route: `#/module/${module.id}`,
         moduleNumber: module.number,
       });
-      for (const item of group.items) {
-        entries.push({
-          type: 'Topic',
-          title: item,
-          subtitle: `${group.group} · ${context}`,
-          route: `#/module/${module.id}`,
-          keywords: '',
-          moduleNumber: module.number,
-        });
-      }
     }
   }
   return entries;
