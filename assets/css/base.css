@@ -159,6 +159,18 @@ code {
   color: var(--color-code-text);
 }
 
+/* An INLINE code span must be allowed to break mid-token. Java identifiers are
+   long and unbreakable — `jdk.internal.misc.Unsafe::getReferenceVolatile` has no
+   space in it, and browsers will not break on `.` or `:`, so on a narrow screen
+   one such span pushes the whole page sideways. Found at 360px in Module 01
+   Chapter 3; the earlier chapters simply had no identifier long enough to show it.
+
+   Scoped to code that is NOT inside a <pre>: block code must never reflow, since
+   a wrapped line changes what the reader sees. Those scroll instead (.scroll-x). */
+:not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
 /* --------------------------------------------------------------------------
    4. Focus and accessibility primitives
    -------------------------------------------------------------------------- */

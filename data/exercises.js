@@ -7,8 +7,8 @@
  * Exercises appear here only when the chapter they belong to is written
  * (master brief §36, §41). Adding them ahead of that would be fake content.
  *
- * Authored so far: Module 01 Chapters 1 and 2 (`01-01`, `01-02`) — six exercises
- * each, across the difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
+ * Authored so far: Module 01 Chapters 1–3 — six exercises each, across the
+ * difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
  * RUN on OpenJDK 21.0.10 with `--release 17` on 2026-08-13; the recorded
  * `sampleOutput` is real output, not expected output. Sources live in
  * `java/module-01/ch01/solutions/`.
@@ -80,6 +80,7 @@ export const DIFFICULTIES = ['Warm-up', 'Easy', 'Applied', 'Medium', 'Challenge'
 const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
 const CHAPTER_01_02 = '01-02';
+const CHAPTER_01_03 = '01-03';
 
 /** @type {Array<object>} */
 export const EXERCISES = [
@@ -1113,6 +1114,545 @@ export const EXERCISES = [
         + '-verbose:class helps in every case: it shows whether the class was loaded at all and '
         + 'from which source, which settles "is it on the classpath?" and "which copy won?" '
         + 'immediately.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 3 — The Execution Engine
+     Solutions verified by execution on OpenJDK 21.0.10, --release 17,
+     4 vCPU Xeon @2.80GHz, 2026-08-13. Sources: java/module-01/ch03/solutions/
+     Timings are ONE machine, ONE workload - indicative shapes, not benchmarks.
+     ====================================================================== */
+
+  {
+    id: '01-03-warmup-observe-warmup',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Watch a JVM warm up',
+    difficulty: 'Warm-up',
+    objective:
+      'See with your own timings that the same work costs less after the JVM has been '
+      + 'running it for a while, so "warm-up" stops being an abstraction.',
+    problem:
+      'Write a program with a small method doing arithmetic in a loop. Call it 20,000 times '
+      + 'per batch, for 12 batches, timing each batch and printing the result. Consume the '
+      + 'result so the compiler cannot delete the work. Run it and describe the curve.',
+    requirements: [
+      'The unit of work must be small and called many times, not one huge loop.',
+      'Time each batch with System.nanoTime and report microseconds.',
+      'Accumulate and print a checksum, so the computation cannot be optimised away.',
+      'Say which batch the curve flattens at.',
+    ],
+    constraints: ['No libraries. System.nanoTime only.'],
+    sampleInput: '',
+    sampleOutput: 'batch  1:   10,224 us\nbatch  2:    8,046 us\nbatch  3:    7,984 us\n...\nbatch 12:    7,725 us',
+    edgeCases: [
+      'Drop the checksum and the loop may be deleted entirely, making every batch near-zero.',
+      'Use one giant loop instead of many calls and on-stack replacement flattens the curve almost immediately.',
+    ],
+    testCases: [{ input: 'java Warmup', expected: 'batch 1 clearly slower than the steady state' }],
+    starterCode:
+      'public class Warmup {\n'
+      + '    static long work(int n) {\n'
+      + '        // small arithmetic loop, returning a value\n'
+      + '        return 0;\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // 12 batches of 20,000 calls, timing each batch\n'
+      + '        // print a checksum at the end\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'System.nanoTime() around the batch, divided by 1_000, gives microseconds.',
+      'If every batch prints a near-zero time, the JIT deleted your loop. Accumulate the result into a variable you print.',
+      'The compiler needs a few thousand invocations before it acts - that is why the batch size matters.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class Warmup {\n'
+        + '\n'
+        + '    static long work(int n) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 1; i <= n; i++) {\n'
+        + '            total += (i % 7) * (i % 13);\n'
+        + '        }\n'
+        + '        return total;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        int batches = args.length > 0 ? Integer.parseInt(args[0]) : 12;\n'
+        + '        int callsPerBatch = 20_000;\n'
+        + '        int workSize = 200;\n'
+        + '\n'
+        + '        long checksum = 0;\n'
+        + '        for (int batch = 1; batch <= batches; batch++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            for (int call = 0; call < callsPerBatch; call++) {\n'
+        + '                checksum += work(workSize);\n'
+        + '            }\n'
+        + '            long micros = (System.nanoTime() - start) / 1_000;\n'
+        + '            System.out.printf("batch %2d: %,8d us%n", batch, micros);\n'
+        + '        }\n'
+        + '        System.out.println("checksum " + checksum);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured on 4 vCPU Xeon @2.80GHz, OpenJDK 21.0.10: batch 1 at 10,224 us, settling to '
+        + 'about 7,700 us by batch 3 - roughly a quarter cheaper once warm. A second run '
+        + 'reproduced the same shape.\n\n'
+        + 'Your absolute numbers will differ and that does not matter. What should match is the '
+        + 'shape: an expensive first batch, a short transition, then a flat line.\n\n'
+        + 'The checksum is not decoration. Without something consuming the result, the JIT can '
+        + 'prove the loop has no effect and remove it, and you end up timing an empty loop and '
+        + 'concluding arithmetic is free.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-easy-execution-modes',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Compare the execution modes, and report your method',
+    difficulty: 'Easy',
+    objective:
+      'Quantify what the JIT is worth on your machine, and practise stating a measurement '
+      + 'together with the conditions that make it meaningful.',
+    problem:
+      'Extend your warm-up program to also print the JVM execution mode it is running under, '
+      + 'read from a system property. Run it under the default, -Xint, -Xcomp and '
+      + '-XX:TieredStopAtLevel=1, and produce a small table of steady-state times. Write down '
+      + 'the machine, the JDK, and the method alongside the numbers.',
+    requirements: [
+      'Print java.vm.name and java.vm.info at startup.',
+      'Report the best of several rounds rather than a single timing.',
+      'Run all four modes and tabulate the steady-state figure.',
+      'State hardware, JDK version, workload and number of runs with the table.',
+      'Write one sentence on why these numbers must not be quoted as general Java performance.',
+    ],
+    constraints: ['Standard library only.'],
+    sampleInput: '',
+    sampleOutput: 'java.vm.info    mixed mode, sharing\nbest of 8 rounds: 7,688 us',
+    edgeCases: [
+      '-Xcomp takes noticeably longer to START even though its steady state is fine.',
+      'A shared or virtualised machine adds noise; run each mode more than once.',
+    ],
+    testCases: [
+      { input: 'java ModeReport', expected: 'java.vm.info = mixed mode' },
+      { input: 'java -Xint ModeReport', expected: 'java.vm.info = interpreted mode' },
+    ],
+    starterCode:
+      'public class ModeReport {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // print java.vm.name / java.vm.info / java.vm.version\n'
+      + '        // then time a fixed workload, best of N rounds\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'System.getProperty("java.vm.info") returns the same string java -version prints on its third line.',
+      'Best-of-N is a reasonable quick estimate because noise only ever makes a run slower, never faster.',
+      'Run each mode at least three times. If the spread between runs is bigger than the difference between modes, you have measured noise.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class ModeReport {\n'
+        + '\n'
+        + '    static long work(int n) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 1; i <= n; i++) total += (i % 7) * (i % 13);\n'
+        + '        return total;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("java.vm.name    " + System.getProperty("java.vm.name"));\n'
+        + '        System.out.println("java.vm.info    " + System.getProperty("java.vm.info"));\n'
+        + '        System.out.println("java.vm.version " + System.getProperty("java.vm.version"));\n'
+        + '\n'
+        + '        long sink = 0;\n'
+        + '        long best = Long.MAX_VALUE;\n'
+        + '        for (int round = 0; round < 8; round++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            for (int call = 0; call < 20_000; call++) sink += work(200);\n'
+        + '            best = Math.min(best, (System.nanoTime() - start) / 1_000);\n'
+        + '        }\n'
+        + '        System.out.printf("best of 8 rounds: %,d us%n", best);\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured 2026-08-13 on 4 vCPU Intel Xeon @2.80GHz, 16 GB, Linux container, OpenJDK '
+        + '21.0.10; steady state is batch 12 of 12, three runs per mode:\n\n'
+        + '  default (tiered C1+C2)        7,757 / 7,822 / 7,772 us\n'
+        + '  -XX:TieredStopAtLevel=1      14,564 / 15,711 / 14,653 us   about 1.9x slower\n'
+        + '  -Xcomp                        7,386 / 7,401 / 7,417 us     about 0.95x\n'
+        + '  -Xint                        59,406 / 56,006 / 56,205 us   about 7.2x slower\n\n'
+        + 'The sentence that matters: this is one tight-integer-arithmetic workload on one '
+        + 'shared virtual machine, which is close to the best case for a JIT. Code dominated by '
+        + 'memory access, allocation or I/O would look nothing like this, and the ratios do not '
+        + 'transfer to another machine, JDK or program. Quote the conditions or do not quote the '
+        + 'number.\n\n'
+        + 'Note also that -Xcomp came out marginally FASTER in steady state here, which is not '
+        + 'the textbook expectation. See the chapter - the prediction was wrong and is recorded '
+        + 'as such.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-applied-read-printcompilation',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Read PrintCompilation and narrate what the JIT did',
+    difficulty: 'Applied',
+    objective:
+      'Turn a wall of compiler output into a sentence about what happened to one method.',
+    problem:
+      'Run your warm-up program under -XX:+PrintCompilation, filter to your own methods, and '
+      + 'write a short narration of the life of the hot method: which tiers it reached, in what '
+      + 'order, where on-stack replacement occurred, and which compiled version was retired. '
+      + 'Then find a method that reached tier 1 and only tier 1, and explain why.',
+    requirements: [
+      'Filter the output to your own class so the JDK noise is gone.',
+      'Identify each column: time, id, flags, tier, method, size.',
+      'Point to the % line and say what bytecode index it re-entered at.',
+      'Point to the made not entrant line and say what it means.',
+      'Find a tier-1-only method somewhere in the unfiltered output and explain the decision.',
+    ],
+    constraints: ['No profiler - only PrintCompilation.'],
+    sampleInput: '',
+    sampleOutput: '32    8       3       Warmup::work (30 bytes)\n32    9 %     4       Warmup::work @ 4 (30 bytes)\n33   10       4       Warmup::work (30 bytes)\n35    8       3       Warmup::work (30 bytes)   made not entrant',
+    edgeCases: [
+      'With too few batches the method never reaches tier 4 - raise the count.',
+      'Tier numbers are HotSpot-specific and are not part of the Java specification.',
+    ],
+    testCases: [{ input: 'java -XX:+PrintCompilation Warmup 4 | grep Warmup::', expected: 'tier 3, then a % tier 4, then tier 4, then made not entrant' }],
+    hints: [
+      'grep for your class name followed by :: to drop everything from the JDK.',
+      'The % flag is on-stack replacement and the @ N that follows the method name is the bytecode index.',
+      'A one-line accessor has nothing for C2 to improve, so profiling it would cost more than it could ever save.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// This exercise is about reading output. The verified sequence for Warmup::work:\n'
+        + '//\n'
+        + '//   32    8       3       Warmup::work (30 bytes)\n'
+        + '//   32    9 %     4       Warmup::work @ 4 (30 bytes)\n'
+        + '//   33   10       4       Warmup::work (30 bytes)\n'
+        + '//   35    8       3       Warmup::work (30 bytes)   made not entrant\n'
+        + '//\n'
+        + '// and, from the unfiltered output of any run, a tier 0 native method:\n'
+        + '//   26    3     n 0       jdk.internal.misc.Unsafe::getReferenceVolatile (native)\n'
+        + 'public class NarrationNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Read the four lines above and narrate them.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'A model narration:\n\n'
+        + '"At 32 ms, work was compiled by C1 at tier 3 - native code that still collects profile '
+        + 'data. In the same millisecond it was compiled again at tier 4 by C2, and the % flag '
+        + 'says this was an on-stack replacement entering at bytecode index 4: the loop was '
+        + 'already running, so rather than wait for the next call the JVM swapped the executing '
+        + 'frame into the compiled version. At 33 ms a normal tier-4 compilation was installed for '
+        + 'future invocations. At 35 ms the tier-3 version was made not entrant - anyone already '
+        + 'inside it finishes there, but no new call will enter it."\n\n'
+        + 'The columns are: milliseconds since VM start, compilation id, flags, tier, method, '
+        + 'bytecode size.\n\n'
+        + 'For the tier-1 question: methods that reach tier 1 and stop are ones C1 can compile '
+        + 'and C2 could not meaningfully improve - trivial getters and one-line natives. '
+        + 'Profiling them would cost more than the optimisation could ever return, so the JVM '
+        + 'compiles them once without profiling and leaves them alone.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-medium-force-deoptimization',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Force a deoptimisation and get the JVM to name the reason',
+    difficulty: 'Medium',
+    objective:
+      'Make the JIT speculate, break the speculation deliberately, and confirm the discard '
+      + 'from two independent sources rather than inferring it.',
+    problem:
+      'Write a program with one interface, two implementations, and a single call site. Run '
+      + 'phase 1 with only the first implementation, long enough to be compiled at tier 4. Then '
+      + 'run phase 2 introducing the second implementation at the same call site. Print a marker '
+      + 'between phases. Show the compiled method being discarded, and get the JVM to state why.',
+    requirements: [
+      'Exactly one call site, reached with different concrete types in the two phases.',
+      'Print a phase marker so the compilation output can be lined up against it.',
+      'Show the made not entrant line arriving immediately after the phase 2 marker.',
+      'Obtain the deoptimisation reason from the JVM, not from your own inference.',
+    ],
+    constraints: ['No reflection or agents - ordinary code and JVM flags only.'],
+    sampleInput: '',
+    sampleOutput: 'phase 2: Slow appears at the same call site\n38   11       4       Deoptimization::consume (28 bytes)   made not entrant',
+    edgeCases: [
+      'Plain -Xlog:deoptimization prints nothing; the reasons are at debug level.',
+      'The exact count of deopt events varies between runs even though the reasons are stable.',
+    ],
+    testCases: [
+      { input: 'java -XX:+PrintCompilation SpeculationDemo | grep -E "Speculation|phase"', expected: 'made not entrant right after the phase 2 marker' },
+      { input: 'java -Xlog:deoptimization=debug SpeculationDemo | grep run', expected: 'a line naming reason `predicate`' },
+    ],
+    starterCode:
+      'public class SpeculationDemo {\n'
+      + '    interface Handler { int handle(int x); }\n'
+      + '    // two implementations\n'
+      + '\n'
+      + '    static void run(Handler h, int times) {\n'
+      + '        // the single call site\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // phase 1: one implementation, ~200k calls\n'
+      + '        // phase 2: both implementations, same call site\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Phase 1 needs enough calls to reach tier 4 - a few hundred thousand is ample.',
+      'Alternate the two implementations in phase 2 so the call site genuinely becomes bimorphic.',
+      '-Xlog:deoptimization on its own is silent. Add =debug.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class SpeculationDemo {\n'
+        + '\n'
+        + '    interface Handler { int handle(int x); }\n'
+        + '    static class Fast implements Handler { public int handle(int x) { return x + 1; } }\n'
+        + '    static class Slow implements Handler { public int handle(int x) { return x + 2; } }\n'
+        + '\n'
+        + '    static long sink;\n'
+        + '\n'
+        + '    static void run(Handler h, int times) {\n'
+        + '        for (int i = 0; i < times; i++) sink += h.handle(i);\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        Handler fast = new Fast();\n'
+        + '\n'
+        + '        System.out.println("phase 1: only Fast");\n'
+        + '        for (int i = 0; i < 200_000; i++) run(fast, 10);\n'
+        + '\n'
+        + '        System.out.println("phase 2: Slow appears at the same call site");\n'
+        + '        Handler slow = new Slow();\n'
+        + '        for (int i = 0; i < 200_000; i++) run(i % 2 == 0 ? fast : slow, 10);\n'
+        + '\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Two independent confirmations, both verified.\n\n'
+        + 'PrintCompilation shows the tier-4 method retired immediately after the phase 2 marker '
+        + 'prints, then recompiled - first by on-stack replacement so the loop already running can '
+        + 'continue, then normally for future calls.\n\n'
+        + '-Xlog:deoptimization=debug names the reason:\n\n'
+        + '  ... level=4 ...run(...)V trap_bci=4 predicate maybe_recompile\n'
+        + '  ... osr level=4 ...run(...)V trap_bci=2 osr_bci=2 profile_predicate maybe_recompile\n\n'
+        + '`predicate` is the guard C2 inserted around its assumption that the receiver was always '
+        + 'Fast; `profile_predicate` is the equivalent for the on-stack-replaced version. Across '
+        + 'three runs the reasons were identical every time, although the number of events varied - '
+        + 'so assert the reasons, not the counts.\n\n'
+        + 'Worth noticing: plain -Xlog:deoptimization prints nothing at all. Discovering that the '
+        + 'detail lives at debug level is part of learning to interrogate the JVM.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-challenge-call-site-shape',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Measure what a call site’s shape costs',
+    difficulty: 'Challenge',
+    objective:
+      'Predict, then measure, how the number of implementations at one call site affects its '
+      + 'cost - and discover that the answer is not a straight line.',
+    problem:
+      'Write a harness that drives the same call site with one, two, and five implementations '
+      + 'of an interface, doing identical work in each case. Warm up properly, then time each '
+      + 'shape. Predict the results before running. Explain the shape you actually get.',
+    requirements: [
+      'One driving method, called with arrays of 1, 2 and 5 implementations.',
+      'Warm up each shape before timing it.',
+      'Report best-of-N rather than a single run.',
+      'Consume the result so nothing can be optimised away.',
+      'Write your prediction down before running, then explain the difference.',
+    ],
+    constraints: ['Standard library only. No JMH - that is Module 41.'],
+    sampleInput: '',
+    sampleOutput: 'monomorphic       36,511 us (best of 5)\nbimorphic         36,508 us (best of 5)\nmegamorphic       74,155 us (best of 5)',
+    edgeCases: [
+      'Warming up with one shape and timing another measures the transition, not the shape.',
+      'The array indexing is identical in all three cases, so it cancels out of the comparison.',
+    ],
+    testCases: [{ input: 'java CallSiteShape', expected: 'monomorphic and bimorphic within noise of each other; megamorphic roughly 2x' }],
+    starterCode:
+      'public class CallSiteShape {\n'
+      + '    interface Op { int apply(int x); }\n'
+      + '    // five implementations\n'
+      + '\n'
+      + '    static void drive(Op[] ops, int iterations) {\n'
+      + '        // one call site, cycling through the array\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // time arrays of size 1, 2 and 5\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Cycle with ops[i % ops.length] so the same call site sees each implementation in turn.',
+      'Warm up each shape with tens of rounds before timing, so the call site is compiled in that shape.',
+      'Most people predict a steady increase from one to five. Look carefully at where the jump actually is.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class CallSiteShape {\n'
+        + '\n'
+        + '    interface Op { int apply(int x); }\n'
+        + '\n'
+        + '    static class A implements Op { public int apply(int x) { return x + 1; } }\n'
+        + '    static class B implements Op { public int apply(int x) { return x + 2; } }\n'
+        + '    static class C implements Op { public int apply(int x) { return x + 3; } }\n'
+        + '    static class D implements Op { public int apply(int x) { return x + 4; } }\n'
+        + '    static class E implements Op { public int apply(int x) { return x + 5; } }\n'
+        + '\n'
+        + '    static long sink;\n'
+        + '\n'
+        + '    static void drive(Op[] ops, int iterations) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 0; i < iterations; i++) {\n'
+        + '            total += ops[i % ops.length].apply(i);\n'
+        + '        }\n'
+        + '        sink += total;\n'
+        + '    }\n'
+        + '\n'
+        + '    static long timeIt(String label, Op[] ops) {\n'
+        + '        for (int i = 0; i < 50; i++) drive(ops, 100_000);   // warm up in THIS shape\n'
+        + '\n'
+        + '        long best = Long.MAX_VALUE;\n'
+        + '        for (int round = 0; round < 5; round++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            drive(ops, 20_000_000);\n'
+        + '            best = Math.min(best, (System.nanoTime() - start) / 1_000);\n'
+        + '        }\n'
+        + '        System.out.printf("%-14s %,9d us (best of 5)%n", label, best);\n'
+        + '        return best;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        Op a = new A(), b = new B(), c = new C(), d = new D(), e = new E();\n'
+        + '        timeIt("monomorphic", new Op[] { a });\n'
+        + '        timeIt("bimorphic",   new Op[] { a, b });\n'
+        + '        timeIt("megamorphic", new Op[] { a, b, c, d, e });\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured on 4 vCPU Xeon @2.80GHz, OpenJDK 21.0.10, and highly reproducible across runs:\n\n'
+        + '  monomorphic   36,511 us   (second run 36,523)\n'
+        + '  bimorphic     36,508 us   (second run 36,471)\n'
+        + '  megamorphic   74,155 us   (second run 74,409)\n\n'
+        + 'The jump is not between one and two - those are within noise of each other. It is '
+        + 'between two and three.\n\n'
+        + 'HotSpot inlines a monomorphic call site outright. For a bimorphic one it uses an inline '
+        + 'cache that checks which of two types arrived and branches to the right inlined body, '
+        + 'which is nearly as good. At three or more receivers the site becomes megamorphic and '
+        + 'falls back to a genuine virtual dispatch that cannot be inlined - and losing the inline '
+        + 'also loses every optimisation that would have followed it.\n\n'
+        + 'Practical consequence: an interface with two implementations behaves very differently '
+        + 'from one with five at the same hot call site. That is worth knowing and NOT worth '
+        + 'designing around prematurely - measure your own code before contorting it. One machine, '
+        + 'one workload; the ratio is indicative, not a constant.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-interview-explain-jit',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Explain adaptive optimisation, and defend a number',
+    difficulty: 'Interview',
+    objective:
+      'Give the spoken answer, then survive the follow-up that most candidates fail: '
+      + '"where did that number come from?"',
+    problem:
+      'Without notes, answer: "Walk me through what the JVM does with your bytecode at run '
+      + 'time, and explain why it is faster than interpreting but slower to start than a native '
+      + 'binary." Then be ready for: "You said the JIT gives roughly a sevenfold speedup - on '
+      + 'what?" Demonstrate at least two of your claims at a terminal.',
+    requirements: [
+      'Cover interpretation, profiling, tiered compilation, OSR, and deoptimisation.',
+      'Explain the startup versus steady-state trade-off in both directions.',
+      'State any number together with the hardware, JDK, workload and method behind it.',
+      'Say explicitly which parts are HotSpot behaviour rather than Java specification.',
+      'Demonstrate at least two claims live.',
+    ],
+    constraints: ['JDK tools only.'],
+    sampleInput: '',
+    sampleOutput: 'A spoken answer plus a terminal session. There is no single correct transcript.',
+    edgeCases: [
+      'Being asked "so should we use -Xcomp?" - the honest answer needs the startup measurement.',
+      'Being asked whether this is true of all JVMs. It is not.',
+    ],
+    testCases: [],
+    hints: [
+      'Structure it as: interpret to start fast, profile while running, compile the hot parts, speculate using the profile, deoptimise when the speculation breaks.',
+      'The two easiest live demonstrations are the warm-up curve and PrintCompilation on a hot method.',
+      'For the number question, the only good answer names the conditions. "About seven times, on tight integer arithmetic, on a 4 vCPU Xeon running OpenJDK 21, comparing -Xint to the default" is defensible. "About seven times" alone is not.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// Verified demonstration sequence - all captured in this chapter.\n'
+        + '//\n'
+        + '//   java -version                       -> "mixed mode": interpreter AND compiler\n'
+        + '//   java Warmup                         -> batch 1 ~10,224us settling to ~7,700us\n'
+        + '//   java -XX:+PrintCompilation Warmup 4 | grep Warmup::\n'
+        + '//                                       -> tier 3, then % tier 4 (OSR), then tier 4,\n'
+        + '//                                          then tier 3 made not entrant\n'
+        + '//   java -Xint Warmup                   -> ~56,000us steady, no warm-up curve\n'
+        + '//   time java -Xcomp Hello              -> ~1,300ms vs ~39ms default\n'
+        + '//   java -Xlog:deoptimization=debug Deoptimization | grep consume\n'
+        + '//                                       -> reason: predicate\n'
+        + 'public class InterviewNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Say it out loud, then run two of the commands above.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'A model answer:\n\n'
+        + '"The JVM starts by interpreting bytecode, so the program runs immediately with no '
+        + 'compilation cost. While interpreting it profiles - counting invocations, branch '
+        + 'outcomes, and which concrete types arrive at each call site. Once a method is clearly '
+        + 'hot, C1 compiles it quickly into native code that keeps profiling, and once it is very '
+        + 'hot C2 compiles it again using that profile, aggressively. If a method is stuck in a '
+        + 'long loop rather than being called repeatedly, on-stack replacement compiles it and '
+        + 'swaps the running frame over mid-loop.\n\n'
+        + 'It beats interpretation because it ends up executing native code. It beats an '
+        + 'ahead-of-time compiler in some ways because it optimises with evidence - it can inline '
+        + 'a virtual call it has only ever seen resolve one way, which a static compiler cannot '
+        + 'safely do. Those assumptions are guarded, and when one fails the JVM deoptimises: '
+        + 'discards the code, returns to the interpreter, recompiles.\n\n'
+        + 'It is slower to start because all of that is work done at run time, and because most '
+        + 'methods run once and compiling them buys nothing. That is the whole trade."\n\n'
+        + 'AND THE FOLLOW-UP. If asked to defend a number, the answer must carry its conditions: '
+        + '"About 7x, comparing -Xint to the default on a tight integer-arithmetic loop, on a '
+        + '4 vCPU Xeon at 2.80GHz running OpenJDK 21.0.10, steady state after warm-up, three runs "'
+        + 'per mode. It is close to the best case for a JIT and it would not transfer to '
+        + 'allocation-heavy or I/O-bound code. For anything real I would use JMH."\n\n'
+        + 'A candidate who volunteers the conditions before being asked has demonstrated the thing '
+        + 'the question is actually testing.',
       complexity: 'Not applicable.',
     },
   },

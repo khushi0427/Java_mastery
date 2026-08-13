@@ -7,8 +7,8 @@
  * Master brief §19 calls for roughly 5–8 of these in behaviour-heavy chapters.
  * They are authored alongside the chapter they belong to, never in advance.
  *
- * Authored so far: Module 01 Chapters 1 and 2 (`01-01`, `01-02`) — five and six
- * questions respectively. Every
+ * Authored so far: Module 01 Chapters 1–3 — five, six and five questions
+ * respectively. Every
  * `answer` below is REAL OUTPUT captured by running the command on OpenJDK
  * 21.0.10 on 2026-08-13, not output written from memory. A predict-the-output
  * question with a guessed answer would teach the wrong thing with total
@@ -40,6 +40,7 @@
 const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
 const CHAPTER_01_02 = '01-02';
+const CHAPTER_01_03 = '01-03';
 
 /** @type {Array<object>} */
 export const PREDICTIONS = [
@@ -345,6 +346,143 @@ export const PREDICTIONS = [
       + 'and so does swapping one JAR in a deployment. Do a clean build when a constant changes; '
       + 'and if a value must be updatable without recompiling its users, do not make it a '
       + 'compile-time constant — a boxed type or a method call is read at run time instead.',
+    isPlaceholder: false,
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 3 — The Execution Engine
+     Every answer captured from a real run, OpenJDK 21.0.10,
+     4 vCPU Xeon @2.80GHz, 2026-08-13.
+     ====================================================================== */
+
+  {
+    id: '01-03-predict-vm-info',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    prompt: 'What is the third line of each of these three commands?',
+    language: 'shell',
+    code: 'java -version\njava -Xint -version\njava -Xcomp -version',
+    answer: 'OpenJDK 64-Bit Server VM (build 21.0.10+7-Ubuntu-124.04, mixed mode, sharing)\nOpenJDK 64-Bit Server VM (build 21.0.10+7-Ubuntu-124.04, interpreted mode, sharing)\nOpenJDK 64-Bit Server VM (build 21.0.10+7-Ubuntu-124.04, compiled mode, sharing)',
+    explanation:
+      'The JVM states its execution strategy every time you ask its version, and "mixed mode" '
+      + 'is literal rather than marketing: interpreter AND JIT compiler, together. -Xint '
+      + 'disables the JIT, so it reports "interpreted mode". -Xcomp compiles every method on '
+      + 'first invocation and never interprets, so it reports "compiled mode".\n\n'
+      + 'A running program can read the same string from the java.vm.info system property, '
+      + 'which is a convenient way for a benchmark to record the mode it ran under.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-03-predict-warmup-shape',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    prompt: 'Twelve identical batches of work. Will batch 1 and batch 12 take the same time? What about under -Xint?',
+    language: 'java',
+    code: [
+      'for (int batch = 1; batch <= 12; batch++) {',
+      '    long start = System.nanoTime();',
+      '    for (int call = 0; call < 20_000; call++) {',
+      '        checksum += work(200);          // small arithmetic loop',
+      '    }',
+      '    System.out.printf("batch %2d: %,8d us%n", batch, (System.nanoTime() - start) / 1_000);',
+      '}',
+    ].join('\n'),
+    answer: 'Default: batch 1 is about 10,224 us and the rest settle near 7,700 us - roughly a quarter cheaper once warm.\n\nUnder -Xint: every batch costs about the same (~56,000 us). There is no curve at all.',
+    explanation:
+      'The default run shows JVM warm-up. Batch 1 pays for interpretation and then compilation; '
+      + 'by batch 3 the method is compiled at tier 4 and the line is flat.\n\n'
+      + 'The -Xint result is the more instructive half. With the JIT disabled there is nothing to '
+      + 'warm up, so the curve disappears entirely - which proves the curve was compilation and '
+      + 'not caches, branch predictors, or anything else that might plausibly have explained it.\n\n'
+      + 'Measured on 4 vCPU Xeon @2.80GHz, OpenJDK 21.0.10. Your numbers will differ; the shape '
+      + 'should not.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-03-predict-xcomp-startup',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    prompt: 'Hello.java prints one line. Which of these three starts fastest, and which slowest?',
+    language: 'shell',
+    code: 'time java Hello\ntime java -Xint Hello\ntime java -Xcomp Hello',
+    answer: '(default)  ~38-41 ms\n-Xint      ~36-37 ms   <- fastest\n-Xcomp     ~1262-1338 ms  <- about 33x slower',
+    explanation:
+      'The ordering inverts completely from the steady-state ranking, and both ends surprise '
+      + 'people.\n\n'
+      + '-Xint is FASTEST to start, because it never compiles anything. For a program that prints '
+      + 'one line and exits, compilation is pure overhead.\n\n'
+      + '-Xcomp is catastrophically slow to start - roughly 33x here - because it compiles every '
+      + 'method on first invocation, including the thousands of one-shot JDK methods that run '
+      + 'during startup before your main is even reached.\n\n'
+      + 'This is the whole startup-versus-steady-state trade in one command, and it is why '
+      + 'short-lived JVM processes have a reputation for being slow, and why serverless and CLI '
+      + 'workloads reach for AOT or native images rather than for JIT tuning.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-03-predict-call-site-shape',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    prompt: 'The same call site, driven with 1, 2, and 5 implementations of an interface. How do the three times compare?',
+    language: 'java',
+    code: [
+      'static void drive(Op[] ops, int iterations) {',
+      '    long total = 0;',
+      '    for (int i = 0; i < iterations; i++) {',
+      '        total += ops[i % ops.length].apply(i);   // ONE call site',
+      '    }',
+      '    sink += total;',
+      '}',
+      '',
+      '// timed with arrays of size 1, 2 and 5, after warming up in each shape',
+    ].join('\n'),
+    answer: 'monomorphic       36,511 us\nbimorphic         36,508 us\nmegamorphic       74,155 us\n\nOne and two are within noise of each other. Five is about twice as slow.',
+    explanation:
+      'Almost everyone predicts a steady increase from one to five. The jump is between TWO and '
+      + 'THREE.\n\n'
+      + 'HotSpot inlines a monomorphic call site outright. For a bimorphic one it uses an inline '
+      + 'cache - a type check that branches to one of two inlined bodies - which is nearly as '
+      + 'good. At three or more receivers the site is megamorphic and falls back to a real '
+      + 'virtual dispatch that cannot be inlined, and losing the inline also loses every '
+      + 'optimisation that would have followed it.\n\n'
+      + 'Highly reproducible here (second run: 36,523 / 36,471 / 74,409) on 4 vCPU Xeon @2.80GHz, '
+      + 'OpenJDK 21.0.10. Indicative of the shape, not a constant - and not a reason to contort a '
+      + 'design before measuring your own code.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-03-predict-deopt-timing',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    prompt: 'Phase 1 calls consume() 200k times with only Triangle. Phase 2 introduces Square at the same call site. What appears in PrintCompilation immediately after the phase 2 line?',
+    language: 'java',
+    code: [
+      'static void consume(Shape shape, int times) {',
+      '    for (int i = 0; i < times; i++) total += shape.sides();',
+      '}',
+      '',
+      'System.out.println("phase 1: only Triangle, 200k calls");',
+      'for (int i = 0; i < 200_000; i++) consume(triangle, 10);',
+      '',
+      'System.out.println("phase 2: introduce Square at the same call site");',
+      'for (int i = 0; i < 200_000; i++) consume(i % 2 == 0 ? triangle : square, 10);',
+    ].join('\n'),
+    answer: 'phase 2: introduce Square at the same call site\n38   11       4       Deoptimization::consume (28 bytes)   made not entrant\n38   17       1       Deoptimization$Square::sides (2 bytes)\n40   16 %     4       Deoptimization::consume @ 2 (28 bytes)\n42   18       4       Deoptimization::consume (28 bytes)',
+    explanation:
+      'The tier-4 consume is thrown away the moment the speculation becomes false.\n\n'
+      + 'During phase 1, C2 saw 200,000 Triangles and nothing else, so it inlined Triangle::sides '
+      + 'as if the call were direct - guarded by a check. Phase 2 fails that guard, so the '
+      + 'compiled version is made not entrant: anyone already inside finishes there, no new call '
+      + 'enters it.\n\n'
+      + 'Then it recovers. Square::sides is compiled, consume is re-entered by on-stack '
+      + 'replacement so the loop already running can continue in compiled code, and a fresh '
+      + 'tier-4 version is installed for future calls.\n\n'
+      + 'Asking the JVM directly with -Xlog:deoptimization=debug names the reason as `predicate` '
+      + '- the type guard. This is not a failure mode; it is what makes speculating safe.',
     isPlaceholder: false,
   },
 ];

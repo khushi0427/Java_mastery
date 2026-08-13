@@ -104,6 +104,18 @@ export const CHAPTERS = [
     status: 'VERIFIED',
     load: () => import('../content/modules/module-01/01-02-jvm-architecture-class-loading.js'),
   },
+  {
+    id: '01-03',
+    moduleId: '01-java-foundations-execution-model',
+    number: 3,
+    title: 'The Execution Engine',
+    summary:
+      'Interpreter, tiered JIT compilation, on-stack replacement, warm-up, '
+      + 'speculation and deoptimisation, and the JVM command-line options that '
+      + 'make all of it observable.',
+    status: 'VERIFIED',
+    load: () => import('../content/modules/module-01/01-03-the-execution-engine.js'),
+  },
 ];
 
 /**
@@ -115,7 +127,7 @@ export const CHAPTERS = [
  * because a future session with no conversation history needs it and would
  * otherwise have to re-derive the split from the topic list.
  *
- * Module 01's 45 curriculum topics divide into four chapters. Chapters 3–4 are
+ * Module 01's 45 curriculum topics divide into four chapters. Chapter 4 is
  * NOT_STARTED. Later modules will record their own plans the same way when
  * they are authored — no plan is invented ahead of the module being written.
  */
@@ -123,14 +135,7 @@ export const PLANNED_CHAPTERS = {
   '01-java-foundations-execution-model': [
     { number: 1, id: '01-01', title: 'From Source to Running Program', status: 'VERIFIED' },
     { number: 2, id: '01-02', title: 'JVM Architecture & Class Loading', status: 'VERIFIED' },
-    {
-      number: 3,
-      id: '01-03',
-      title: 'The Execution Engine',
-      status: 'NOT_STARTED',
-      topics: ['execution engine', 'interpreter', 'JIT compiler', 'HotSpot',
-        'JVM warm-up', 'basic JVM command-line concepts'],
-    },
+    { number: 3, id: '01-03', title: 'The Execution Engine', status: 'VERIFIED' },
     {
       number: 4,
       id: '01-04',
