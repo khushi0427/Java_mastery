@@ -69,6 +69,13 @@
   --color-status-in-progress: #1a63a4;
   --color-status-content-complete: #6340ad;
   --color-status-verified: #24704a;
+
+  /* Learner progress vocabulary (assets/js/progress.js) */
+  --color-learner-not-started: #7c8494;
+  --color-learner-in-progress: #1a63a4;
+  --color-learner-completed: #24704a;
+  --color-danger: #a33224;
+  --color-danger-hover: #8a2a1e;
 }
 
 /* --------------------------------------------------------------------------
@@ -112,6 +119,12 @@
   --color-status-in-progress: #63aeea;
   --color-status-content-complete: #a98bea;
   --color-status-verified: #56c08d;
+
+  --color-learner-not-started: #8b94a3;
+  --color-learner-in-progress: #63aeea;
+  --color-learner-completed: #56c08d;
+  --color-danger: #e8806e;
+  --color-danger-hover: #f29b8a;
 }
 
 /* --------------------------------------------------------------------------
@@ -160,6 +173,13 @@
     --color-status-in-progress: #63aeea;
     --color-status-content-complete: #a98bea;
     --color-status-verified: #56c08d;
+
+    /* Learner progress vocabulary (assets/js/progress.js) */
+    --color-learner-not-started: #8b94a3;
+    --color-learner-in-progress: #63aeea;
+    --color-learner-completed: #56c08d;
+    --color-danger: #e8806e;
+    --color-danger-hover: #f29b8a;
   }
 }
 

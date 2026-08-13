@@ -2,26 +2,39 @@
 /**
  * generate-modules.mjs — derive data/modules.js from docs/CURRICULUM.md.
  *
- * Why this exists
- * ---------------
- * The quality bar for the metadata layer is "one source of module metadata, no
- * duplication". But docs/CURRICULUM.md is already the authoritative curriculum
- * for humans, so hand-writing the same 43 modules into a JavaScript file would
- * create a second source that silently drifts from the first.
+ * The chain of truth
+ * ------------------
+ *   docs/MASTER_BRIEF.md §12   ← canonical, written by the project owner
+ *          ↓ verbatim transcription
+ *   docs/CURRICULUM.md         ← readable curriculum, stable parse target
+ *          ↓ this script
+ *   data/modules.js            ← the single source the application reads
  *
- * So: CURRICULUM.md stays authoritative, and data/modules.js is DERIVED from it
- * by this script. This resolves open question 3 in docs/ARCHITECTURE.md §16.
- *
- * This is a development tool, NOT a build step. The site runs directly from the
- * committed data/modules.js with no toolchain; you only run this when
- * CURRICULUM.md changes.
+ * Nothing downstream may be hand-edited. `--check` verifies BOTH hops and exits
+ * non-zero on drift, because drift between the brief and the curriculum is
+ * exactly the failure this project already suffered once.
  *
  *   node tools/generate-modules.mjs           # rewrite data/modules.js
- *   node tools/generate-modules.mjs --check   # verify it is in sync, exit 1 if not
+ *   node tools/generate-modules.mjs --check   # verify in sync, exit 1 if not
  *
- * The curriculum is LOCKED (CURRICULUM.md Appendix B). This script must never be
- * used to renumber or rename a module — module ids are permanent keys that
- * Phase 4 progress records depend on.
+ * This is a development tool, NOT a build step. The site runs directly from the
+ * committed data/modules.js with no toolchain.
+ *
+ * Format parsed (the master brief's, transcribed into CURRICULUM.md):
+ *
+ *     ## MODULE 08 — Hashing & HashMap Internals
+ *
+ *     This module must receive **extra depth**.      ← a note
+ *
+ *     Topics:
+ *
+ *     * hashing concept                              ← a topic
+ *     * hash functions
+ *
+ *     Include diagrams and dry runs.                 ← a note
+ *
+ * Note that the brief carries NO per-module description or prerequisite fields.
+ * See `description` and `prerequisites` below — neither is invented here.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,33 +42,33 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const BRIEF = join(ROOT, 'docs/MASTER_BRIEF.md');
 const SOURCE = join(ROOT, 'docs/CURRICULUM.md');
 const TARGET = join(ROOT, 'data/modules.js');
+
+const EXPECTED_COUNT = 43;
 
 /* ---------------------------------------------------------------- helpers */
 
 /** Strip inline markdown so metadata carries plain text, not markup. */
 function plain(text) {
   return text
-    .replace(/`([^`]+)`/g, '$1')          // code spans
-    .replace(/\*\*([^*]+)\*\*/g, '$1')    // bold
-    .replace(/\*([^*]+)\*/g, '$1')        // italics
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links → their text
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * Build a module's URL slug from its name.
+ * Build a module's URL slug from its number and name.
  *
- * Names often carry an em-dash subtitle ("Concurrency I — Threads, Shared
- * State…"); only the part before it is used, which keeps slugs short and
- * readable. The two-digit number prefix guarantees uniqueness regardless, and
- * collisions are asserted against below.
+ * PERMANENT KEYS: Phase 4 progress records are keyed on these ids. Renaming a
+ * module in the master brief moves its id and orphans stored progress. If a
+ * rename ever becomes unavoidable, pin the old id here by hand.
  */
 function slugify(number, name) {
-  const head = name.split('—')[0];
-  const body = plain(head)
+  const body = plain(name)
     .toLowerCase()
     .replace(/&/g, ' ')
     .replace(/[^a-z0-9]+/g, '-')
@@ -63,167 +76,216 @@ function slugify(number, name) {
   return `${number}-${body}`;
 }
 
-/* ------------------------------------------------------------- extraction */
+/**
+ * Split a document into module blocks keyed by number.
+ * Used for both CURRICULUM.md and MASTER_BRIEF.md so the two can be compared.
+ */
+function extractModuleBlocks(text) {
+  const heads = [...text.matchAll(/^## MODULE (\d{2}) — (.+)$/gm)];
+  return heads.map((h, i) => {
+    const end = i + 1 < heads.length ? heads[i + 1].index : undefined;
+    let block = text.slice(h.index, end);
 
-const src = readFileSync(SOURCE, 'utf8');
+    // The LAST module has no following module heading, so the slice would run to
+    // end of file — swallowing the brief's Sections 13-48, or the curriculum's
+    // appendices. Cut at the next document-level "# " heading; module bodies only
+    // ever use "##" and "###", so this can never truncate real module content.
+    const boundary = block.search(/\n# [^\n]/);
+    if (boundary !== -1) block = block.slice(0, boundary);
 
-// Part headings ("# Part I — Java Language Core (Modules 01–14)") give each
-// module its presentation grouping. Parts carry no identity — see §5.
-const parts = [...src.matchAll(/^# Part ([IVX]+) — (.+?) \(Modules (\d{2})–(\d{2})\)$/gm)]
-  .map((m) => ({
-    roman: m[1],
-    name: plain(m[2]),
-    from: Number(m[3]),
-    to: Number(m[4]),
-  }));
-if (parts.length === 0) throw new Error('No Part headings found in CURRICULUM.md');
-
-const partFor = (n) => parts.find((p) => n >= p.from && n <= p.to);
-
-// Split the document into one chunk per module.
-const headings = [...src.matchAll(/^## Module (\d{2}) — (.+)$/gm)];
-if (headings.length !== 43) {
-  throw new Error(`Expected 43 modules, found ${headings.length}. Refusing to generate.`);
+    // Drop a trailing horizontal rule and whitespace so blocks compare cleanly.
+    block = block.replace(/\n+---\s*$/, '').trimEnd();
+    return { number: h[1], name: h[2].trim(), block };
+  });
 }
 
-const modules = headings.map((heading, i) => {
-  const number = heading[1];
-  const name = plain(heading[2]);
-  const start = heading.index + heading[0].length;
-  const end = i + 1 < headings.length ? headings[i + 1].index : src.indexOf('\n# Appendix A');
-  const body = src.slice(start, end === -1 ? undefined : end);
+/* ------------------------------------------------------------- extraction */
 
-  const field = (label) => {
-    const m = body.match(new RegExp(`\\*\\*${label}\\.\\*\\*\\s*([\\s\\S]*?)(?=\\n\\*\\*|\\n---|$)`));
-    return m ? plain(m[1]) : '';
-  };
-
-  // Prerequisites appear in three forms:
-  //   "01, 02."                  → a list
-  //   "None." / "None beyond …"  → empty (the none-check must run first, since
-  //                                the "beyond" wording can contain numbers)
-  //   "All of Modules 01–42."    → an inclusive range (Module 43 only)
-  const prereqText = field('Prerequisites');
-  const range = prereqText.match(/All of Modules (\d{2})[–-](\d{2})/i);
-  let prerequisites;
-  if (/none/i.test(prereqText)) {
-    prerequisites = [];
-  } else if (range) {
-    const [from, to] = [Number(range[1]), Number(range[2])];
-    prerequisites = Array.from({ length: to - from + 1 },
-      (_, k) => String(from + k).padStart(2, '0'));
-  } else {
-    prerequisites = [...prereqText.matchAll(/\b(\d{2})\b/g)].map((m) => m[1]);
+function parseModules(text) {
+  const blocks = extractModuleBlocks(text);
+  if (blocks.length !== EXPECTED_COUNT) {
+    throw new Error(`Expected ${EXPECTED_COUNT} modules, found ${blocks.length}. Refusing to generate.`);
   }
 
-  // Topics: "- *Group name*" followed by nested bullets at deeper indentation.
-  // Nested sub-bullets are flattened into the group's item list; the grouping
-  // that matters for display and search is the group level.
-  //
-  // Bullets in CURRICULUM.md wrap across lines for readability:
-  //
-  //     - `Iterable` → `Collection` → `List`, `Set`, `Queue`/`Deque`; `Map` as a
-  //       separate root and why
-  //
-  // so a line-at-a-time match truncates the text mid-sentence. Continuation
-  // lines are indented and do NOT begin with "- ", which is what separates them
-  // from a nested sub-bullet; they are appended to the item being built.
-  const topicBlock = body.split('**Topics**')[1]?.split('**Practice focus.**')[0] ?? '';
-  const topics = [];
-  let pending = null;
+  return blocks.map(({ number, name, block }) => {
+    // Everything after the heading line.
+    const body = block.split('\n').slice(1).join('\n');
 
-  const flush = () => {
-    if (pending === null) return;
-    const text = plain(pending).replace(/[:;,]$/, '');
-    if (text && topics.length > 0) topics[topics.length - 1].items.push(text);
-    pending = null;
-  };
+    const topics = [];
+    const notes = [];
+    const subsections = [];
+    let currentSub = null;
 
-  for (const line of topicBlock.split('\n')) {
-    const group = line.match(/^- \*(.+?)\*\s*$/);
-    if (group) {
-      flush();
-      topics.push({ group: plain(group[1]), items: [] });
-      continue;
+    for (const raw of body.split('\n')) {
+      const line = raw.trim();
+      if (line === '') continue;
+
+      // "### Project 1 — Core Java" (Module 42 uses these)
+      const sub = line.match(/^###\s+(.+)$/);
+      if (sub) {
+        currentSub = { heading: plain(sub[1]), text: '' };
+        subsections.push(currentSub);
+        continue;
+      }
+
+      // "* topic"
+      const bullet = line.match(/^\*\s+(.+)$/);
+      if (bullet) {
+        topics.push(plain(bullet[1]));
+        continue;
+      }
+
+      // Lead-ins like "Topics:" carry no information once bullets are parsed.
+      if (/^(Topics|Include|Potentially include|For every project teach):$/i.test(line)) continue;
+
+      // Blockquote lines ("> JPA = specification") are emphasis, kept as notes.
+      const text = plain(line.replace(/^>\s?/, ''));
+      if (!text) continue;
+
+      if (currentSub && currentSub.text === '') currentSub.text = text;
+      else notes.push(text);
     }
 
-    const item = line.match(/^\s{2,}- (.+)$/);
-    if (item) {
-      flush();
-      pending = item[1];
-      continue;
-    }
+    return {
+      number,
+      id: slugify(number, name),
+      name: plain(name),
 
-    // A continuation of the bullet currently being built.
-    if (pending !== null && /^\s{3,}\S/.test(line)) {
-      pending += ` ${line.trim()}`;
-      continue;
-    }
+      // DERIVED, not authored. The master brief provides no description field,
+      // and inventing editorial prose for 43 modules would be fabrication. This
+      // is a mechanical restatement of the module's own first topics.
+      description: topics.length
+        ? `Topics include: ${topics.slice(0, 5).join(', ')}.`
+        : '',
+      descriptionDerived: true,
 
-    // A blank line or anything else ends the current bullet.
-    if (line.trim() === '') flush();
-  }
-  flush();
+      // The master brief's Section 12 does not state per-module prerequisites.
+      // Left empty deliberately rather than inferred from module order.
+      prerequisites: [],
 
-  const part = partFor(Number(number));
-  return {
-    number,
-    id: slugify(number, name),
-    name,
-    part: part ? `Part ${part.roman} — ${part.name}` : null,
-    partNumber: part ? parts.indexOf(part) + 1 : null,
-    description: field('Purpose'),
-    prerequisites,
-    owns: field('Owns'),
-    topics,
-    // Nothing is built yet. Every module is NOT_STARTED and has no chapters;
-    // these are facts about the repository, not placeholders to fill in.
-    status: 'NOT_STARTED',
-    chapterCount: 0,
-    chapters: [],
-  };
-});
+      // Emphasis the brief attaches to a module — e.g. Module 08's extra-depth
+      // requirement, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's
+      // JPA=specification / Hibernate=implementation framing. These are
+      // requirements, so they are carried into the metadata verbatim.
+      notes,
+      subsections,
+      topics,
+
+      // Facts about the repository, not placeholders: no chapter content exists.
+      status: 'NOT_STARTED',
+      chapterCount: 0,
+      chapters: [],
+    };
+  });
+}
 
 /* ------------------------------------------------------------ assertions */
 
-const numbers = modules.map((m) => m.number);
-const expected = Array.from({ length: 43 }, (_, i) => String(i + 1).padStart(2, '0'));
-if (numbers.join() !== expected.join()) {
-  throw new Error('Module numbers are not exactly 01–43 in order. Refusing to generate.');
+function assertValid(modules) {
+  const numbers = modules.map((m) => m.number);
+  const expected = Array.from({ length: EXPECTED_COUNT }, (_, i) => String(i + 1).padStart(2, '0'));
+  if (numbers.join() !== expected.join()) {
+    throw new Error('Module numbers are not exactly 01–43 in order. Refusing to generate.');
+  }
+  if (new Set(modules.map((m) => m.id)).size !== modules.length) {
+    throw new Error('Duplicate module ids generated.');
+  }
+  for (const m of modules) {
+    if (!m.name) throw new Error(`Module ${m.number} has no name.`);
+    if (m.topics.length === 0) throw new Error(`Module ${m.number} has no topics.`);
+    if (m.status !== 'NOT_STARTED') throw new Error(`Module ${m.number} status must be NOT_STARTED.`);
+    if (m.chapterCount !== 0) throw new Error(`Module ${m.number} chapterCount must be 0.`);
+  }
 }
-const ids = new Set(modules.map((m) => m.id));
-if (ids.size !== modules.length) throw new Error('Duplicate module ids generated.');
-for (const m of modules) {
-  if (!m.name) throw new Error(`Module ${m.number} has no name.`);
-  if (!m.description) throw new Error(`Module ${m.number} has no description.`);
-  if (m.topics.length === 0) throw new Error(`Module ${m.number} has no topics.`);
+
+/**
+ * Isolate Section 12 of the master brief.
+ *
+ * Necessary because the brief continues into Sections 13–48 after the last
+ * module, and an unbounded slice would make Module 43's block swallow the rest
+ * of the document.
+ */
+function briefSection12(text) {
+  const after = text.split('# 12. EXACT 43-MODULE CURRICULUM')[1];
+  if (after === undefined) throw new Error('MASTER_BRIEF.md has no Section 12 heading.');
+  const section = after.split('\n# 13. CONTENT STRUCTURE')[0];
+  const start = section.indexOf('## MODULE 01 —');
+  if (start === -1) throw new Error('MASTER_BRIEF.md Section 12 has no Module 01 heading.');
+  return section.slice(start);
+}
+
+/** Verify CURRICULUM.md's module blocks are still verbatim from the brief. */
+function assertTranscriptionFaithful() {
+  const brief = extractModuleBlocks(briefSection12(readFileSync(BRIEF, 'utf8')));
+  const curr = extractModuleBlocks(readFileSync(SOURCE, 'utf8'));
+
+  if (brief.length !== curr.length) {
+    return `MASTER_BRIEF.md has ${brief.length} modules, CURRICULUM.md has ${curr.length}.`;
+  }
+  for (let i = 0; i < brief.length; i += 1) {
+    if (brief[i].number !== curr[i].number) {
+      return `Module order differs at position ${i + 1}: brief ${brief[i].number}, curriculum ${curr[i].number}.`;
+    }
+    if (brief[i].block !== curr[i].block) {
+      return `Module ${brief[i].number} in CURRICULUM.md is not verbatim from MASTER_BRIEF.md.`;
+    }
+  }
+  return null;
 }
 
 /* --------------------------------------------------------------- emitting */
 
-const banner = `/**
+function render(modules) {
+  const banner = `/**
  * modules.js — the module metadata layer. GENERATED FILE, DO NOT EDIT BY HAND.
  *
- * Source of truth: docs/CURRICULUM.md
- * Regenerate with: node tools/generate-modules.mjs
- * Verify in sync:  node tools/generate-modules.mjs --check
+ * Canonical source: docs/MASTER_BRIEF.md §12
+ * Transcribed into: docs/CURRICULUM.md
+ * Generated by:     node tools/generate-modules.mjs
+ * Verify in sync:   node tools/generate-modules.mjs --check
  *
  * This is the ONE place the application reads module metadata from. The sidebar,
- * the dashboard, the module overview, and the search index all consume this
+ * dashboard, curriculum view, module overview, and search index all consume this
  * array; nothing hardcodes a module list anywhere else.
  *
- * The curriculum is LOCKED (docs/CURRICULUM.md Appendix B). \`number\` and \`id\`
- * are permanent keys — Phase 4 progress records are keyed on \`id\`. Renaming a
- * module changes its generated id, which would orphan stored progress.
+ * \`number\` and \`id\` are PERMANENT KEYS — Phase 4 progress records are keyed on
+ * \`id\`. Renaming a module in the master brief changes its generated id.
  *
- * \`status\` and \`chapterCount\` describe what actually exists in this repository.
- * All 43 modules are NOT_STARTED with 0 chapters because no chapter content has
- * been written yet. Metadata is not content.
+ * Two fields deserve explicit note, because the master brief does not supply them:
+ *
+ *   description  — DERIVED mechanically from each module's own first five topics,
+ *                  not authored. \`descriptionDerived: true\` marks this. The brief
+ *                  has no description field and inventing prose would be
+ *                  fabrication.
+ *   prerequisites — EMPTY for every module. The brief's Section 12 states no
+ *                  per-module prerequisites, and inferring them from module order
+ *                  would be a guess.
+ *
+ * \`notes\` carries the brief's per-module emphasis verbatim (Module 08's extra
+ * depth, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's JPA-vs-Hibernate
+ * framing). Those are requirements, not commentary.
+ *
+ * \`status\` and \`chapterCount\` describe what actually exists in this repository:
+ * all 43 modules are NOT_STARTED with 0 chapters. Metadata is not content.
  */
 
 export const MODULES = `;
 
-const out = `${banner}${JSON.stringify(modules, null, 2)};\n\nexport default MODULES;\n`;
+  return `${banner}${JSON.stringify(modules, null, 2)};\n\nexport default MODULES;\n`;
+}
+
+/* ------------------------------------------------------------------- main */
+
+const drift = assertTranscriptionFaithful();
+if (drift) {
+  console.error(`TRANSCRIPTION DRIFT: ${drift}`);
+  console.error('docs/CURRICULUM.md must be a verbatim copy of MASTER_BRIEF.md §12.');
+  process.exit(1);
+}
+
+const modules = parseModules(readFileSync(SOURCE, 'utf8'));
+assertValid(modules);
+const out = render(modules);
 
 if (process.argv.includes('--check')) {
   const current = readFileSync(TARGET, 'utf8');
@@ -232,13 +294,13 @@ if (process.argv.includes('--check')) {
     console.error('Run: node tools/generate-modules.mjs');
     process.exit(1);
   }
-  console.log('IN SYNC: data/modules.js matches docs/CURRICULUM.md.');
+  console.log('IN SYNC: MASTER_BRIEF.md → CURRICULUM.md → data/modules.js.');
   process.exit(0);
 }
 
 writeFileSync(TARGET, out);
 console.log(`Wrote ${TARGET}`);
 console.log(`  modules:     ${modules.length}`);
-console.log(`  parts:       ${parts.length}`);
-console.log(`  topic groups:${modules.reduce((n, m) => n + m.topics.length, 0)}`);
-console.log(`  topic items: ${modules.reduce((n, m) => n + m.topics.reduce((k, t) => k + t.items.length, 0), 0)}`);
+console.log(`  topics:      ${modules.reduce((n, m) => n + m.topics.length, 0)}`);
+console.log(`  notes:       ${modules.reduce((n, m) => n + m.notes.length, 0)}`);
+console.log(`  subsections: ${modules.reduce((n, m) => n + m.subsections.length, 0)}`);

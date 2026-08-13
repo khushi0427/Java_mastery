@@ -31,13 +31,11 @@ const PRIMARY_NAV = [
   ] },
 ];
 
-/** Human labels for the status vocabulary (docs/PROJECT_STATE.md). */
-const STATUS_LABEL = {
+/** Learner-side labels — see progress.js on the two status axes. */
+const LEARNER_LABEL = {
   NOT_STARTED: 'Not started',
-  FOUNDATION_ONLY: 'Foundation only',
   IN_PROGRESS: 'In progress',
-  CONTENT_COMPLETE: 'Content complete',
-  VERIFIED: 'Verified',
+  COMPLETED: 'Completed',
 };
 
 /* ------------------------------------------------------------------ module */
@@ -49,7 +47,8 @@ const STATUS_LABEL = {
 function moduleItem(module) {
   const chaptersId = `chapters-${module.id}`;
   const progress = getModuleProgress(module.id);
-  const statusLabel = STATUS_LABEL[progress.status] ?? progress.status;
+  // The dot reflects what the LEARNER has done, read from stored progress.
+  const statusLabel = LEARNER_LABEL[progress.learnerStatus] ?? progress.learnerStatus;
 
   const chapters = el('div', {
     class: 'module-chapters',
@@ -98,7 +97,7 @@ function moduleItem(module) {
         el('span', { class: 'module-link__number', text: module.number }),
         el('span', { class: 'module-link__name', text: module.name }),
         el('span', {
-          class: `status-dot status-dot--${progress.status.toLowerCase()}`,
+          class: `status-dot status-dot--${progress.learnerStatus.toLowerCase()}`,
           title: statusLabel,
           'aria-hidden': 'true',
         }),
@@ -174,6 +173,43 @@ export function initSidebar() {
   }
 
   container.replaceChildren(fragment);
+}
+
+/**
+ * Rebuild the tree. Called when stored progress changes so the status dots stay
+ * in step without a reload.
+ */
+export function refreshSidebar() {
+  const container = document.getElementById('sidebar-nav');
+  if (!container) return;
+
+  // Preserve which disclosures were open, so a progress change does not collapse
+  // the tree the learner is reading.
+  const openModules = new Set(
+    [...container.querySelectorAll('.module-row__toggle[aria-expanded="true"]')]
+      .map((b) => b.getAttribute('aria-controls')),
+  );
+  const curriculumOpen = container
+    .querySelector('.curriculum-toggle')?.getAttribute('aria-expanded') !== 'false';
+
+  initSidebar();
+
+  for (const id of openModules) {
+    const region = document.getElementById(id);
+    const toggle = container.querySelector(`.module-row__toggle[aria-controls="${CSS.escape(id)}"]`);
+    if (region && toggle) {
+      region.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+  }
+  if (!curriculumOpen) {
+    const toggle = container.querySelector('.curriculum-toggle');
+    const list = document.getElementById('curriculum-modules');
+    if (toggle && list) {
+      toggle.setAttribute('aria-expanded', 'false');
+      list.hidden = true;
+    }
+  }
 }
 
 /**

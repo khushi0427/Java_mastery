@@ -29,8 +29,11 @@ changing anything**:
    right now
 5. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the system is/will be
    built
-6. [`docs/CURRICULUM.md`](docs/CURRICULUM.md) — the authoritative 43-module
-   curriculum with full topic lists
+6. [`docs/CURRICULUM.md`](docs/CURRICULUM.md) — the 43-module curriculum with
+   full topic lists, transcribed verbatim from the master brief
+7. [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md) — **the canonical project
+   brief**, written by the project owner. Its Section 12 is the authoritative
+   curriculum; `CURRICULUM.md` is a transcription of it
 
 Then **inspect the actual repository** (`git status`, list the directories, open
 the files) and reconcile what you see against `docs/PROJECT_STATE.md`. The
@@ -42,16 +45,20 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 3 of 6 (Dashboard + metadata + search) complete |
-| **What exists** | Documentation, the website shell, and the module metadata layer |
-| **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
+| **Phase** | **FOUNDATION COMPLETE** (all 6 phases) — awaiting the first `CONTINUE` |
+| **What exists** | Documentation, the full website foundation, the module metadata layer, progress persistence, practice shells, and the execution abstraction |
+| **Website** | Navigation, dashboard, curriculum, module overviews, search, practice shells, code runner. **No learning content** |
 | **Module content** | Metadata only — no chapters, exercises, or examples exist |
-| **Code execution / compiler** | Does not exist yet (Phase 5) |
-| **Modules completed** | 0 of 43 |
+| **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
+| **Code execution / compiler** | Architecture built; **no online provider enabled**. The editor, the `executeJava()` abstraction, two adapters, and the local `javac`/`java` fallback all exist. Running code locally with a JDK needs nothing else. |
+| **Modules completed** | 0 of 43 — every module is `NOT_STARTED` with 0 chapters |
+| **Next step** | The project owner says `CONTINUE`; the agent builds the first chapter of Module 01 (`01-java-foundations-execution-model`). See §13 |
 
-The site navigates all 43 modules, shows what each will cover, and searches
-module names and topics. **There is no learning content** — every module is
-`NOT_STARTED` with zero chapters — and no progress tracking. See
+The site navigates all 43 modules **as defined by
+[`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
+searches module names and topics. **There is no learning content** — every module is
+`NOT_STARTED` with zero chapters, and the practice components are shells holding
+one labelled placeholder each. Progress you record is saved in this browser. See
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
 ### Running it
@@ -195,81 +202,54 @@ removed, merged, split, renumbered, or renamed. Module numbers are permanent
 identifiers used by the website, the progress system, and every cross-reference
 in this repository.
 
-Full topic lists for each module live in
-**[`docs/CURRICULUM.md`](docs/CURRICULUM.md)** — that file is authoritative for
-what each module must eventually cover. The list below is the index only.
-
-### Part I — Java Language Core (01–14)
+Full topic lists live in **[`docs/CURRICULUM.md`](docs/CURRICULUM.md)**, which
+transcribes **[`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)** §12 verbatim —
+the brief is canonical. The list below is the index only.
 
 | # | Module |
 |---|---|
 | 01 | Java Foundations & Execution Model |
-| 02 | Types, Operators, Control Flow & Method Semantics |
-| 03 | Arrays, Strings & Text Processing |
-| 04 | Classes, Objects & Object Lifecycle |
-| 05 | Inheritance, Polymorphism & Dynamic Dispatch |
-| 06 | Interfaces, Abstraction & Composition |
-| 07 | Object Contracts — equals, hashCode, toString & Ordering |
-| 08 | Immutability, Records & Data-Oriented Design |
-| 09 | Enums, Sealed Types & Pattern Matching |
-| 10 | Exceptions, Errors & Resource Management |
-| 11 | Generics & Type Erasure |
-| 12 | Collections Framework & Internal Data Structures |
-| 13 | Nested Classes, Lambdas & Functional Interfaces |
-| 14 | Streams, Optional & Functional Data Processing |
-
-### Part II — JVM Internals, Concurrency & Performance (15–20)
-
-| # | Module |
-|---|---|
-| 15 | JVM Architecture, Memory Areas & Garbage Collection |
-| 16 | Class Loading, Reflection, Annotations & Bytecode |
-| 17 | Concurrency I — Threads, Shared State & the Java Memory Model |
-| 18 | Concurrency II — Executors, Futures & Asynchronous Composition |
-| 19 | Concurrency III — Concurrent Collections, Locks & Virtual Threads |
-| 20 | Performance Engineering, Profiling & Benchmarking |
-
-### Part III — Platform, I/O & Tooling (21–25)
-
-| # | Module |
-|---|---|
-| 21 | Files, I/O, NIO.2 & Serialization |
-| 22 | Date, Time, Formatting & Internationalization |
-| 23 | Networking, HTTP Clients & JSON Processing |
-| 24 | Build Systems, Dependency Management & Packaging |
-| 25 | Testing with JUnit 5, Mockito & Test Design |
-
-### Part IV — Design & Architecture (26–27)
-
-| # | Module |
-|---|---|
-| 26 | Design Patterns & SOLID in Idiomatic Java |
-| 27 | Application Architecture, Clean Code & Domain Modeling |
-
-### Part V — Data & Persistence (28–32)
-
-| # | Module |
-|---|---|
-| 28 | Relational Database Design & SQL Foundations |
-| 29 | Advanced SQL — Joins, Aggregation, Window Functions & Query Tuning |
-| 30 | JDBC, Connection Pooling & Transaction Management |
-| 31 | JPA & Hibernate I — Entities, Mapping & the Persistence Context |
-| 32 | JPA & Hibernate II — Relationships, Fetching, Caching & Performance |
-
-### Part VI — Spring, Spring Boot & Full-Stack Delivery (33–43)
-
-| # | Module |
-|---|---|
-| 33 | Spring Framework Core — IoC Container, Beans & Dependency Injection |
-| 34 | Spring AOP, Configuration, Profiles & Application Context Lifecycle |
-| 35 | Spring Boot — Auto-Configuration, Starters & Application Structure |
-| 36 | Spring Data JPA — Repositories, Queries, Projections & Migrations |
-| 37 | REST API Development with Spring Web MVC |
-| 38 | API Contracts — Validation, Error Handling, Versioning & Documentation |
-| 39 | Spring Security — Authentication, Authorization, JWT & OAuth2 |
-| 40 | Asynchronous Processing, Caching, Scheduling & Messaging |
-| 41 | Testing Spring Boot Applications — Slices, MockMvc & Testcontainers |
-| 42 | Production Readiness — Observability, Containers & Deployment |
+| 02 | OOP in Java |
+| 03 | Java Language Fundamentals |
+| 04 | Strings, Wrappers & Object Fundamentals |
+| 05 | Exception Handling |
+| 06 | Generics |
+| 07 | Java Collections Framework |
+| 08 | Hashing & HashMap Internals |
+| 09 | Functional Java & Lambda Expressions |
+| 10 | Stream API |
+| 11 | Optional, Date/Time & Modern Java APIs |
+| 12 | Annotations, Enums & Reflection |
+| 13 | Java I/O & NIO |
+| 14 | JVM Memory & Garbage Collection |
+| 15 | Multithreading Fundamentals |
+| 16 | Concurrency & Synchronization |
+| 17 | Executors & Advanced Concurrency |
+| 18 | DSA Foundations in Java |
+| 19 | Hashing DSA Patterns |
+| 20 | Two Pointers & Sliding Window |
+| 21 | Linked Lists, Stack, Queue & Deque |
+| 22 | Trees, BST & Heaps |
+| 23 | Graphs |
+| 24 | Binary Search, Recursion & Backtracking |
+| 25 | Greedy & Dynamic Programming |
+| 26 | SQL Fundamentals |
+| 27 | Advanced SQL & Database Concepts |
+| 28 | JDBC |
+| 29 | Maven & Java Project Management |
+| 30 | JPA Fundamentals |
+| 31 | Hibernate Internals & Advanced ORM |
+| 32 | Spring Core |
+| 33 | Spring Boot Fundamentals |
+| 34 | Spring MVC & REST APIs |
+| 35 | Spring Data JPA |
+| 36 | Spring Security |
+| 37 | Testing Java & Spring Applications |
+| 38 | Production-Grade Spring Boot |
+| 39 | Backend Architecture & Design |
+| 40 | Java Full-Stack Integration |
+| 41 | Debugging, Performance & Problem Solving |
+| 42 | Projects & Interview Engineering |
 | 43 | Final Full-Stack Capstone & Mastery Assessment |
 
 ---
@@ -355,16 +335,19 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
 
 ## 7. Website architecture summary
 
-> **Status: the shell is built (Phase 2). Everything it will contain is not.**
+> **Status: the website foundation is complete (Phases 2–5). The learning
+> content it will hold is not — 0 of 43 modules have chapters.**
 
 **Built and verified:**
 
-- **Stack:** static HTML + CSS + vanilla JavaScript (three ES modules). No
-  framework, no bundler, no transpiler, no build step, no dependencies.
+- **Stack:** static HTML + CSS + vanilla JavaScript (ES modules, no globals).
+  No framework, no bundler, no transpiler, no build step, no dependencies.
 - **Delivery:** static files served by any static file server (see
   [Running it](#running-it)). No server-side rendering.
-- **Shell:** fixed top bar, sidebar navigation, and a content region, with
-  seven placeholder destinations. Hash-based routing (`#/curriculum`).
+- **Shell:** fixed top bar, sidebar navigation, and a content region.
+  Hash-based routing (`#/curriculum`, `#/module/<id>`). Dashboard,
+  Curriculum, Module and Practice are built; Interview, Assessments,
+  Projects and Revision are still placeholder destinations.
 - **Theming:** light and dark, user-toggled, persisted in `localStorage` under
   `jfsm.theme`, defaulting to `prefers-color-scheme`, with no flash of the
   wrong theme on load.
@@ -376,11 +359,22 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   drawer, and `prefers-reduced-motion` support.
 
 - **Module metadata:** `data/modules.js` is the single source of module data —
-  generated from `docs/CURRICULUM.md`, never hand-maintained. The sidebar,
+  generated from `docs/CURRICULUM.md`, which is itself a verbatim transcription
+  of `docs/MASTER_BRIEF.md` §12. Never hand-maintained at either hop. The sidebar,
   dashboard, curriculum view, module overview, and search all read from it.
 - **Search:** client-side, no library, over module names, descriptions, and
   topic keywords. Built from registered *sources* so chapters and practice can
   be added later without a rewrite.
+- **Progress tracking:** persisted in `localStorage` under `jfsm.progress`
+  (`schemaVersion: 1`), keyed on permanent module ids, behind a single API in
+  `assets/js/progress.js`. Reset clears progress but keeps your theme.
+- **Practice shells:** exercise, progressive-hint (one at a time), and
+  predict-the-output components, rendering from documented data contracts. They
+  currently hold one labelled placeholder each — real exercises are authored per
+  module.
+- **Code runner:** an editable editor with Run / Reset / Copy, an output panel
+  that separates stdout from compiler and runtime errors, and an always-present
+  local `javac` / `java` panel derived from the source in the editor. See §8.
 
 **Still to come:**
 
@@ -388,10 +382,8 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   renderer, keeping content and presentation separable.
 - **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
   chapter, resume-where-you-left-off.
-- **Progress tracking** (Phase 4) — `assets/js/progress.js` is currently a stub
-  returning real zeros.
-- **Code blocks:** syntax highlighting, copy-to-clipboard, and — from Phase 5 —
-  a run affordance.
+- **Code blocks:** syntax highlighting. (Copy-to-clipboard and the run
+  affordance already exist — see §8.)
 
 Detail, decisions, and open questions:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -400,30 +392,46 @@ Detail, decisions, and open questions:
 
 ## 8. Compiler / code-execution architecture summary
 
-> **Status: planned and pending. Nothing is built. This is Phase 5.**
-> Nothing about execution should be treated as decided beyond the shape below.
+> **Status: built in Phase 5, shipping with NO online provider enabled.**
+> That is a deliberate, supported end state — not an unfinished one.
+> Full detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §11.
 
-The intent is an **abstraction layer with two interchangeable adapters**, so
-that no chapter content is ever coupled to a specific execution provider:
+Everything that runs code calls one function — `executeJava()` in
+`assets/js/execution/service.js` — so no chapter content is ever coupled to a
+specific execution provider. It always resolves, never throws, and reports one
+of: `success`, `compile-error`, `runtime-error`, `timeout`,
+`provider-unavailable`, `invalid-input`, `error`.
 
-- **Online adapter (primary).** The browser sends source to a third-party Java
-  execution API and renders `stdout`, `stderr`, exit code, and compilation
-  diagnostics. If the chosen provider requires a secret key, a **minimal
-  proxy** may be introduced solely to keep that key off the client — this is
-  the one and only sanctioned reason for server-side code in this project.
-- **Local fallback (always available).** Every runnable example ships with the
-  exact `javac` / `java` / Maven commands so the learner can run it locally with
-  no network and no third party. The platform must remain fully usable with the
-  online adapter switched off or unavailable.
+- **Local fallback (always available, and the primary path).** Every snippet
+  renders the exact `javac` / `java` commands for *that* source — the real file
+  name, the real class, the real package — with copy and download buttons. This
+  needs nothing but a JDK: no provider, no network, no third party.
+- **Online adapters (optional, none enabled).** Adapters for self-hosted
+  [Piston](https://github.com/engineer-man/piston) and
+  [Judge0](https://github.com/judge0/judge0) exist behind
+  `assets/js/execution/config.js`, which ships as `provider: null`.
 
-Constraints already decided: a single execution interface both adapters
-implement; no provider-specific code in chapter content; graceful degradation
-to the local fallback; no secret key ever embedded in client-side JavaScript.
+**Why nothing is preconfigured.** Providers were researched against their live
+documentation on 2026-08-13. Piston's public API is, per its own readme, *"no
+longer freely available to the public (as of Feb 15, 2026)"*; Judge0's hosted
+offerings authenticate with a secret key, and a static site cannot hold a
+secret. No keyless, browser-callable Java service could be verified. So the
+repository ships honest and unconfigured rather than shipping something broken,
+metered, or leaking a key.
 
-Provider selection, request/response schema, rate limiting, and timeout
-behaviour are **not yet decided** and must not be assumed.
+**Neither adapter has ever contacted a live instance**, and CORS is unverified
+for every provider — it can only be established from a real browser talking to a
+real instance. Treat the first run against your own instance as the real test.
 
----
+**The security rule is absolute.** `config.js` has no field for a key, token, or
+password, because it is served verbatim to every visitor. If a provider needs a
+secret, it goes in a minimal proxy that forwards the request and nothing else —
+the one and only sanctioned reason for server-side code in this project — and
+`baseUrl` points at that proxy.
+
+**The platform is fully usable with no provider connected.** Every chapter,
+exercise, hint, solution, and predict-the-output question works; the editor
+stays editable; the local commands are always there.
 
 ## 9. Progress tracking
 
@@ -454,12 +462,12 @@ The project is being built in **6 foundation phases**. The specified phases are:
 | **1** | Documentation layer (README, CLAUDE.md, `docs/*`) | Complete |
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Complete and verified |
 | **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
-| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Not started |
-| **5** | Compiler / code-execution integration | Not started |
-| **6** | *Not yet specified by the project owner* | Awaiting specification |
+| **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Complete and verified |
+| **5** | Java execution architecture — editor, execution-service abstraction, online adapter seam, local fallback | Complete and verified; **no online provider enabled** |
+| **6** | Full foundation verification, documentation-truth audit, Foundation Report | Complete and verified |
 
-Phase 6 has **not** been defined. No agent may invent, assume, or act on a
-scope for it; wait for an explicit instruction. Each phase is
+All six foundation phases are complete. What follows is **not** another
+phase: it is the per-chapter `CONTINUE` workflow described in §13. Each phase was
 delivered on explicit instruction only, and each ends with a STOP.
 
 ### After the foundation
@@ -521,12 +529,19 @@ Java_mastery/
 │       ├── curriculum-view.js ← all modules, grouped by part
 │       ├── module-view.js     ← module overview
 │       ├── search.js          ← search index + UI
-│       └── progress.js        ← progress accessors (stub until Phase 4)
+│       ├── storage.js         ← the only localStorage gateway
+│       ├── progress.js        ← the only progress API
+│       ├── practice-view.js   ← practice route
+│       ├── exercise-shell.js  ← exercise + progressive hints
+│       └── predict-shell.js   ← predict-the-output
 ├── data/
-│   └── modules.js             ← GENERATED module metadata — do not hand-edit
+│   ├── modules.js             ← GENERATED module metadata — do not hand-edit
+│   ├── exercises.js           ← exercise contract (1 placeholder)
+│   └── predict-output.js      ← predict contract (1 placeholder)
 ├── tools/
 │   └── generate-modules.mjs   ← regenerates data/modules.js from CURRICULUM.md
 └── docs/
+    ├── MASTER_BRIEF.md        ← CANONICAL curriculum source (owner-written)
     ├── PROJECT_STATE.md       ← authoritative current status
     ├── ARCHITECTURE.md        ← system design (partly built, partly planned)
     ├── CURRICULUM.md          ← the 43 modules, full topic lists
@@ -549,11 +564,19 @@ Java_mastery/
 
 ## 13. How another AI agent continues this project
 
+**The foundation is complete. The project now runs on `CONTINUE`.**
+
+### Every session starts here
+
 1. **Read, in order:** `README.md` → [`CLAUDE.md`](CLAUDE.md) →
    [`docs/AI_INSTRUCTIONS.md`](docs/AI_INSTRUCTIONS.md) →
    [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) →
    [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) →
-   [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
+   [`docs/CURRICULUM.md`](docs/CURRICULUM.md) →
+   [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md).
+
+   `MASTER_BRIEF.md` is **canonical** — the project owner's brief, transcribed
+   verbatim. Where any other document disagrees with it, it wins.
 2. **Inspect the actual repository** before changing anything — list the
    directories, read the files that exist, run `git log` and `git status`.
    Never assume a file's contents from its name.
@@ -561,8 +584,42 @@ Java_mastery/
    repository is right; correct the document and say that you did.
 4. **Assume no conversation history.** Everything needed is in these files. If
    something genuinely is not written down, ask — do not invent it.
-5. **Do only the phase or chapter you were asked for**, then update
-   `docs/PROJECT_STATE.md` and **stop**.
-6. **Never** add/remove/merge/rename modules, never overwrite without
-   inspecting first, never force-push or rewrite history, and never claim
-   verification that did not happen.
+
+### The `CONTINUE` workflow (master brief §41)
+
+When the project owner says **`CONTINUE`**:
+
+1. Do the reading and inspection above.
+2. **Determine the first incomplete chapter from the repository**, never from
+   conversation history. Today that is the first chapter of Module 01,
+   `01-java-foundations-execution-model`, because no chapter exists anywhere.
+3. Build **only that one chapter**, through the delivery workflow in §6.
+4. Integrate it into the website and **verify it by actually running it**.
+5. Update `docs/PROJECT_STATE.md` and any other documentation the change
+   affects.
+6. **STOP.** Wait for the next `CONTINUE`. Never batch chapters.
+
+### The module-id convention — permanent, never renamed
+
+Every module has a permanent id of the form `NN-kebab-case-name`, e.g.
+`08-hashing-hashmap-internals`. These ids are **primary keys**, not labels:
+
+- they key learner progress in `localStorage` under `jfsm.progress`;
+- they key the routes (`#/module/<id>`);
+- they key every cross-reference in this repository.
+
+Renaming or renumbering one **silently destroys stored learner progress**. The
+43 ids are fixed by `docs/CURRICULUM.md`, which is generated from
+`docs/MASTER_BRIEF.md` §12; `data/modules.js` is generated from that in turn.
+Never hand-edit `data/modules.js` — run `node tools/generate-modules.mjs`, and
+`node tools/generate-modules.mjs --check` to confirm the chain is in sync.
+
+### Hard rules
+
+- **Do only the phase or chapter you were asked for**, then update
+  `docs/PROJECT_STATE.md` and **stop**.
+- **Never** add, remove, merge, split, rename, or renumber a module.
+- **Never** overwrite a file without reading it first.
+- **Never** force-push or rewrite history.
+- **Never** claim verification that did not happen — say
+  `Not verified because: ...` instead.

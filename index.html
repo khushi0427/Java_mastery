@@ -135,8 +135,8 @@
       <div class="sidebar__scroll" id="sidebar-nav"></div>
 
       <div class="sidebar__footer">
-        <p class="sidebar__phase">Foundation · Phase 3 of 6</p>
-        <p class="sidebar__phase-note">Metadata, dashboard &amp; search</p>
+        <p class="sidebar__phase">Foundation complete</p>
+        <p class="sidebar__phase-note">Awaiting first CONTINUE · 0 of 43 modules written</p>
       </div>
     </nav>
 
@@ -149,14 +149,15 @@
       -->
       <section class="view view--wide" id="view-dashboard" data-view="dashboard" aria-labelledby="view-dashboard-title">
         <header class="view__header">
-          <p class="view__eyebrow">Foundation · Phase 3 of 6</p>
+          <p class="view__eyebrow">Foundation complete · no chapters yet</p>
           <h1 class="view__title" id="view-dashboard-title">Dashboard</h1>
           <p class="view__lede">
-            Your position across the 43-module curriculum. Nothing has been
-            studied yet, because no chapter content has been written.
+            Your position across the 43-module curriculum, saved in this browser.
+            No chapters or exercises have been written yet, so the denominators
+            below are real rather than placeholders.
           </p>
         </header>
-        <!-- Filled by assets/js/dashboard.js from metadata + the progress stub. -->
+        <!-- Filled by assets/js/dashboard.js from metadata + stored progress. -->
         <div id="dashboard-body"></div>
       </section>
 
@@ -165,9 +166,8 @@
           <p class="view__eyebrow">43 modules</p>
           <h1 class="view__title" id="view-curriculum-title">Curriculum</h1>
           <p class="view__lede">
-            The full curriculum, grouped into six parts. Every module is listed
-            in the sidebar; select one to see what it will cover. No module has
-            been written yet.
+            All 43 modules, in curriculum order, as defined by the master brief.
+            Select one to see what it will cover. No module has been written yet.
           </p>
         </header>
         <!-- Filled by assets/js/curriculum-view.js. -->
@@ -179,19 +179,21 @@
         <div id="module-body"></div>
       </section>
 
-      <section class="view" id="view-practice" data-view="practice" aria-labelledby="view-practice-title" hidden>
+      <section class="view view--wide" id="view-practice" data-view="practice" aria-labelledby="view-practice-title" hidden>
         <header class="view__header">
-          <p class="view__eyebrow">Placeholder view</p>
+          <p class="view__eyebrow">Shells only — no content yet</p>
           <h1 class="view__title" id="view-practice-title">Practice</h1>
           <p class="view__lede">
-            Predict-output questions, guided labs, and practice problems with
-            progressive hints. Built in a later phase.
+            The exercise, hint, predict-the-output, and code-runner components.
+            Real exercises are authored per module; what renders below is
+            placeholder scaffolding that demonstrates the components work.
+            No execution provider is configured — that is the default, and every
+            snippet still carries the exact <code>javac</code> / <code>java</code>
+            commands to run it locally.
           </p>
         </header>
-        <div class="panel">
-          <h2 class="panel__title">Not built yet</h2>
-          <p>The practice interface and its execution affordances do not exist.</p>
-        </div>
+        <!-- Filled by assets/js/practice-view.js. -->
+        <div id="practice-body"></div>
       </section>
 
       <section class="view" id="view-interview" data-view="interview" aria-labelledby="view-interview-title" hidden>

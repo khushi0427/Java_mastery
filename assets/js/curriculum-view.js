@@ -1,37 +1,35 @@
 /**
- * curriculum-view.js — the full curriculum, grouped by part.
+ * curriculum-view.js — all 43 modules, in curriculum order.
  *
  * Route: #/curriculum
  *
- * Reads data/modules.js like every other view. Parts are a presentation
- * grouping only — they carry no identity and no progress state
- * (docs/ARCHITECTURE.md §5), which is why modules are keyed by number here and
- * parts are just headings.
+ * Reads data/modules.js like every other view. The master brief defines the
+ * curriculum as one ordered sequence of 43 modules with no part groupings, so
+ * none are invented here.
  */
 
 import { MODULES } from '../../data/modules.js';
 import { el, replaceChildren } from './dom.js';
 import { getModuleProgress } from './progress.js';
 
-const STATUS_LABEL = {
+/** Learner-side labels — see progress.js on the two status axes. */
+const LEARNER_LABEL = {
   NOT_STARTED: 'Not started',
-  FOUNDATION_ONLY: 'Foundation only',
   IN_PROGRESS: 'In progress',
-  CONTENT_COMPLETE: 'Content complete',
-  VERIFIED: 'Verified',
+  COMPLETED: 'Completed',
 };
 
 function moduleCard(module) {
   const progress = getModuleProgress(module.id);
-  const statusLabel = STATUS_LABEL[progress.status] ?? progress.status;
-  const topicCount = module.topics.reduce((n, g) => n + g.items.length, 0);
+  const statusLabel = LEARNER_LABEL[progress.learnerStatus] ?? progress.learnerStatus;
+  const topicCount = module.topics.length;
 
   return el('li', {}, [
     el('a', { class: 'module-card', href: `#/module/${module.id}` }, [
       el('div', { class: 'module-card__head' }, [
         el('span', { class: 'module-card__number', text: module.number }),
         el('span', {
-          class: `status-pill status-pill--${progress.status.toLowerCase()}`,
+          class: `status-pill status-pill--${progress.learnerStatus.toLowerCase()}`,
           text: statusLabel,
         }),
       ]),
@@ -47,24 +45,11 @@ export function renderCurriculum() {
   const container = document.getElementById('curriculum-body');
   if (!container) return;
 
-  // Preserve curriculum order; group consecutive modules under their part.
-  const parts = [];
-  for (const module of MODULES) {
-    const last = parts[parts.length - 1];
-    if (!last || last.name !== module.part) {
-      parts.push({ name: module.part, modules: [module] });
-    } else {
-      last.modules.push(module);
-    }
-  }
-
-  replaceChildren(container, parts.map((part) =>
-    el('section', { class: 'part' }, [
-      el('h2', { class: 'part__title', text: part.name ?? 'Modules' }),
-      el('p', {
-        class: 'part__count',
-        text: `Modules ${part.modules[0].number}–${part.modules[part.modules.length - 1].number}`,
-      }),
-      el('ul', { class: 'module-cards' }, part.modules.map(moduleCard)),
-    ])));
+  // The master brief presents the 43 modules as one ordered sequence with no
+  // part/section grouping, so they render as a single ordered list rather than
+  // being grouped into headings the brief does not define.
+  replaceChildren(container, [
+    el('p', { class: 'part__count', text: `${MODULES.length} modules, in curriculum order` }),
+    el('ul', { class: 'module-cards' }, MODULES.map(moduleCard)),
+  ]);
 }

@@ -1,12 +1,16 @@
 # ARCHITECTURE.md — System Architecture
 
-**Status of this document:** created as a skeleton in Phase 1; filled in from
-what was actually built in Phase 2 (frontend, file structure, navigation,
-theming, responsive) and Phase 3 (data architecture, module architecture,
-search, dashboard). Many sections still describe systems that **do not exist
-yet** and are marked accordingly. Real today: the documentation layer, the
-website shell, and the module metadata layer with the views over it — no
-learning content, no progress persistence, no code execution.
+**Status of this document:** created as a skeleton in Phase 1 and filled in from
+what was actually built — Phase 2 (frontend, file structure, navigation,
+theming, responsive), Phase 3 (data architecture, module architecture, search,
+dashboard), Phase 4 (progress system, localStorage schema, practice/hint/
+predict-output shells), Phase 5 (compiler/execution abstraction) and Phase 6
+(foundation verification and documentation audit). Sections that still describe
+systems which **do not exist yet** are marked accordingly. Real today: the
+documentation layer, the website shell, the module metadata layer, persisted
+progress, the practice shells, and the execution abstraction with its local
+`javac`/`java` fallback — **no learning content, and no online execution
+provider enabled**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -27,17 +31,17 @@ section becomes real, move it out of *Planned* — and only then.
 ## Table of contents
 
 1. [Documentation layer](#1-documentation-layer) — **IMPLEMENTED**
-2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED** (shell only)
+2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED**
 3. [File structure](#3-file-structure) — PARTIAL
 4. [Data architecture](#4-data-architecture) — PARTIAL (module metadata built)
 5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL (modules built, chapters not)
-6. [Practice architecture](#6-practice-architecture) — PLANNED
+6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells; no content)
 7. [Interview-question architecture](#7-interview-question-architecture) — PLANNED
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
-9. [Progress system](#9-progress-system) — PLANNED (Phase 4)
-10. [localStorage usage](#10-localstorage-usage) — PARTIAL (theme only)
-11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — PLANNED (Phase 5)
-12. [Navigation](#12-navigation) — **IMPLEMENTED** (shell only)
+9. [Progress system](#9-progress-system) — **IMPLEMENTED**
+10. [localStorage usage](#10-localstorage-usage) — **IMPLEMENTED** (theme + progress)
+11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — **IMPLEMENTED** (Phase 5; no provider enabled)
+12. [Navigation](#12-navigation) — **IMPLEMENTED** (module level; chapter level PLANNED)
 13. [Search](#13-search) — **IMPLEMENTED** (modules + topics)
 14. [Responsive behaviour](#14-responsive-behaviour) — **IMPLEMENTED**
 15. [Cross-cutting decisions already fixed](#15-cross-cutting-decisions-already-fixed)
@@ -59,16 +63,17 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 
 | File | Role | Change frequency |
 |---|---|---|
+| `docs/MASTER_BRIEF.md` | **Canonical project brief and curriculum**, written by the project owner | Only by the owner |
 | `README.md` | Complete project description; entry point for humans and agents | Rarely — when project shape/status changes |
 | `CLAUDE.md` | Permanent operating rules for Claude Code | Rarely — rules are meant to be stable |
 | `docs/AI_INSTRUCTIONS.md` | Same rules, agent-neutral, plus workflow protocols | Rarely |
 | `docs/PROJECT_STATE.md` | Authoritative current status | **Every unit of work** |
 | `docs/ARCHITECTURE.md` | This file — system design | When a structural decision is made |
-| `docs/CURRICULUM.md` | The 43 modules and their full topic lists | Topic clarification only; never structural |
+| `docs/CURRICULUM.md` | The 43 modules, transcribed verbatim from `MASTER_BRIEF.md` §12 | Only by re-transcription after the brief changes |
 
 ### Design decisions (fixed in Phase 1)
 
-1. **Six files, flat structure.** `README.md` and `CLAUDE.md` at the root
+1. **Seven files, flat structure.** `README.md` and `CLAUDE.md` at the root
    (conventional discovery locations); the four detail documents under `docs/`.
    No deeper nesting — discoverability beats taxonomy at this size.
 2. **`PROJECT_STATE.md` is the single mutable status file.** Status is not
@@ -91,10 +96,11 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 
 ## 2. Frontend architecture
 
-**Status: IMPLEMENTED for the application shell (Phase 2).** Layout, theming,
-navigation, and routing exist and were verified in a real browser. Everything
-the shell *contains* — module data, content rendering, search, progress,
-practice, execution — is still PLANNED.
+**Status: IMPLEMENTED (Phase 2 shell; Phases 3–5 filled it in).** Layout,
+theming, navigation, routing, module data, search, progress, the practice
+shells, and the execution abstraction all exist and were verified in a real
+browser. What is still PLANNED is **chapter content rendering** — there is no
+chapter to render.
 
 ### Fixed constraints (decided, not negotiable)
 
@@ -109,7 +115,9 @@ practice, execution — is still PLANNED.
 - **ES modules** (`<script type="module">`), each with one job — `app.js`
   (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router),
   `sidebar.js`, `dashboard.js`, `curriculum-view.js`, `module-view.js`,
-  `search.js`, `progress.js` (stub), and `dom.js` (element builder). No globals;
+  `search.js`, `practice-view.js`, `exercise-shell.js`, `predict-shell.js`,
+  `progress.js`, `storage.js`, `code-runner.js`, the `execution/` modules, and
+  `dom.js` (element builder). No globals;
   modules communicate by import, not by shared window state.
 - **Three stylesheets** with a strict division of responsibility:
   `base.css` (reset, non-colour tokens, typography, focus primitives),
@@ -143,7 +151,7 @@ declined in Phase 2 because module scoping matters more as the codebase grows.
 
 ### Still PLANNED
 
-Chapter content rendering, progress persistence (§9, Phase 4), practice (§6),
+Chapter content rendering, real exercises and questions to fill the §6 shells,
 execution (§11, Phase 5), syntax highlighting (§16 open question 9), and any
 service worker / offline support.
 
@@ -151,7 +159,9 @@ service worker / offline support.
 
 ## 3. File structure
 
-**Status: PARTIAL.** The documentation layer exists; everything else is planned.
+**Status: PARTIAL.** The documentation layer and the whole website foundation
+exist (Phases 1–5). What remains planned is content: `content/` and `java/`
+below hold nothing, because no chapter has been written.
 
 ### Actual, today
 
@@ -164,7 +174,7 @@ Java_mastery/
 │   ├── css/
 │   │   ├── base.css       ← reset, non-colour tokens, typography, focus
 │   │   ├── theme.css      ← the complete colour system, light + dark
-│   │   └── layout.css     ← app shell + Phase 3 components
+│   │   └── layout.css     ← app shell + Phase 3/4/5 components
 │   └── js/
 │       ├── app.js         ← bootstrap / entry point
 │       ├── dom.js         ← element builder (no innerHTML)
@@ -175,9 +185,24 @@ Java_mastery/
 │       ├── curriculum-view.js ← all 43 modules, grouped by part
 │       ├── module-view.js ← module overview
 │       ├── search.js      ← source-based search index + UI
-│       └── progress.js    ← progress accessors (STUB until Phase 4)
+│       ├── storage.js     ← the ONLY module touching localStorage (Phase 4)
+│       ├── progress.js    ← the ONLY progress API (Phase 4)
+│       ├── practice-view.js   ← the #/practice route (Phase 4)
+│       ├── exercise-shell.js  ← one exercise, hints, solution (Phase 4)
+│       ├── predict-shell.js   ← one predict-the-output question (Phase 4)
+│       ├── code-runner.js ← editor + output + local fallback (Phase 5)
+│       └── execution/     ← Java execution, provider-agnostic (Phase 5)
+│           ├── config.js  ← THE single config point; no credential field
+│           ├── result.js  ← STATUS, baseResult, postJson
+│           ├── service.js ← executeJava(), the one entry point
+│           ├── java-source.js ← file name / run target / package from source
+│           └── providers/
+│               ├── piston.js  ← self-hosted Piston adapter
+│               └── judge0.js  ← self-hosted Judge0 adapter
 ├── data/
-│   └── modules.js         ← GENERATED module metadata (single source)
+│   ├── modules.js         ← GENERATED module metadata (single source)
+│   ├── exercises.js       ← exercise contract (Phase 4; +starterCode Phase 5)
+│   └── predict-output.js  ← predict-the-output contract (Phase 4)
 ├── tools/
 │   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
@@ -198,8 +223,8 @@ Phase 1 sketched a `site/` directory containing `index.html`, `css/`, and `js/`.
 2. It removes one level of nesting for the only entry point the project has.
 
 The Phase 1 text explicitly labelled that tree "intent, not commitments; Phase 2
-confirms them" — this is that confirmation. `content/`, `java/`, and `tools/`
-below are still intent.
+confirms them" — this is that confirmation. `content/` and `java/` below are
+still intent; `tools/` exists as of Phase 3.
 
 ### Planned — not yet implemented
 
@@ -211,12 +236,16 @@ Java_mastery/
 │           └── chapters/
 ├── java/                  ← runnable Java sources, per module
 │   └── module-01/
-└── tools/                 ← Phase 5 adds execution adapters here
 ```
 
 Note that `tools/` now exists — Phase 1 had reserved it for Phase 5 execution
-helpers, and Phase 3 put the curriculum generator there first. Both belong to
-"development tooling that is not shipped to the browser", so they share it.
+helpers, and Phase 3 put the curriculum generator there first.
+
+**Phase 5 did not use `tools/` for its adapters after all.** The execution
+adapters ship *to the browser*, so they belong under `assets/js/execution/`
+with the rest of the client code; `tools/` is for development tooling that is
+never served. The Phase 1 expectation is superseded, and this note records it
+rather than leaving the two documents disagreeing.
 
 **Naming conventions (decided now, so later phases are consistent):**
 
@@ -254,20 +283,20 @@ Per module:
 | `number` | `"01"`–`"43"`, matching `CURRICULUM.md`. **Permanent key.** |
 | `id` | URL slug, e.g. `12-collections-framework-internal-data-structures`. **Permanent key** — Phase 4 progress records are keyed on it |
 | `name` | Module name, verbatim from `CURRICULUM.md` |
-| `part` / `partNumber` | Presentation grouping (Part I–VI) |
-| `description` | The module's Purpose line |
-| `prerequisites` | Array of module numbers |
-| `owns` | The concepts this module teaches in depth (§5 single ownership) |
-| `topics` | `[{ group, items[] }]` — the coverage specification, **not** taught content |
+| `notes` | The brief's per-module emphasis, verbatim — requirements, not commentary |
+| `subsections` | Named sub-parts (only Module 42's seven projects today) |
+| `description` | DERIVED from the first five topics; never authored |
+| `prerequisites` | Empty for all 43 — the brief specifies none |
+| `topics` | Flat `string[]` — the coverage specification, **not** taught content |
 | `status` | One of the five status tokens. All 43 are `NOT_STARTED` |
 | `chapterCount` / `chapters` | `0` and `[]` — no chapter content exists |
 
 ### Generated, not hand-maintained — resolves open question 3
 
-`docs/CURRICULUM.md` is authoritative for humans; hand-copying the same 43
-modules into JavaScript would create a second source that drifts. So
-`data/modules.js` is **derived** from `CURRICULUM.md` by
-`tools/generate-modules.mjs`:
+**`docs/MASTER_BRIEF.md` is canonical**, `docs/CURRICULUM.md` is a verbatim
+transcription of its Section 12, and `data/modules.js` is generated from that.
+Hand-copying 43 modules at either hop would create a source that drifts, so
+`tools/generate-modules.mjs` owns both and `--check` guards both:
 
 ```bash
 node tools/generate-modules.mjs           # regenerate after editing CURRICULUM.md
@@ -276,8 +305,23 @@ node tools/generate-modules.mjs --check   # verify in sync; exits 1 if not
 
 This is a **development tool, not a build step** — the site runs directly from
 the committed `data/modules.js` with no toolchain. The generator refuses to emit
-unless it finds exactly 43 modules numbered 01–43 with unique ids, a name, a
-description, and topics on every one.
+unless the curriculum is byte-identical to the brief's Section 12 **and** it
+finds exactly 43 modules numbered 01–43 with unique ids, a name, and topics.
+
+#### Two fields the brief does not supply
+
+The brief gives module names and topic bullets only. Neither of these is
+invented:
+
+- **`description`** — derived mechanically as `Topics include: <first five
+  topics>.`, flagged `descriptionDerived: true`.
+- **`prerequisites`** — **empty for all 43 modules.** The brief states none;
+  module order is not evidence of a prerequisite.
+
+Conversely, the brief's per-module emphasis **is** carried: `notes` holds it
+verbatim (Module 08's extra depth, Module 14's JVM-spec-vs-HotSpot distinction,
+Module 30's JPA-vs-Hibernate framing), and `subsections` holds Module 42's seven
+named projects. Those lines are requirements, and the module view renders them.
 
 ### Still PLANNED
 
@@ -307,15 +351,15 @@ within modules is planned.
 - **Exactly 43 modules, numbered 01–43, frozen.** See
   [`CURRICULUM.md`](CURRICULUM.md). Modules are never added, removed, merged,
   split, renamed, renumbered, or reordered.
-- **LOCKED as of 2026-08-12 (Phase 3).** The project owner confirmed the module
-  set as canonical; `CURRICULUM.md` Appendix B records the confirmation. The
-  reconciliation question raised in Phase 1 is closed.
+- **REALIGNED and (re)LOCKED to `docs/MASTER_BRIEF.md` on 2026-08-12.** The
+  Phase 3 lock was superseded: the brief arrived after Phase 3 and the authored
+  curriculum matched it on only 2 of 43 names. `CURRICULUM.md` Appendix B
+  records the full history.
 - **Module numbers are permanent identifiers** — used by navigation, progress
   keys, and cross-references. This is *why* the set is frozen: renumbering
   invalidates stored learner progress.
 - **Module ids are derived from names**, so names are locked too. The id is
-  `<number>-<kebab-cased name up to any em-dash subtitle>`, e.g.
-  `17-concurrency-i`. Renaming a module changes its id and orphans any progress
+  `<number>-<kebab-cased name>`, e.g. `08-hashing-hashmap-internals`. Renaming a module changes its id and orphans any progress
   stored against it. If a rename ever becomes unavoidable, pin the old id by
   hand rather than letting the generator move it.
 - **Modules are grouped into six parts** for navigation only. Parts are a
@@ -327,16 +371,17 @@ within modules is planned.
 - **Single primary ownership.** Each concept is taught in exactly one module;
   others cross-link. `CURRICULUM.md` records ownership per module.
 
-### As built (Phase 3)
+### As built
 
 Module metadata is rendered in three places, all reading `data/modules.js`:
 
 - **Sidebar** — all 43 modules under a collapsible Curriculum section, each row
   carrying a status dot and its own disclosure for chapters.
-- **Curriculum view** (`#/curriculum`) — module cards grouped under the six
-  parts.
-- **Module overview** (`#/module/<id>`) — description, status, prerequisites as
-  links, primary ownership, the empty chapter region, and the topic groups.
+- **Curriculum view** (`#/curriculum`) — 43 module cards in curriculum order.
+  The brief defines no part groupings, so none are invented.
+- **Module overview** (`#/module/<id>`) — description, status, prerequisites,
+  the brief's emphasis notes, the empty chapter region, any subsections
+  (Module 42's projects), and the flat topic list.
 
 The module overview labels its topic list as *the coverage specification*, not
 as taught content, so a long list never implies the module has been written.
@@ -351,29 +396,49 @@ navigation or advisory only.
 
 ## 6. Practice architecture
 
-**Status: PLANNED — not yet implemented.**
+**Status: IMPLEMENTED as shells (Phase 4); NO content.** The components exist
+and are verified; `data/exercises.js` and `data/predict-output.js` hold one
+labelled placeholder each and nothing else. Real exercises are authored per
+module through `CONTINUE`.
 
-### Decided (from the methodology)
+### Exercise contract (`data/exercises.js`)
 
-- Practice is **mandatory in every chapter**, not an optional appendix.
-- Problems are **graded by difficulty** within a chapter.
-- **Hints are progressive and stored separately from solutions**, so a hint can
-  be revealed without spoiling the answer.
-- **Solutions are revealed deliberately** by learner action, never shown by
-  default.
-- Every problem carries **expected output**, so correctness is checkable — by
-  the learner locally, and by the execution layer once Phase 5 exists.
-- **Predict-output questions are a distinct type** from practice problems: they
-  are answered *before* running code and record prediction accuracy (§9), which
-  is the primary signal of genuine understanding in this methodology.
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | unique within its module |
+| `moduleId` | string | **permanent** id from `data/modules.js` |
+| `title`, `objective`, `problem` | string | |
+| `difficulty` | string | ladder: Warm-up → Easy → Applied → Medium → Challenge → Interview (§18) |
+| `requirements`, `constraints`, `edgeCases` | string[] | optional; omitted fields render nothing |
+| `sampleInput`, `sampleOutput` | string | optional |
+| `testCases` | `[{ input, expected }]` | optional |
+| `hints` | string[] | ordered; revealed **one at a time** |
+| `solution` | `{ language, code, explanation, complexity }` | hidden by default |
+| `isPlaceholder` | boolean | true only for demo scaffolding; excluded from counts |
 
-### Not yet decided — UNDECIDED
+### Predict-the-output contract (`data/predict-output.js`)
 
-Whether answers are auto-checked (string comparison of program output) or
-self-assessed; whether starter code is provided per problem or per chapter;
-spaced-repetition scheduling for revision.
+`{ id, moduleId, prompt, language, code, answer, explanation, isPlaceholder }` —
+`answer` is hidden until revealed (§19).
 
----
+### Rules enforced structurally, not by convention
+
+- **Hints reveal one at a time.** The button for hint *n+1* does not exist until
+  hint *n* is revealed, so "reveal everything" is never one click away (§20).
+- **Solutions and answers are hidden by default**, behind a single persistent
+  toggle whose `aria-expanded` tracks state. Replacing the trigger on reveal
+  would strand that state on a detached element.
+- **Placeholders are labelled in the UI** and excluded from every count, so demo
+  scaffolding can never inflate progress or be mistaken for curriculum.
+- **Completion flows through the progress API** (§9) — `setExerciseSolved` — so
+  solving an exercise counts the moment real exercises exist.
+- **Run controls are disabled**, labelled "Phase 5". A Run button that looked
+  live would be a lie about what the platform can currently do.
+
+### Still PLANNED
+
+Real exercises and questions; auto-checking answers against expected output
+(still UNDECIDED — it may remain self-assessed); spaced-repetition revision.
 
 ## 7. Interview-question architecture
 
@@ -417,117 +482,258 @@ exist at part boundaries; whether assessment results are exportable.
 
 ## 9. Progress system
 
-**Status: PLANNED — Phase 4.** Phase 3 added `assets/js/progress.js` as a
-**stub with no persistence**: every accessor returns the true current state of
-an empty repository (zeros and empty arrays), and the dashboard reads through
-it. The function shapes there are the contract Phase 4 must honour, so wiring
-real `localStorage` should not require rewriting the dashboard.
+**Status: IMPLEMENTED (Phase 4).** Progress is persisted in `localStorage`
+through `assets/js/progress.js`, which is the **only** progress API — no view
+touches storage directly, and no view keeps its own copy of progress state.
 
-Progress records will be keyed on module `id` from `data/modules.js` under the
-`jfsm.` prefix (§10). Those ids are permanent — see §5.
+### Two status axes — do not conflate them
 
-### Decided (fixed architectural decisions)
+| Axis | Source | Vocabulary |
+|---|---|---|
+| **Content status** | `data/modules.js` | `NOT_STARTED` / `FOUNDATION_ONLY` / `IN_PROGRESS` / `CONTENT_COMPLETE` / `VERIFIED` — what exists in the repository |
+| **Learner status** | the progress store | `NOT_STARTED` / `IN_PROGRESS` / `COMPLETED` — what the learner has done |
 
-- **Browser-local only.** Progress lives in `localStorage`. There is **no
-  backend, no database, and no user account system.** This is a deliberate
-  permanent decision, not a temporary shortcut.
-- **Keyed by permanent identifiers** — module number and chapter ID (§3
-  conventions). This is a primary reason the 43-module set is frozen.
-- **Consequences are accepted:** progress is per-browser, per-device, and lost
-  if site data is cleared. Mitigated by JSON export/import, not by a server.
+A module can be content-`NOT_STARTED` and learner-`IN_PROGRESS` at once.
+`getModuleProgress()` returns both, named distinctly; the ambiguous `status`
+field is retained only as a deprecated alias.
 
-### Intended tracked state
+### Keys
 
-Chapter completion; module completion; practice problems attempted and solved;
-predict-output accuracy; theme preference; last position (resume where you left
-off); revision flags/bookmarks.
+Progress is keyed on the **permanent module ids** from `data/modules.js` (e.g.
+`08-hashing-hashmap-internals`), never on array index or display order. This is
+why the curriculum is locked to `MASTER_BRIEF.md` (§5).
 
-### Not yet decided — UNDECIDED
+### API
 
-Whether completion is manual, inferred from activity, or both; granularity
-(chapter-level vs section-level); export/import file format details.
+| Group | Functions |
+|---|---|
+| Reads | `getModuleProgress`, `getOverallProgress`, `getCurrentPosition`, `getRecentActivity`, `getRecommendedNext`, `getPracticeProgress`, `getAssessmentProgress`, `isExerciseSolved`, `getStorageInfo` |
+| Writes | `setModuleStatus`, `setChapterComplete`, `toggleChapterComplete`, `setExerciseSolved`, `recordAssessmentScore`, `recordVisit`, `resetProgress` |
+| Events | `onProgressChange(listener)` → unsubscribe |
 
----
+Writes validate the module id against the curriculum and ignore unknown ids, so
+a stale link cannot inject junk records.
+
+### Two percentages, because they answer different questions
+
+`modulePercent` is completed modules over 43 — a denominator that exists today.
+`chapterPercent` is completed chapters over total chapters, which is `0 / 0`
+until chapters are written. Neither is invented, and the dashboard says which is
+which rather than showing one number and hoping.
+
+### Reset
+
+`resetProgress()` removes the progress record only. **The theme key is
+deliberately untouched** — clearing what you have studied should not also flip
+the site back to light mode. The UI gates it behind a confirm.
+
+### Change notification
+
+Views subscribe via `onProgressChange`. `app.js` refreshes the sidebar and, when
+visible, the dashboard. The module view is deliberately **not** subscribed:
+rendering it records a visit, which writes and notifies, so re-rendering from a
+notification would loop.
+
+### Still PLANNED
+
+Export/import of progress as JSON (§9 of `README.md`); chapter- and
+exercise-level completion driven by real content rather than the temporary
+manual control (§6).
 
 ## 10. localStorage usage
 
-**Status: PARTIAL.** Exactly one key is in use — the theme preference, written
-in Phase 2. Progress storage is still PLANNED (§9).
+**Status: IMPLEMENTED (Phase 4).**
 
-### In use today
+### Keys in use
 
-| Key | Values | Written by |
+| Key | Shape | Written by |
 |---|---|---|
 | `jfsm.theme` | `"light"` \| `"dark"` | `assets/js/theme.js` |
+| `jfsm.progress` | JSON record, below | `assets/js/progress.js` |
 
-The key is read in two places that must stay in step: `theme.js` and the inline
-anti-FOUC script in `index.html`. Both treat any value other than exactly
-`"light"` or `"dark"` as absent, and both wrap access in `try/catch`.
+All keys carry the `jfsm.` prefix. **One aggregate record** holds all progress
+rather than a key per module — this resolves the Phase 1 open question. One read
+and one write, no key scanning, and no possibility of a half-updated set of keys.
+The dataset is small (43 modules), so the write cost is irrelevant.
 
-**Note:** the prefix convention is `jfsm.` (dot), not the `jfsm:` shown
-illustratively in Phase 1. Phase 2 fixed the actual convention when it wrote the
-first real key; all future keys use `jfsm.`.
+### Schema — `jfsm.progress`, `schemaVersion: 1`
 
-### Decided
+```json
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-12T12:00:00.000Z",
+  "modules": {
+    "08-hashing-hashmap-internals": {
+      "status": "IN_PROGRESS",
+      "startedAt": "2026-08-12T11:00:00.000Z",
+      "completedAt": null,
+      "chapters":  { "<chapterId>":  { "completedAt": "…" } },
+      "exercises": { "<exerciseId>": { "solvedAt": "…" } }
+    }
+  },
+  "assessments": { "<assessmentId>": { "score": 0, "max": 0, "takenAt": "…" } },
+  "position": { "moduleId": "…", "chapterId": null, "visitedAt": "…" },
+  "recent":   [ { "moduleId": "…", "chapterId": null, "visitedAt": "…" } ]
+}
+```
 
-- **Namespaced keys.** All keys carry the `jfsm.` prefix so the project never
-  collides with anything else on the same origin.
-- **Versioned schema.** A stored schema version accompanies the data.
-- **Non-destructive migrations.** A version bump must migrate existing progress
-  forward. Wiping learner progress on upgrade is a destructive change and is
-  not acceptable (`CLAUDE.md` §8).
-- **Defensive reads.** All reads are wrapped: `localStorage` may be
-  unavailable (private mode), full, or hold corrupted JSON. The site must
-  degrade to "no saved progress" rather than break.
-- **No sensitive data.** Only learning progress and preferences. No credentials,
-  no personal data, no tokens.
+`recent` is capped at 8 entries, most recent first, de-duplicated on
+module+chapter.
 
-### Not yet decided — UNDECIDED
+### Versioning and migration
 
-Exact key layout (one aggregate record vs per-module records — a trade-off
-between write cost and quota granularity); quota handling strategy; whether
-`sessionStorage` or IndexedDB is used for anything.
+`SCHEMA_VERSION` is exported from `progress.js`. Bumping it requires adding a
+migration branch in `migrate()` — **never** wiping the record. Two cases are
+handled explicitly:
 
----
+- **Unrecognisable or older record** → migrated forward, or treated as empty.
+- **A record from a FUTURE version** → left **completely untouched** and treated
+  as "no progress this session". Overwriting data a newer build owns would
+  destroy it; refusing to read it only costs one session.
+
+### Defensive access
+
+All storage goes through `assets/js/storage.js`, the single place that touches
+`localStorage`. It survives: storage being unavailable entirely (private mode,
+blocked cookies), quota-exceeded writes, malformed JSON, JSON scalars, and
+foreign objects. Every path degrades to "no saved data" rather than throwing.
+
+**One sanctioned exception:** the anti-FOUC script inlined in `index.html` reads
+`jfsm.theme` directly, because it must run before any module loads. Keep the two
+in step.
 
 ## 11. Compiler / execution abstraction
 
-**Status: PLANNED — not yet implemented (Phase 5).** Nothing here exists.
-Everything except the two decisions below is open.
+**Status: IMPLEMENTED (Phase 5), shipping with NO provider enabled.** The
+editor, the abstraction, both online adapters, and the local fallback exist.
+No online provider is configured or verified working — that is a deliberate,
+supported end state, not an unfinished one. See §11.6.
 
-### Decided
+### 11.1 The decisions this phase inherited — both kept
 
-1. **One interface, two adapters.** Chapter content is **never** coupled to a
-   specific execution provider. All execution goes through a single internal
-   interface with interchangeable implementations.
-2. **The local fallback always exists.** Every runnable example ships with exact
-   `javac` / `java` / Maven commands. The platform must be **fully usable with
-   online execution disabled or unavailable** — offline, no network, no third
-   party. Online execution is an enhancement, never a dependency.
+1. **One interface, many adapters.** Chapter content is never coupled to a
+   specific execution provider. Everything calls `executeJava()` in
+   `assets/js/execution/service.js`; nothing else imports an adapter, names a
+   provider, or calls `fetch`.
+2. **The local fallback always exists.** Every runnable snippet renders exact
+   `javac` / `java` commands, always — not only when something fails. The
+   platform is **fully usable with no provider connected**.
 
-### Adapters
+### 11.2 File layout
 
-| Adapter | Role |
+| File | Role |
 |---|---|
-| **Online adapter** | Sends source to a third-party Java execution service; renders `stdout`, `stderr`, exit code, and compiler diagnostics |
-| **Local fallback** | Exact commands for the learner to compile and run locally; always present |
+| `assets/js/execution/config.js` | **The single configuration point.** Chooses the provider, or `null` for none. Deliberately has no field for a secret. |
+| `assets/js/execution/result.js` | `STATUS`, `baseResult()`, `postJson()` — the shared result vocabulary. Separate from `service.js` so the service and its adapters do not import each other. |
+| `assets/js/execution/service.js` | `executeJava()`, `executionStatus()`. Validation, deadline, adapter dispatch, error classification. |
+| `assets/js/execution/java-source.js` | Derives the file name, run target, and package from the source. |
+| `assets/js/execution/providers/piston.js` | Adapter for a self-hosted Piston instance. |
+| `assets/js/execution/providers/judge0.js` | Adapter for a self-hosted Judge0 instance. |
+| `assets/js/code-runner.js` | The UI: editor, Run/Reset/Copy, output panel, local-fallback panel. |
 
-### Proxy — conditional
+### 11.3 The result contract — DECIDED
 
-If the chosen provider requires a secret key, a **minimal proxy** may be
-introduced for the sole purpose of keeping that key off the client. Constraints:
+`executeJava({ source, stdin })` resolves to an `ExecutionResult` and **never
+rejects**. A compiler error, a dead provider, and an infinite loop are all
+*results*, because to a learner they are all just outcomes of pressing Run;
+rejecting would push provider plumbing into every call site.
+
+| Field | Meaning |
+|---|---|
+| `status` | One of `success`, `compile-error`, `runtime-error`, `timeout`, `provider-unavailable`, `invalid-input`, `error`. Exhaustive. |
+| `stdout` / `stderr` | Program streams, `''` when empty |
+| `compileError` | Compiler diagnostics, or `null` |
+| `timedOut` | A deadline was hit — ours or the provider's |
+| `providerUnavailable` | No provider ran the code at all |
+| `exitCode` | When the provider reports one, else `null` |
+| `message` | One human-readable line, always safe to show |
+| `durationMs`, `provider`, `raw` | Client-observed wall time, which adapter answered, untouched provider response |
+
+`providerUnavailable` is deliberately **separate from `status`** so the UI can
+say "this is a configuration problem, not your code" without enumerating
+provider failure modes. Telling a learner their correct program failed would be
+the worst defect this platform could ship, so the output panel states in words
+that the code was not run and that nothing about the failure reflects on it.
+
+### 11.4 Failure modes — DECIDED
+
+| Condition | Result |
+|---|---|
+| No provider configured | `provider-unavailable`, with the configuration reason |
+| Provider selected but incompletely configured | `provider-unavailable`, naming the missing field |
+| Empty or oversized source | `invalid-input`, refused before sending |
+| Client deadline exceeded (`timeoutMs`) | `timeout`, `timedOut: true` |
+| Provider reports a time limit | `timeout` |
+| Compile stage failed | `compile-error`, diagnostics in `compileError` |
+| Ran, exited non-zero | `runtime-error` |
+| HTTP 401 / 403 / 429 | `provider-unavailable`, described as authorisation/rate-limit |
+| Network failure, DNS, refused connection, blocked CORS, mixed content | `provider-unavailable` |
+
+The browser reports that last row's cases as one indistinguishable `TypeError`
+by design, so the message lists the possibilities rather than guessing one and
+misleading the operator. All of them are provider problems; none is the code.
+
+### 11.5 Source analysis — DECIDED
+
+`java-source.js` derives the file name from the source rather than assuming
+`Main.java`. A public top-level type must live in a file named after it, so a
+fixed name breaks every example whose class is not `Main` — with a compiler
+error the learner did not write. It strips comments and string/text-block
+literals first, so a `// public class Ghost` cannot win.
+
+It also yields the `main`-bearing class and any `package`, so the fallback panel
+emits commands that work for packaged sources instead of ones that fail.
+
+**Verified by execution** against OpenJDK 21.0.10 — sources were generated,
+named by this logic, then actually compiled and run. See PROJECT_STATE.
+
+### 11.6 Provider status — NONE ENABLED, and why
+
+Researched 2026-08-13 against each provider's live documentation. Findings and
+sources are recorded in `docs/PROJECT_STATE.md`; the short version:
+
+- **Piston's public API at emkc.org** is, per its own readme, *"no longer
+  freely available to the public (as of Feb 15, 2026)"* and requires
+  case-by-case authorization. Not something to point learners at.
+- **Judge0's hosted offerings** authenticate with a secret (`X-Auth-Token` /
+  `X-RapidAPI-Key`). A static site cannot hold a secret.
+- No keyless, browser-callable Java service could be verified to this project's
+  standard on that date.
+
+So `provider: null` ships as the default and is a **permanent supported mode**,
+not a placeholder. Both adapters are written to wire formats read from the
+providers' live docs, and both target a **self-hosted** instance, where
+authentication is off by default and no secret exists to leak.
+
+**NOT VERIFIED BY EXECUTION:** no HTTP request has been made to any live Piston
+or Judge0 instance from this repository. The development sandbox blocks
+outbound connections to those hosts, so the adapters' wire formats follow
+documentation, not an observed round trip. **CORS behaviour in particular
+cannot be verified from a sandbox at all** — it is a browser-enforced property
+of a real page origin talking to a real instance. Anyone enabling a provider
+should treat the first run from an actual browser as the real test.
+
+### 11.7 Proxy — still conditional, still unbuilt
+
+Unchanged and deliberately not built, because nothing needs it yet. If a
+provider requires a secret, a minimal proxy may hold it, under the original
+constraints:
 
 - **No secret may ever appear in client-side JavaScript or in this repository.**
-- The proxy does nothing but forward the execution request and response.
+- The proxy forwards the execution request and response and nothing else.
 - It must not become a general backend — no database, no accounts, no rendering.
 - If no key is needed, no proxy is built.
 
-### Not yet decided — UNDECIDED
+`config.js` has no credential field at all, so the only way to use a keyed
+provider is to point `baseUrl` at such a proxy.
 
-Provider selection; request/response schema; timeout, rate-limit, and quota
-handling; error and diagnostic presentation; whether stdin input is supported;
-whether multi-file or Maven-project examples can run online at all (many
-providers accept a single file — the local fallback covers this case regardless).
+### 11.8 Still open — UNDECIDED
+
+Whether multi-file or Maven-project examples can run online (both adapters send
+a single file; the local fallback covers this regardless); whether to add
+polling for Judge0 instances that do not honour `wait=true`; whether runs should
+be recorded in progress; rate-limit and quota presentation once a real provider
+is in use.
 
 ---
 
@@ -577,10 +783,12 @@ or merely advise remains UNDECIDED.
 
 ## 12a. Dashboard
 
-**Status: IMPLEMENTED as structure (Phase 3); values arrive with Phase 4.**
+**Status: IMPLEMENTED (Phase 3 structure, Phase 4 real values).**
 
-Seven sections, each reading `data/modules.js` and the `progress.js` stub — no
-duplicated module list, no hardcoded figures:
+Seven sections, each reading `data/modules.js` and the real progress API in
+`assets/js/progress.js` — no duplicated module list, no hardcoded figures. The
+figures below are what an untouched browser shows; they are real zeros, not
+placeholders, because no chapters or exercises exist yet:
 
 | Section | Current state |
 |---|---|
@@ -716,7 +924,14 @@ from the project owner:
 | 13 | **`jfsm.` prefix** for every `localStorage` key | §10 |
 | 14 | **Colour literals live only in `theme.css`**; all three theme blocks carry identical token sets | §2, §14 |
 | 15 | **The site is served over http**, not opened as `file://` (ES modules) | §2 |
-| 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md` | §4 |
+| 16 | **`data/modules.js` is the single source of module metadata**, generated from `CURRICULUM.md`, which is verbatim from `MASTER_BRIEF.md` §12 | §4 |
+| 20 | **`docs/MASTER_BRIEF.md` is the canonical curriculum**; the chain is brief → curriculum → metadata, and `--check` guards both hops | §4, §5 |
+| 21 | **Nothing the brief does not supply is invented** — `description` is derived, `prerequisites` is empty | §4 |
+| 22 | **One progress API** (`progress.js`); one storage gateway (`storage.js`). No view touches `localStorage` | §9, §10 |
+| 23 | **Progress is keyed on permanent module ids**, never index or order | §9 |
+| 24 | **Progress storage is versioned**; a future-version record is left untouched rather than overwritten | §10 |
+| 25 | **Reset clears progress but preserves the theme** | §9 |
+| 26 | **Hints reveal one at a time; solutions and answers hidden by default** | §6 |
 | 17 | **Module ids are permanent keys** derived from names; Phase 4 progress keys on them | §5 |
 | 18 | **Search indexes registered sources**, so new content types need no rewrite | §13 |
 | 19 | **No `innerHTML`** — all rendering goes through `assets/js/dom.js` and `textContent` | §2 |
