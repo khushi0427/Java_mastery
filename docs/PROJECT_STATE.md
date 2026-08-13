@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-13 (Phase 5 — Java execution architecture)
+**Last updated:** 2026-08-13 (Phase 6 — foundation verification, doc audit, Foundation Report)
 
 ---
 
@@ -31,18 +31,19 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | FOUNDATION (Phase 5 of 6 — Java execution architecture) — **complete** |
-| **Current module** | none (foundation not yet complete) |
+| **Project phase** | **FOUNDATION COMPLETE (all 6 phases) — awaiting the first `CONTINUE`** |
+| **Current module** | none — no chapter has been built yet |
 | **Current chapter** | none |
 | **Completed modules** | none (0 of 43) |
 | **Completed chapters** | none |
-| **Partially completed work** | none — Phase 5 finished its stated scope; Phase 6 not started |
-| **Next required task** | Phase 6 — **not yet specified by the project owner.** Do not invent a scope for it. |
+| **Partially completed work** | none — all six foundation phases finished their stated scope |
+| **Next required task** | **First `CONTINUE`** → build the first incomplete chapter of Module 01 (`01-java-foundations-execution-model`), following the CONTINUE workflow (master brief §41) and the chapter delivery workflow (§42). Determine the chapter from the repository, never from conversation history. Build ONE chapter, then STOP. |
 | **Completed website features** | app shell; light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; metadata-driven sidebar listing all 43 modules; module overview and curriculum views; functional module/topic search; **real `localStorage` progress persistence**; **dashboard wired to stored progress**; **practice / progressive-hint / predict-the-output UI shells**; **editable code editor with Run, Reset and Copy**; **provider-agnostic Java execution abstraction**; **always-present local `javac`/`java` fallback derived from the actual source** |
 | **Compiler integration status** | **Architecture implemented; NO online provider enabled.** Editor, `executeJava()` abstraction, Piston + Judge0 adapters, and the local `javac`/`java` fallback all exist. `provider: null` is the shipped default and a permanently supported mode. No HTTP request has ever been made to a live provider from this repository — see [Phase 5 — provider research](#phase-5--provider-research-performed-2026-08-13). |
 | **Known bugs** | none |
+| **Learning content** | **none** — 0 of 43 modules have chapters; all 43 are `NOT_STARTED` with `chapterCount: 0` and an empty `chapters` array (verified by inspection 2026-08-13) |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | Phase 5 verified in-browser — 32/32 Phase 5 checks and 28/28 Java source-analysis checks (8 of which actually compiled and ran Java on OpenJDK 21.0.10), plus 63/63 Phase 4, 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2 (262 total); see [Verification](#verification-status) |
+| **Last verification status** | **Foundation verified 2026-08-13 — 314 checks passing, 0 failing.** 52/52 Phase 6 consolidated foundation checks (master brief §38), plus the phase suites: 32/32 Phase 5, 28/28 Java source-analysis (8 of which really compiled and ran Java on OpenJDK 21.0.10), 63/63 Phase 4, 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2. See [Verification](#verification-status). |
 | **Last updated** | 2026-08-13 |
 
 ---
@@ -56,11 +57,12 @@ Used throughout this file. Never substitute vague words like "done" or
 | **3** | Dashboard + 43-module metadata layer + search foundation | `VERIFIED` — built and exercised in a real browser |
 | **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | `VERIFIED` — built and exercised in a real browser |
 | **5** | Java execution architecture — editor UI, execution-service abstraction, online adapter seam, local fallback | `VERIFIED` — built and exercised in a real browser; **no online provider enabled or verified** |
-| **6** | *Not yet specified by the project owner* | Awaiting specification |
+| **6** | Full foundation verification, documentation-truth audit, Foundation Report | `VERIFIED` — 52/52 consolidated checks; two false documentation claims found and corrected |
 
-Phase 6 has **not** been defined. No agent may invent, assume, or act on a
-scope for it. Phases 3 and 4 were specified by the project owner in due course;
-their scope above is what was actually instructed, not inferred.
+All six foundation phases are complete. **What comes next is not a phase** —
+it is the per-chapter `CONTINUE` workflow (master brief §41). Each phase above
+was specified by the project owner in due course; the scope recorded is what was
+actually instructed, not inferred.
 
 ---
 
@@ -266,13 +268,17 @@ Full detail in `docs/ARCHITECTURE.md` §15.
 2. **No learning content.** Module *metadata* exists; chapters, practice
    problems, interview questions, and code examples do not. Every module is
    `NOT_STARTED` with 0 chapters.
-3. **No progress tracking.** `assets/js/progress.js` is a stub with no
-   persistence; every figure it returns is a real zero. The only `localStorage`
-   key in use is `jfsm.theme`. Phase 4 wires the rest.
+3. **Progress records position, not achievement.** Persistence is real
+   (Phase 4), but with no chapters or exercises in the repository the only
+   thing a learner can record is which module they opened and a manually set
+   status. Every completion figure is a real zero because there is nothing to
+   complete yet — not because the store does not work.
 4. **Search covers modules and topics only** — the only searchable data that
    exists. The no-results state says so explicitly.
-5. **Practice, Interview, Assessments, Projects, and Revision are still
-   placeholder views.**
+5. **Interview, Assessments, Projects, and Revision are still placeholder
+   views.** Practice is no longer one — it renders working exercise, hint,
+   predict-the-output and code-runner shells (Phases 4–5) over labelled
+   placeholder data.
 6. **Without JavaScript the site does not navigate at all** — the sidebar and
    all view bodies are built by ES modules. Full no-JS content is not a goal.
 7. **`data/modules.js` is generated.** Hand-editing it will be overwritten. Edit
@@ -308,6 +314,17 @@ Full detail in `docs/ARCHITECTURE.md` §15.
 
 16. **Online execution is single-file.** Multi-file and Maven-project examples
     cannot run through either adapter; the local fallback covers them.
+
+17. **The verification suites are not committed to this repository.** Every
+    figure in [Verification](#verification-status) was produced by Playwright
+    suites held outside the repo in the authoring environment. A fresh session
+    therefore **cannot re-run them** and must treat the recorded totals as a
+    historical record, not something reproducible from a clone. Re-establishing
+    them in-repo is unfinished work, deliberately not done during Phase 6
+    because that phase was scoped to verification and documentation only.
+
+18. **No automated test or CI runs on push.** There is no CI configuration in
+    the repository; verification is manual and agent-driven.
 
 ---
 
@@ -526,6 +543,75 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### Phase 6 — foundation verification (performed 2026-08-13)
+
+A consolidated end-to-end pass against the master brief's foundation checklist
+(§38), served over `python3 -m http.server` and driven in headless Chromium.
+**52 passed, 0 failed, 4 not-applicable-yet.** All six phase suites were re-run
+first: **262 passing, 0 failing.** Combined total **314 checks, 0 failures.**
+
+| Checklist item (§38 + Phase 6 instruction) | Result |
+|---|---|
+| Navigation works; view switching; `aria-current` on the active link | PASS |
+| Sidebar lists all 43 modules | PASS |
+| Module expansion toggles and tracks `aria-expanded` | PASS |
+| Chapter-nav foundation renders and says chapters do not exist | PASS |
+| Mobile drawer: off-canvas at 375px, opens, backdrop closes it | PASS |
+| No horizontal overflow at 375px and at 320px on the heaviest view | PASS |
+| Dark/light toggle, persistence to `jfsm.theme` | PASS |
+| Theme already applied at DOMContentLoaded (no flash); inline script in `<head>` | PASS |
+| Search returns module hits and topic hits; navigates to the module | PASS |
+| Search empty state and no-results state | PASS |
+| Progress persists across reload | PASS |
+| Progress keys use permanent module ids; record carries `schemaVersion` | PASS |
+| Reset clears progress and preserves the theme | PASS |
+| Corrupt `localStorage` does not throw and degrades to empty | PASS |
+| Missing `localStorage` renders the dashboard cleanly | PASS |
+| Solution and predict answer hidden by default | PASS |
+| Hint ladder reveals one step at a time | PASS |
+| Disclosure toggles expose and update `aria-expanded` | PASS |
+| Editor accepts edits | PASS |
+| Run routes through the abstraction and renders a typed result | PASS |
+| "No provider configured" renders cleanly with no throw | PASS |
+| Reset restores the starter code | PASS |
+| Local `javac`/`java` fallback reachable from the practice UI | PASS |
+| All 43 module routes resolve to their module | PASS |
+| Module 08 is "Hashing & HashMap Internals" | PASS |
+| DSA block 18–25 present and contiguous | PASS |
+| Unknown route falls back to the not-found view | PASS |
+| No broken internal links | PASS |
+| No console errors across the whole sweep | PASS |
+| Temporary dev completion control is labelled as scaffolding | PASS |
+| Chapter navigation (previous/next, breadcrumbs) | NOT APPLICABLE YET — no chapters exist |
+| Chapter content rendering | NOT APPLICABLE YET — no chapters exist |
+| Real exercise / predict content | NOT APPLICABLE YET — only labelled placeholders, by design |
+| Online execution round-trip | NOT APPLICABLE YET — no provider configured |
+
+### Phase 6 — not verified
+
+Carried forward honestly; none of these was tested:
+
+- **Real devices.** Not verified because: only headless Chromium at simulated
+  viewports was available. No physical phone or tablet was used.
+- **Other browsers.** Not verified because: only Chromium was available. Firefox
+  and Safari (and therefore WebKit-specific rendering) are untested.
+- **Live provider round-trip and CORS.** Not verified because: the sandbox's
+  network egress policy blocks the provider hosts, and CORS can only be
+  established from a real browser origin talking to a real instance.
+- **Screen-reader narration.** Not verified because: no assistive technology was
+  available. ARIA attributes and semantics were asserted structurally
+  (`role`, `aria-live`, `aria-expanded`, `aria-current`, accessible names), which
+  is not the same as hearing a screen reader read the page.
+- **Measured colour contrast.** Not verified because: no contrast measurement
+  was performed. The palette was designed with contrast in mind but no ratio was
+  computed against WCAG thresholds.
+- **`prefers-reduced-motion` behaviour** was not exercised in this pass.
+- **Keyboard-only end-to-end traversal** was not exercised in this pass beyond
+  the focus and `aria-expanded` assertions.
+- **Print styles** do not exist and were not tested.
+
+---
 
 ### Phase 5 — performed 2026-08-13
 
@@ -934,11 +1020,131 @@ see the Phase 2 section above.)*
 
 ---
 
+## Foundation Report (master brief §40)
+
+Filled with what is actually true on 2026-08-13.
+
+```text
+Foundation complete.
+
+Modules created:            43 (metadata only — 0 have learning content)
+Website foundation:         complete
+Search:                     complete (foundation — modules and topics only)
+Progress tracking:          complete (foundation — per-browser localStorage)
+Practice system:            complete (foundation — shells; no real content)
+Java compiler integration:  complete (abstraction + local javac/java fallback;
+                            online provider: NONE configured, NONE verified)
+Responsive layout:          complete
+Dark/light mode:            complete
+Persistent documentation:   complete
+
+Current project state:
+  Phase                FOUNDATION COMPLETE (all 6 phases)
+  Awaiting             the first CONTINUE from the project owner
+  Chapters written     0
+  Modules with content 0 of 43 (all NOT_STARTED, chapterCount 0)
+  Exercises (real)     0   (1 labelled placeholder, excluded from all counts)
+  Predict questions    0   (1 labelled placeholder, excluded from all counts)
+  Verification         314 checks passing, 0 failing, 2026-08-13
+  Known bugs           none
+  Execution provider   none configured; both adapters unproven against a live
+                       instance; CORS unverified
+  Next required task   CONTINUE -> first chapter of Module 01
+                       (01-java-foundations-execution-model)
+
+Repository tree:
+  Java_mastery/
+  |- index.html                      app shell; all views as static markup
+  |- README.md                       project description + fresh-session entry
+  |- CLAUDE.md                       permanent operating rules
+  |- assets/
+  |  |- css/  base.css  theme.css  layout.css
+  |  \- js/   app.js dom.js theme.js nav.js sidebar.js dashboard.js
+  |           curriculum-view.js module-view.js search.js
+  |           storage.js progress.js
+  |           practice-view.js exercise-shell.js predict-shell.js
+  |           code-runner.js
+  |           execution/ config.js result.js service.js java-source.js
+  |                      providers/ piston.js judge0.js
+  |- data/    modules.js (GENERATED)  exercises.js  predict-output.js
+  |- tools/   generate-modules.mjs
+  \- docs/    MASTER_BRIEF.md (CANONICAL)  PROJECT_STATE.md
+              ARCHITECTURE.md  CURRICULUM.md  AI_INSTRUCTIONS.md
+
+  Absent by design: content/, java/, chapters, build files, dependencies, CI.
+```
+
+### The 43 permanent module ids — for the record
+
+These are **primary keys**, not labels. They key `localStorage` progress under
+`jfsm.progress`, the routes (`#/module/<id>`), and every cross-reference in the
+repository. Renaming or renumbering one silently destroys stored learner
+progress. Verified against `data/modules.js` on 2026-08-13.
+
+```text
+01  01-java-foundations-execution-model
+02  02-oop-in-java
+03  03-java-language-fundamentals
+04  04-strings-wrappers-object-fundamentals
+05  05-exception-handling
+06  06-generics
+07  07-java-collections-framework
+08  08-hashing-hashmap-internals
+09  09-functional-java-lambda-expressions
+10  10-stream-api
+11  11-optional-date-time-modern-java-apis
+12  12-annotations-enums-reflection
+13  13-java-i-o-nio
+14  14-jvm-memory-garbage-collection
+15  15-multithreading-fundamentals
+16  16-concurrency-synchronization
+17  17-executors-advanced-concurrency
+18  18-dsa-foundations-in-java
+19  19-hashing-dsa-patterns
+20  20-two-pointers-sliding-window
+21  21-linked-lists-stack-queue-deque
+22  22-trees-bst-heaps
+23  23-graphs
+24  24-binary-search-recursion-backtracking
+25  25-greedy-dynamic-programming
+26  26-sql-fundamentals
+27  27-advanced-sql-database-concepts
+28  28-jdbc
+29  29-maven-java-project-management
+30  30-jpa-fundamentals
+31  31-hibernate-internals-advanced-orm
+32  32-spring-core
+33  33-spring-boot-fundamentals
+34  34-spring-mvc-rest-apis
+35  35-spring-data-jpa
+36  36-spring-security
+37  37-testing-java-spring-applications
+38  38-production-grade-spring-boot
+39  39-backend-architecture-design
+40  40-java-full-stack-integration
+41  41-debugging-performance-problem-solving
+42  42-projects-interview-engineering
+43  43-final-full-stack-capstone-mastery-assessment
+```
+
+### How a fresh session continues
+
+**Read** `README.md` → `CLAUDE.md` → `docs/AI_INSTRUCTIONS.md` →
+`docs/PROJECT_STATE.md` → `docs/ARCHITECTURE.md` → `docs/CURRICULUM.md` →
+`docs/MASTER_BRIEF.md` (canonical) → **inspect the repository itself**
+(`git log`, `git status`, list the directories, open the files) → wait for
+**`CONTINUE`**, then build exactly one chapter — the first incomplete one,
+determined from the repository and never from conversation history — verify it,
+update this file, and **STOP**.
+
+---
+
 ## Change log
 
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-13 | 6 | Final foundation phase — verification and documentation truth only; **no code behaviour changed**. Ran a consolidated end-to-end pass against the master brief's §38 foundation checklist: 52/52 passing, 4 items not-applicable-yet, plus all six phase suites re-run at 262/262 — **314 checks, 0 failures**. Documentation-truth audit found and fixed two false claims in this file: known limitation 3 still said progress tracking was an unpersisted stub (Phase 4 replaced it), and limitation 5 still listed Practice as a placeholder view (Phases 4–5 built it). Added limitations 17–18 (verification suites are not committed to the repo; no CI). Corrected README §7's stale status line and module count, rewrote README §13 into a self-sufficient fresh-session entry point covering the CONTINUE workflow, the read order including MASTER_BRIEF.md, and the module-id convention. Updated the site's phase labels from 'Phase 5 of 6' to 'Foundation complete'. Confirmed all 43 modules are NOT_STARTED with 0 chapters and the MASTER_BRIEF → CURRICULUM → modules.js chain is in sync. State set to FOUNDATION COMPLETE, awaiting the first CONTINUE. No chapter was created. |
 | 2026-08-13 | 5 | Built the Java execution architecture. Added `assets/js/execution/{config,result,service,java-source}.js` and `assets/js/execution/providers/{piston,judge0}.js` — a provider-agnostic `executeJava()` returning a typed result with every failure mode mapped, and one documented configuration point that deliberately has **no credential field**. Added `assets/js/code-runner.js`: an editable editor with Run / Reset / Copy, an output panel separating stdout, compiler diagnostics, runtime errors and provider-unavailable, and an always-present local `javac` / `java` panel whose commands are derived from the source actually in the editor. Replaced the disabled `Run — Phase 5` placeholders in both practice shells. Extended the exercise contract with `starterCode` and `stdin` (additive). **Researched providers against live docs and enabled none**: Piston's public API is no longer freely available (Feb 15 2026, per its readme) and Judge0's hosted offerings require a secret key a static site cannot hold. Verified in-browser 32/32, plus 28/28 source-analysis checks of which 8 really compiled and ran Java on OpenJDK 21.0.10; all prior suites re-run green (262 total). Corrected two Java claims by execution rather than asserting them. No provider was contacted; no CORS behaviour verified. |
 | 2026-08-12 | 4 | Replaced the progress stub with real `localStorage` persistence: `assets/js/storage.js` (single storage gateway) and a rewritten `assets/js/progress.js` (single progress API, `schemaVersion: 1`, keyed on permanent module ids, defensive against corrupt/blocked/future-version storage, reset that preserves the theme). Wired real progress into the dashboard, sidebar, curriculum, and module views, with change notification. Added the practice/hint/predict-output shells (`practice-view.js`, `exercise-shell.js`, `predict-shell.js`) plus their data contracts (`data/exercises.js`, `data/predict-output.js`) holding one labelled placeholder each. Added a clearly-tagged temporary manual completion control. Verified in-browser: 63/63 Phase 4 checks and 202 total across all suites; two real bugs found and fixed. No real exercises, no chapters, no code execution. |
 | 2026-08-12 | realign | Added `docs/MASTER_BRIEF.md` (verbatim, owner-supplied) as the canonical curriculum source. Rewrote `docs/CURRICULUM.md` as a byte-identical transcription of its Section 12, replacing the Phase 1 authored curriculum — only 2 of 43 names had matched. Regenerated `data/modules.js` (43 modules, 848 topics, 19 emphasis notes, 7 project subsections); 41 of 43 module ids changed. Adapted the module, curriculum, and search views to the flat topic shape. `description` derived mechanically; `prerequisites` left empty — neither invented. Verified in-browser: 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2. |

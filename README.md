@@ -45,13 +45,14 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 5 of 6 (Java execution architecture) complete |
-| **What exists** | Documentation, the website shell, and the module metadata layer |
-| **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
+| **Phase** | **FOUNDATION COMPLETE** (all 6 phases) — awaiting the first `CONTINUE` |
+| **What exists** | Documentation, the full website foundation, the module metadata layer, progress persistence, practice shells, and the execution abstraction |
+| **Website** | Navigation, dashboard, curriculum, module overviews, search, practice shells, code runner. **No learning content** |
 | **Module content** | Metadata only — no chapters, exercises, or examples exist |
 | **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
 | **Code execution / compiler** | Architecture built; **no online provider enabled**. The editor, the `executeJava()` abstraction, two adapters, and the local `javac`/`java` fallback all exist. Running code locally with a JDK needs nothing else. |
-| **Modules completed** | 0 of 43 |
+| **Modules completed** | 0 of 43 — every module is `NOT_STARTED` with 0 chapters |
+| **Next step** | The project owner says `CONTINUE`; the agent builds the first chapter of Module 01 (`01-java-foundations-execution-model`). See §13 |
 
 The site navigates all 43 modules **as defined by
 [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
@@ -334,16 +335,19 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
 
 ## 7. Website architecture summary
 
-> **Status: the shell is built (Phase 2). Everything it will contain is not.**
+> **Status: the website foundation is complete (Phases 2–5). The learning
+> content it will hold is not — 0 of 43 modules have chapters.**
 
 **Built and verified:**
 
-- **Stack:** static HTML + CSS + vanilla JavaScript (three ES modules). No
-  framework, no bundler, no transpiler, no build step, no dependencies.
+- **Stack:** static HTML + CSS + vanilla JavaScript (ES modules, no globals).
+  No framework, no bundler, no transpiler, no build step, no dependencies.
 - **Delivery:** static files served by any static file server (see
   [Running it](#running-it)). No server-side rendering.
-- **Shell:** fixed top bar, sidebar navigation, and a content region, with
-  seven placeholder destinations. Hash-based routing (`#/curriculum`).
+- **Shell:** fixed top bar, sidebar navigation, and a content region.
+  Hash-based routing (`#/curriculum`, `#/module/<id>`). Dashboard,
+  Curriculum, Module and Practice are built; Interview, Assessments,
+  Projects and Revision are still placeholder destinations.
 - **Theming:** light and dark, user-toggled, persisted in `localStorage` under
   `jfsm.theme`, defaulting to `prefers-color-scheme`, with no flash of the
   wrong theme on load.
@@ -368,6 +372,9 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   predict-the-output components, rendering from documented data contracts. They
   currently hold one labelled placeholder each — real exercises are authored per
   module.
+- **Code runner:** an editable editor with Run / Reset / Copy, an output panel
+  that separates stdout from compiler and runtime errors, and an always-present
+  local `javac` / `java` panel derived from the source in the editor. See §8.
 
 **Still to come:**
 
@@ -375,8 +382,8 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   renderer, keeping content and presentation separable.
 - **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
   chapter, resume-where-you-left-off.
-- **Code blocks:** syntax highlighting. Copy-to-clipboard and the run
-  affordance arrived in Phase 5.
+- **Code blocks:** syntax highlighting. (Copy-to-clipboard and the run
+  affordance already exist — see §8.)
 
 Detail, decisions, and open questions:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -457,10 +464,10 @@ The project is being built in **6 foundation phases**. The specified phases are:
 | **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
 | **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Complete and verified |
 | **5** | Java execution architecture — editor, execution-service abstraction, online adapter seam, local fallback | Complete and verified; **no online provider enabled** |
-| **6** | *Not yet specified by the project owner* | Awaiting specification |
+| **6** | Full foundation verification, documentation-truth audit, Foundation Report | Complete and verified |
 
-Phase 6 has **not** been defined. No agent may invent, assume, or act on a
-scope for it; wait for an explicit instruction. Each phase is
+All six foundation phases are complete. What follows is **not** another
+phase: it is the per-chapter `CONTINUE` workflow described in §13. Each phase was
 delivered on explicit instruction only, and each ends with a STOP.
 
 ### After the foundation
@@ -557,11 +564,19 @@ Java_mastery/
 
 ## 13. How another AI agent continues this project
 
+**The foundation is complete. The project now runs on `CONTINUE`.**
+
+### Every session starts here
+
 1. **Read, in order:** `README.md` → [`CLAUDE.md`](CLAUDE.md) →
    [`docs/AI_INSTRUCTIONS.md`](docs/AI_INSTRUCTIONS.md) →
    [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) →
    [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) →
-   [`docs/CURRICULUM.md`](docs/CURRICULUM.md).
+   [`docs/CURRICULUM.md`](docs/CURRICULUM.md) →
+   [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md).
+
+   `MASTER_BRIEF.md` is **canonical** — the project owner's brief, transcribed
+   verbatim. Where any other document disagrees with it, it wins.
 2. **Inspect the actual repository** before changing anything — list the
    directories, read the files that exist, run `git log` and `git status`.
    Never assume a file's contents from its name.
@@ -569,8 +584,42 @@ Java_mastery/
    repository is right; correct the document and say that you did.
 4. **Assume no conversation history.** Everything needed is in these files. If
    something genuinely is not written down, ask — do not invent it.
-5. **Do only the phase or chapter you were asked for**, then update
-   `docs/PROJECT_STATE.md` and **stop**.
-6. **Never** add/remove/merge/rename modules, never overwrite without
-   inspecting first, never force-push or rewrite history, and never claim
-   verification that did not happen.
+
+### The `CONTINUE` workflow (master brief §41)
+
+When the project owner says **`CONTINUE`**:
+
+1. Do the reading and inspection above.
+2. **Determine the first incomplete chapter from the repository**, never from
+   conversation history. Today that is the first chapter of Module 01,
+   `01-java-foundations-execution-model`, because no chapter exists anywhere.
+3. Build **only that one chapter**, through the delivery workflow in §6.
+4. Integrate it into the website and **verify it by actually running it**.
+5. Update `docs/PROJECT_STATE.md` and any other documentation the change
+   affects.
+6. **STOP.** Wait for the next `CONTINUE`. Never batch chapters.
+
+### The module-id convention — permanent, never renamed
+
+Every module has a permanent id of the form `NN-kebab-case-name`, e.g.
+`08-hashing-hashmap-internals`. These ids are **primary keys**, not labels:
+
+- they key learner progress in `localStorage` under `jfsm.progress`;
+- they key the routes (`#/module/<id>`);
+- they key every cross-reference in this repository.
+
+Renaming or renumbering one **silently destroys stored learner progress**. The
+43 ids are fixed by `docs/CURRICULUM.md`, which is generated from
+`docs/MASTER_BRIEF.md` §12; `data/modules.js` is generated from that in turn.
+Never hand-edit `data/modules.js` — run `node tools/generate-modules.mjs`, and
+`node tools/generate-modules.mjs --check` to confirm the chain is in sync.
+
+### Hard rules
+
+- **Do only the phase or chapter you were asked for**, then update
+  `docs/PROJECT_STATE.md` and **stop**.
+- **Never** add, remove, merge, split, rename, or renumber a module.
+- **Never** overwrite a file without reading it first.
+- **Never** force-push or rewrite history.
+- **Never** claim verification that did not happen — say
+  `Not verified because: ...` instead.

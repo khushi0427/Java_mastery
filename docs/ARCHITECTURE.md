@@ -4,10 +4,13 @@
 what was actually built — Phase 2 (frontend, file structure, navigation,
 theming, responsive), Phase 3 (data architecture, module architecture, search,
 dashboard), Phase 4 (progress system, localStorage schema, practice/hint/
-predict-output shells). Sections that still describe systems which **do not
-exist yet** are marked accordingly. Real today: the documentation layer, the
-website shell, the module metadata layer, persisted progress, and the practice
-shells — **no learning content and no code execution**.
+predict-output shells), Phase 5 (compiler/execution abstraction) and Phase 6
+(foundation verification and documentation audit). Sections that still describe
+systems which **do not exist yet** are marked accordingly. Real today: the
+documentation layer, the website shell, the module metadata layer, persisted
+progress, the practice shells, and the execution abstraction with its local
+`javac`/`java` fallback — **no learning content, and no online execution
+provider enabled**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -28,7 +31,7 @@ section becomes real, move it out of *Planned* — and only then.
 ## Table of contents
 
 1. [Documentation layer](#1-documentation-layer) — **IMPLEMENTED**
-2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED** (shell only)
+2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED**
 3. [File structure](#3-file-structure) — PARTIAL
 4. [Data architecture](#4-data-architecture) — PARTIAL (module metadata built)
 5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL (modules built, chapters not)
@@ -37,8 +40,8 @@ section becomes real, move it out of *Planned* — and only then.
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
 9. [Progress system](#9-progress-system) — **IMPLEMENTED**
 10. [localStorage usage](#10-localstorage-usage) — **IMPLEMENTED** (theme + progress)
-11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — PLANNED (Phase 5)
-12. [Navigation](#12-navigation) — **IMPLEMENTED** (shell only)
+11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — **IMPLEMENTED** (Phase 5; no provider enabled)
+12. [Navigation](#12-navigation) — **IMPLEMENTED** (module level; chapter level PLANNED)
 13. [Search](#13-search) — **IMPLEMENTED** (modules + topics)
 14. [Responsive behaviour](#14-responsive-behaviour) — **IMPLEMENTED**
 15. [Cross-cutting decisions already fixed](#15-cross-cutting-decisions-already-fixed)
@@ -93,10 +96,11 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 
 ## 2. Frontend architecture
 
-**Status: IMPLEMENTED for the application shell (Phase 2).** Layout, theming,
-navigation, and routing exist and were verified in a real browser. Everything
-the shell *contains* — module data, content rendering, search, progress,
-practice, execution — is still PLANNED.
+**Status: IMPLEMENTED (Phase 2 shell; Phases 3–5 filled it in).** Layout,
+theming, navigation, routing, module data, search, progress, the practice
+shells, and the execution abstraction all exist and were verified in a real
+browser. What is still PLANNED is **chapter content rendering** — there is no
+chapter to render.
 
 ### Fixed constraints (decided, not negotiable)
 
@@ -112,7 +116,8 @@ practice, execution — is still PLANNED.
   (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router),
   `sidebar.js`, `dashboard.js`, `curriculum-view.js`, `module-view.js`,
   `search.js`, `practice-view.js`, `exercise-shell.js`, `predict-shell.js`,
-  `progress.js`, `storage.js`, and `dom.js` (element builder). No globals;
+  `progress.js`, `storage.js`, `code-runner.js`, the `execution/` modules, and
+  `dom.js` (element builder). No globals;
   modules communicate by import, not by shared window state.
 - **Three stylesheets** with a strict division of responsibility:
   `base.css` (reset, non-colour tokens, typography, focus primitives),
@@ -154,7 +159,9 @@ service worker / offline support.
 
 ## 3. File structure
 
-**Status: PARTIAL.** The documentation layer exists; everything else is planned.
+**Status: PARTIAL.** The documentation layer and the whole website foundation
+exist (Phases 1–5). What remains planned is content: `content/` and `java/`
+below hold nothing, because no chapter has been written.
 
 ### Actual, today
 
@@ -776,10 +783,12 @@ or merely advise remains UNDECIDED.
 
 ## 12a. Dashboard
 
-**Status: IMPLEMENTED as structure (Phase 3); values arrive with Phase 4.**
+**Status: IMPLEMENTED (Phase 3 structure, Phase 4 real values).**
 
-Seven sections, each reading `data/modules.js` and the `progress.js` stub — no
-duplicated module list, no hardcoded figures:
+Seven sections, each reading `data/modules.js` and the real progress API in
+`assets/js/progress.js` — no duplicated module list, no hardcoded figures. The
+figures below are what an untouched browser shows; they are real zeros, not
+placeholders, because no chapters or exercises exist yet:
 
 | Section | Current state |
 |---|---|
