@@ -21,6 +21,7 @@
 
 import { el, replaceChildren } from './dom.js';
 import { isExerciseSolved, setExerciseSolved } from './progress.js';
+import { renderCodeRunner } from './code-runner.js';
 
 /** A titled block, omitted entirely when it has nothing to show. */
 function field(label, value) {
@@ -34,23 +35,16 @@ function field(label, value) {
   ]);
 }
 
-/** A labelled code block. Wide code scrolls inside itself, never the page. */
-function codeBlock(code, language = 'java') {
-  return el('div', { class: 'code-block' }, [
-    el('div', { class: 'code-block__bar' }, [
-      el('span', { class: 'code-block__lang', text: language }),
-      el('button', {
-        class: 'code-block__action',
-        type: 'button',
-        // Phase 5 owns execution. A disabled control is honest; a fake Run
-        // button that appears to work would not be.
-        disabled: true,
-        title: 'Running code arrives in Phase 5',
-        text: 'Run — Phase 5',
-      }),
-    ]),
-    el('pre', { class: 'code-block__pre scroll-x' }, [el('code', { text: code })]),
-  ]);
+/**
+ * A labelled, editable, runnable code block (Phase 5).
+ *
+ * Phase 4 rendered a read-only block with a disabled "Run — Phase 5" button.
+ * That control is now real: see assets/js/code-runner.js. It runs code when a
+ * provider is configured and explains itself when none is, and it always
+ * carries the local `javac` / `java` commands.
+ */
+function codeBlock(code, language = 'java', options = {}) {
+  return renderCodeRunner({ code, language, ...options });
 }
 
 /**
@@ -186,6 +180,23 @@ export function renderExercise(exercise) {
       : null,
 
     field('Edge cases', exercise.edgeCases),
+
+    // The workspace: where the learner actually writes the solution. Present
+    // only when the exercise supplies starter code (Phase 5 addition to the
+    // data contract — see data/exercises.js). Its Reset restores the starter,
+    // never the reference solution.
+    exercise.starterCode
+      ? el('div', { class: 'exercise__workspace' }, [
+        el('h4', { class: 'exercise__field-label', text: 'Your solution' }),
+        codeBlock(exercise.starterCode, 'java', {
+          starterCode: exercise.starterCode,
+          stdin: exercise.sampleInput && exercise.sampleInput !== '(placeholder)'
+            ? exercise.sampleInput
+            : '',
+          allowStdin: Boolean(exercise.stdin ?? exercise.sampleInput),
+        }),
+      ])
+      : null,
 
     exercise.hints?.length ? hintLadder(exercise) : null,
     exercise.solution ? solutionBlock(exercise) : null,

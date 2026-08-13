@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-12 (Phase 4 — progress tracking + practice shells)
+**Last updated:** 2026-08-13 (Phase 5 — Java execution architecture)
 
 ---
 
@@ -31,19 +31,19 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | FOUNDATION (Phase 4 of 6 — Progress tracking + practice/hint/predict shells) — **complete** |
+| **Project phase** | FOUNDATION (Phase 5 of 6 — Java execution architecture) — **complete** |
 | **Current module** | none (foundation not yet complete) |
 | **Current chapter** | none |
 | **Completed modules** | none (0 of 43) |
 | **Completed chapters** | none |
-| **Partially completed work** | none — Phase 4 finished its stated scope; Phases 5–6 not started |
-| **Next required task** | Phase 5 — Java execution architecture (editor + execution-service abstraction + local `javac`/`java` fallback) |
-| **Completed website features** | app shell; light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; metadata-driven sidebar listing all 43 modules; module overview and curriculum views; functional module/topic search; **real `localStorage` progress persistence**; **dashboard wired to stored progress**; **practice / progressive-hint / predict-the-output UI shells** |
-| **Compiler integration status** | not started |
+| **Partially completed work** | none — Phase 5 finished its stated scope; Phase 6 not started |
+| **Next required task** | Phase 6 — **not yet specified by the project owner.** Do not invent a scope for it. |
+| **Completed website features** | app shell; light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; metadata-driven sidebar listing all 43 modules; module overview and curriculum views; functional module/topic search; **real `localStorage` progress persistence**; **dashboard wired to stored progress**; **practice / progressive-hint / predict-the-output UI shells**; **editable code editor with Run, Reset and Copy**; **provider-agnostic Java execution abstraction**; **always-present local `javac`/`java` fallback derived from the actual source** |
+| **Compiler integration status** | **Architecture implemented; NO online provider enabled.** Editor, `executeJava()` abstraction, Piston + Judge0 adapters, and the local `javac`/`java` fallback all exist. `provider: null` is the shipped default and a permanently supported mode. No HTTP request has ever been made to a live provider from this repository — see [Phase 5 — provider research](#phase-5--provider-research-performed-2026-08-13). |
 | **Known bugs** | none |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | Phase 4 verified in-browser — 63/63 Phase 4 checks, plus 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2 (202 total); see [Verification](#verification-status) |
-| **Last updated** | 2026-08-12 |
+| **Last verification status** | Phase 5 verified in-browser — 32/32 Phase 5 checks and 28/28 Java source-analysis checks (8 of which actually compiled and ran Java on OpenJDK 21.0.10), plus 63/63 Phase 4, 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2 (262 total); see [Verification](#verification-status) |
+| **Last updated** | 2026-08-13 |
 
 ---
 
@@ -55,7 +55,7 @@ Used throughout this file. Never substitute vague words like "done" or
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | `VERIFIED` — built and exercised in a real browser |
 | **3** | Dashboard + 43-module metadata layer + search foundation | `VERIFIED` — built and exercised in a real browser |
 | **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | `VERIFIED` — built and exercised in a real browser |
-| **5** | Java execution architecture — editor UI, execution-service abstraction, local fallback | `NOT_STARTED` |
+| **5** | Java execution architecture — editor UI, execution-service abstraction, online adapter seam, local fallback | `VERIFIED` — built and exercised in a real browser; **no online provider enabled or verified** |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
 Phase 6 has **not** been defined. No agent may invent, assume, or act on a
@@ -168,7 +168,7 @@ which already exist and are already tested.
 
 ## What actually exists in this repository
 
-Verified by direct inspection on 2026-08-12:
+Verified by direct inspection on 2026-08-13:
 
 ```
 Java_mastery/
@@ -179,7 +179,7 @@ Java_mastery/
 │   ├── css/
 │   │   ├── base.css           (Phase 2, extended Phase 3)
 │   │   ├── theme.css          (Phase 2, status colours Phase 3)
-│   │   └── layout.css         (Phase 2, components Phase 3)
+│   │   └── layout.css         (Phase 2, components Phases 3/4/5)
 │   └── js/
 │       ├── app.js             (Phase 2, extended Phase 3)
 │       ├── theme.js           (Phase 2)
@@ -194,17 +194,26 @@ Java_mastery/
 │       ├── progress.js        (Phase 4 — real persistence, one progress API)
 │       ├── practice-view.js   (Phase 4)
 │       ├── exercise-shell.js  (Phase 4 — exercise + progressive hints)
-│       └── predict-shell.js   (Phase 4 — predict-the-output)
+│       ├── predict-shell.js   (Phase 4 — predict-the-output)
+│       ├── code-runner.js     (Phase 5 — editor, output panel, local fallback)
+│       └── execution/         (Phase 5 — provider-agnostic Java execution)
+│           ├── config.js      (THE single config point; NO credential field)
+│           ├── result.js      (STATUS, baseResult, postJson)
+│           ├── service.js     (executeJava() — the one entry point)
+│           ├── java-source.js (file name / run target / package from source)
+│           └── providers/
+│               ├── piston.js  (self-hosted Piston — never contacted a live instance)
+│               └── judge0.js  (self-hosted Judge0 — never contacted a live instance)
 ├── data/
 │   ├── modules.js             (GENERATED from CURRICULUM.md — do not hand-edit)
-│   ├── exercises.js           (Phase 4 — contract + 1 labelled placeholder)
+│   ├── exercises.js           (Phase 4 contract; +starterCode/stdin Phase 5)
 │   └── predict-output.js      (Phase 4 — contract + 1 labelled placeholder)
 ├── tools/
 │   └── generate-modules.mjs   (dev tool, not a build step; --check guards both hops)
 └── docs/
     ├── MASTER_BRIEF.md        (CANONICAL curriculum source — owner-written)
     ├── PROJECT_STATE.md       (Phase 1 — this file, updated through realignment)
-    ├── ARCHITECTURE.md        (Phase 1, updated through realignment)
+    ├── ARCHITECTURE.md        (Phase 1, §11 rewritten Phase 5)
     ├── CURRICULUM.md          (REALIGNED — verbatim from MASTER_BRIEF.md §12)
     └── AI_INSTRUCTIONS.md     (Phase 1)
 ```
@@ -282,12 +291,72 @@ Full detail in `docs/ARCHITECTURE.md` §15.
     exercises exist to complete. See the scaffolding note above.
 12. **Progress is per-browser.** No account system, and no export/import yet —
     clearing site data clears progress.
-13. **No code execution.** Run controls in the practice shells are disabled and
-    labelled "Phase 5".
+13. **No online code execution provider is enabled.** The architecture,
+    editor, adapters and local fallback all exist, but `provider: null` ships as
+    the default because no provider could be verified as free, keyless and
+    browser-callable on 2026-08-13. This is a supported permanent mode, not a
+    gap: every snippet carries exact local `javac` / `java` commands, and the
+    platform is fully usable without a provider.
+
+14. **Neither online adapter has ever contacted a live instance.** Both follow
+    wire formats read from the providers' live documentation. The sandbox this
+    was built in blocks outbound connections to those hosts, so the first run
+    against a real instance is the real test.
+
+15. **CORS is unverified for every provider**, and cannot be verified except
+    from a real browser talking to a real instance.
+
+16. **Online execution is single-file.** Multi-file and Maven-project examples
+    cannot run through either adapter; the local fallback covers them.
 
 ---
 
 ## Important implementation decisions
+
+Made during Phase 5 (2026-08-13):
+
+38. **`executeJava()` never rejects.** A compiler error, a dead provider and an
+    infinite loop are all *results*, because to a learner they are all just
+    outcomes of pressing Run. Rejecting would push provider plumbing into every
+    call site — exactly the coupling the abstraction exists to prevent.
+39. **`providerUnavailable` is a field, not just a status.** The UI must be able
+    to say "this is a configuration problem, not your code" without enumerating
+    provider failure modes. Telling a learner their correct program failed would
+    be the worst defect this platform could ship.
+40. **The config file has no credential field at all.** It is served verbatim to
+    every visitor, so a key placed in it is published. A keyed provider can only
+    be reached by pointing `baseUrl` at the minimal proxy in ARCHITECTURE §11.7.
+41. **Both adapters target self-hosted instances**, where authentication is off
+    by default — so no secret exists to leak.
+42. **No provider ships enabled.** Researched against live docs on 2026-08-13;
+    none was verifiably free, keyless and browser-callable. `provider: null` is
+    a permanently supported mode, not a placeholder awaiting completion.
+43. **Judge0's `language_id` and numeric `status.id` table are deliberately not
+    hardcoded.** Both differ between versions and instances; a constant would
+    silently run the wrong language somewhere. The adapter reads the
+    human-readable `status.description` and config carries the id.
+44. **The file name is derived from the source, not assumed to be `Main.java`.**
+    A public top-level type must live in a file named after it, so a fixed name
+    breaks every example whose class is not `Main` — with a compiler error the
+    learner did not write. Comments and string/text-block literals are stripped
+    first so a `// public class Ghost` cannot win.
+45. **The local `javac` / `java` panel is always present**, not gated on a
+    failure. Running locally is the primary path this curriculum teaches (master
+    brief §17); revealing it only when something breaks would invert that.
+46. **Reset restores the starter code, never the reference solution.** Otherwise
+    one keystroke becomes the answer and the hint ladder is pointless.
+47. **The predict shell allows running before the answer is revealed.** Predict,
+    then run, then compare — the gap between the two is the learning. What stays
+    hidden is the written answer and its explanation.
+48. **`starterCode` and `stdin` were added to the exercise contract additively.**
+    Every Phase 4 exercise stays valid; an exercise without `starterCode` simply
+    renders no editor.
+49. **Execution adapters live under `assets/js/`, not `tools/`.** Phase 1 had
+    reserved `tools/` for them, but they ship to the browser; `tools/` is for
+    development tooling that is never served. Recorded in ARCHITECTURE §3.
+50. **Tab indents in the editor, Escape releases the next Tab to navigation.**
+    Tab-to-indent is expected in a code editor but would trap keyboard users;
+    the escape hatch is announced in visible text under the editor.
 
 Made during Phase 4 (2026-08-12):
 
@@ -457,6 +526,156 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### Phase 5 — performed 2026-08-13
+
+Served over `python3 -m http.server` and driven with headless Chromium
+(Playwright). **32/32 Phase 5 browser checks passed.**
+
+**Editor**
+- The Phase 4 `Run — Phase 5` disabled placeholder is gone from the DOM; no
+  disabled Run control remains at rest.
+- Three runners render on `#/practice` (exercise starter, reference solution,
+  predict snippet); the editor is a real `<textarea>` and edits persist.
+- `Reset` restores the starter code, **not** the reference solution.
+- Output panel is `role="status" aria-live="polite"`; the editor carries an
+  accessible name; the local fallback is a real `<details>` disclosure.
+
+**Execution abstraction**
+- The result carries all eleven contract fields on every path.
+- No provider configured → `provider-unavailable`, `providerUnavailable: true`.
+- Empty source → `invalid-input`. Oversized source → `invalid-input`.
+- `executionStatus().ready` is `false` with no provider.
+- A provider pointed at a dead address → `provider-unavailable` with a message
+  stating the code was not run — **not** a code error. Exercised in-browser
+  against a refused connection.
+
+**Local fallback**
+- Commands are derived from the editor's live contents and update as it is
+  edited: renaming the public class to `Renamed` produced `javac Renamed.java`
+  / `java Renamed`; a `package com.demo;` source produced `mkdir -p com/demo`
+  and `java com.demo.Pkg`.
+
+**Source analysis — verified by actually running Java**
+`assets/js/execution/java-source.js` was tested with **OpenJDK 21.0.10**
+(`javac 21.0.10`) present in the development environment. **28/28 checks
+passed, 8 of which generated a source, named it by this logic, then really ran
+`javac` and `java`** and compared stdout:
+
+- non-`Main` public class, non-public class, two classes with `main` in the
+  second, a record with `main`, a text block, stdin actually read by `Scanner`,
+  a decoy `public class Ghost` inside a comment *and* a string literal, and a
+  packaged source run as `java com.example.demo.Packaged`.
+
+**Two Java facts were checked by execution rather than asserted from memory:**
+
+| Claim | Verified result |
+|---|---|
+| `java Foo.java` runs a single file without `javac` (Java 11+) | **True** on JDK 21 |
+| Single-file source launch requires the class name to match the file | **False** — `Mismatch.java` containing `public class TotallyDifferent` ran fine |
+| `javac` requires the public class and file name to agree | **True** — `error: class TotallyDifferent is public, should be declared in a file named TotallyDifferent.java` |
+| A packaged source can be launched directly as `java Pkg.java` | **True**, with no directory layout needed |
+
+The UI text was corrected to match these results: the file-name rule is stated
+as a `javac` requirement, and the single-file route is described as not
+enforcing it.
+
+**Regression**
+All prior suites re-run green after the Phase 5 changes: 63/63 Phase 4, 33/33
+realignment, 64/64 Phase 3, 42/42 Phase 2. `node tools/generate-modules.mjs
+--check` reports the metadata chain in sync.
+
+One Phase 4 assertion was updated rather than left failing: it asserted the Run
+control was a disabled `Phase 5` placeholder, which Phase 5 deliberately
+replaced. It now asserts the controls are live and no placeholder text survives.
+
+**Presentation**
+Rendered screenshots were inspected in light and dark themes and at a 360px
+viewport; no horizontal page overflow, and the editor picks up dark tokens.
+
+---
+
+### Phase 5 — provider research (performed 2026-08-13)
+
+Researched against the providers' **live documentation**, not training data.
+This section separates what was verified from what was not, because the
+distinction decides whether anything ships enabled.
+
+#### VERIFIED from live sources
+
+| Finding | Source |
+|---|---|
+| Piston's public API is **"no longer freely available to the public (as of Feb 15, 2026)"** and authorization must be requested case-by-case via Discord, granted only for non-commercial educational use | Piston readme, github.com/engineer-man/piston |
+| Piston's public endpoint is rate limited to 5 requests/second; self-hosting is recommended for higher throughput | Piston readme |
+| Piston `POST {base}/execute` requires `language`, `version`, `files[]`; optional `stdin`, `args`, timeouts and memory limits. Response carries `run` and (for compiled languages) `compile`, each with `stdout`, `stderr`, `code`, `signal`, `message` | Piston readme / API docs |
+| Judge0 `POST /submissions` requires `source_code` and `language_id`; optional `stdin`, `expected_output`, `base64_encoded`, `wait`, and CPU/wall/memory limits. Response carries `stdout`, `stderr`, `compile_output`, `message`, `exit_code`, `exit_signal`, `time`, `memory`, `status {id, description}`, `token` | judge0/judge0 `docs/api/submissions/submissions.md` |
+| Judge0 can be configured to require an API key, sent as `X-Auth-Token` on **every** request; via RapidAPI the headers are `X-RapidAPI-Key` / `X-RapidAPI-Host` | Judge0 authentication docs; RapidAPI docs |
+| Judge0 hosted plans are keyed and metered (RapidAPI free Basic tier, paid tiers above it; Sulu offers a free submission allowance on signup) | RapidAPI Judge0 pricing pages |
+| Wandbox has historically offered Java (OpenJDK) — permalinks exist for jdk‑9 through jdk‑22 | wandbox.org permalinks |
+
+#### NOT VERIFIED — and why
+
+- **No HTTP request was made to any provider.** The development sandbox's
+  network egress policy denied `CONNECT` to `wandbox.org:443` and blocked
+  `ce.judge0.com`, confirmed in the proxy's own failure log. **This is a
+  restriction of the sandbox, not evidence about the providers.**
+- **CORS behaviour is entirely unverified for every provider.** It cannot be
+  verified from a sandbox in principle: it is a browser-enforced property of a
+  real page origin talking to a real instance. Anyone enabling a provider must
+  treat the first run **from an actual browser** as the real test.
+- **Wandbox's current Java version could not be confirmed.** The permalinks
+  above prove those JDKs existed at some past time; they do not prove current
+  availability, and `GET /api/list.json` was unreachable. Java 17 is this
+  project's baseline and could not be confirmed as offered.
+- **Judge0's Java `language_id` was not determined** and is deliberately not
+  hardcoded — ids differ between versions and instances. Config requires the
+  operator to read `GET {baseUrl}/languages`.
+- **Judge0's numeric `status.id` table was not verified**, so the adapter
+  matches the human-readable `status.description` instead.
+- **No claim is made that any provider's API "works."** Both adapters were
+  written to documented wire formats and have never exchanged a byte with a
+  live instance.
+
+#### Decision
+
+**Ship with no provider enabled.** `provider: null` is the default in
+`assets/js/execution/config.js` and is a permanently supported mode, not a
+placeholder. The platform is fully usable without one: every chapter, exercise,
+hint, solution and prediction works, the editor stays editable, and every
+snippet carries exact local `javac` / `java` commands.
+
+Both adapters target a **self-hosted** instance, where authentication is off by
+default — so there is no secret, and nothing secret can leak. `config.js` has
+**no credential field at all**; a keyed provider can only be reached by pointing
+`baseUrl` at the minimal proxy described in `docs/ARCHITECTURE.md` §11.7.
+
+---
+
+### Phase 5 — not verified
+
+- **No online execution provider was exercised.** Not verified because: the
+  development sandbox's egress policy blocks outbound connections to the
+  provider hosts. Both adapters follow documented wire formats and have never
+  contacted a live instance.
+- **CORS from a browser to any provider.** Not verified because: this cannot be
+  established from a sandbox at all — it is a property of a real browser origin
+  talking to a real instance.
+- **The Piston adapter's response handling** (compile-stage failure, `SIGKILL`
+  on limits, exit codes) has never seen a real Piston response.
+- **The Judge0 adapter's response handling** (compile output, time-limit
+  description matching, `wait=true` behaviour, the token-only branch) has never
+  seen a real Judge0 response.
+- **The proxy described in ARCHITECTURE §11.7 does not exist.** Nothing needs it
+  while no keyed provider is in use.
+- **Multi-file and Maven-project execution** is not implemented online; both
+  adapters send a single file. The local fallback covers these cases.
+- **The clipboard fallback path** (`document.execCommand` in a non-secure
+  context) was not exercised — the verification run was served over
+  `127.0.0.1`, which is already a secure context.
+- **The Blob download** was not clicked through to a saved file in the
+  verification run.
+
+---
 
 ### Phase 4 — performed 2026-08-12
 
@@ -720,6 +939,7 @@ see the Phase 2 section above.)*
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-13 | 5 | Built the Java execution architecture. Added `assets/js/execution/{config,result,service,java-source}.js` and `assets/js/execution/providers/{piston,judge0}.js` — a provider-agnostic `executeJava()` returning a typed result with every failure mode mapped, and one documented configuration point that deliberately has **no credential field**. Added `assets/js/code-runner.js`: an editable editor with Run / Reset / Copy, an output panel separating stdout, compiler diagnostics, runtime errors and provider-unavailable, and an always-present local `javac` / `java` panel whose commands are derived from the source actually in the editor. Replaced the disabled `Run — Phase 5` placeholders in both practice shells. Extended the exercise contract with `starterCode` and `stdin` (additive). **Researched providers against live docs and enabled none**: Piston's public API is no longer freely available (Feb 15 2026, per its readme) and Judge0's hosted offerings require a secret key a static site cannot hold. Verified in-browser 32/32, plus 28/28 source-analysis checks of which 8 really compiled and ran Java on OpenJDK 21.0.10; all prior suites re-run green (262 total). Corrected two Java claims by execution rather than asserting them. No provider was contacted; no CORS behaviour verified. |
 | 2026-08-12 | 4 | Replaced the progress stub with real `localStorage` persistence: `assets/js/storage.js` (single storage gateway) and a rewritten `assets/js/progress.js` (single progress API, `schemaVersion: 1`, keyed on permanent module ids, defensive against corrupt/blocked/future-version storage, reset that preserves the theme). Wired real progress into the dashboard, sidebar, curriculum, and module views, with change notification. Added the practice/hint/predict-output shells (`practice-view.js`, `exercise-shell.js`, `predict-shell.js`) plus their data contracts (`data/exercises.js`, `data/predict-output.js`) holding one labelled placeholder each. Added a clearly-tagged temporary manual completion control. Verified in-browser: 63/63 Phase 4 checks and 202 total across all suites; two real bugs found and fixed. No real exercises, no chapters, no code execution. |
 | 2026-08-12 | realign | Added `docs/MASTER_BRIEF.md` (verbatim, owner-supplied) as the canonical curriculum source. Rewrote `docs/CURRICULUM.md` as a byte-identical transcription of its Section 12, replacing the Phase 1 authored curriculum — only 2 of 43 names had matched. Regenerated `data/modules.js` (43 modules, 848 topics, 19 emphasis notes, 7 project subsections); 41 of 43 module ids changed. Adapted the module, curriculum, and search views to the flat topic shape. `description` derived mechanically; `prerequisites` left empty — neither invented. Verified in-browser: 33/33 realignment, 64/64 Phase 3, 42/42 Phase 2. |
 | 2026-08-12 | 3 | Locked the curriculum (owner confirmation recorded in `CURRICULUM.md` Appendix B). Added the module metadata layer: `data/modules.js`, generated from `docs/CURRICULUM.md` by `tools/generate-modules.mjs`. Rebuilt the sidebar from metadata (43 modules, collapsible, empty chapter regions), added the dashboard structure reading a progress stub, the curriculum and module-overview views, and functional module/topic search. Verified in headless Chromium: 64/64 Phase 3 checks and 42/42 Phase 2 regression checks; three real bugs found and fixed. No progress persistence, practice UI, or code execution — those remain Phases 4–5. |

@@ -45,12 +45,12 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | FOUNDATION — Phase 4 of 6 (progress tracking + practice shells) complete |
+| **Phase** | FOUNDATION — Phase 5 of 6 (Java execution architecture) complete |
 | **What exists** | Documentation, the website shell, and the module metadata layer |
 | **Website** | Shell + 43-module navigation, dashboard, module overviews, search. No learning content |
 | **Module content** | Metadata only — no chapters, exercises, or examples exist |
 | **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
-| **Code execution / compiler** | Does not exist yet (Phase 5) |
+| **Code execution / compiler** | Architecture built; **no online provider enabled**. The editor, the `executeJava()` abstraction, two adapters, and the local `javac`/`java` fallback all exist. Running code locally with a JDK needs nothing else. |
 | **Modules completed** | 0 of 43 |
 
 The site navigates all 43 modules **as defined by
@@ -375,8 +375,8 @@ and (d) stops. One `CONTINUE`, one chapter. Never batch chapters.
   renderer, keeping content and presentation separable.
 - **Navigation depth:** module → chapter drill-down, breadcrumbs, previous/next
   chapter, resume-where-you-left-off.
-- **Code blocks:** syntax highlighting, copy-to-clipboard, and — from Phase 5 —
-  a run affordance.
+- **Code blocks:** syntax highlighting. Copy-to-clipboard and the run
+  affordance arrived in Phase 5.
 
 Detail, decisions, and open questions:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -385,30 +385,46 @@ Detail, decisions, and open questions:
 
 ## 8. Compiler / code-execution architecture summary
 
-> **Status: planned and pending. Nothing is built. This is Phase 5.**
-> Nothing about execution should be treated as decided beyond the shape below.
+> **Status: built in Phase 5, shipping with NO online provider enabled.**
+> That is a deliberate, supported end state — not an unfinished one.
+> Full detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §11.
 
-The intent is an **abstraction layer with two interchangeable adapters**, so
-that no chapter content is ever coupled to a specific execution provider:
+Everything that runs code calls one function — `executeJava()` in
+`assets/js/execution/service.js` — so no chapter content is ever coupled to a
+specific execution provider. It always resolves, never throws, and reports one
+of: `success`, `compile-error`, `runtime-error`, `timeout`,
+`provider-unavailable`, `invalid-input`, `error`.
 
-- **Online adapter (primary).** The browser sends source to a third-party Java
-  execution API and renders `stdout`, `stderr`, exit code, and compilation
-  diagnostics. If the chosen provider requires a secret key, a **minimal
-  proxy** may be introduced solely to keep that key off the client — this is
-  the one and only sanctioned reason for server-side code in this project.
-- **Local fallback (always available).** Every runnable example ships with the
-  exact `javac` / `java` / Maven commands so the learner can run it locally with
-  no network and no third party. The platform must remain fully usable with the
-  online adapter switched off or unavailable.
+- **Local fallback (always available, and the primary path).** Every snippet
+  renders the exact `javac` / `java` commands for *that* source — the real file
+  name, the real class, the real package — with copy and download buttons. This
+  needs nothing but a JDK: no provider, no network, no third party.
+- **Online adapters (optional, none enabled).** Adapters for self-hosted
+  [Piston](https://github.com/engineer-man/piston) and
+  [Judge0](https://github.com/judge0/judge0) exist behind
+  `assets/js/execution/config.js`, which ships as `provider: null`.
 
-Constraints already decided: a single execution interface both adapters
-implement; no provider-specific code in chapter content; graceful degradation
-to the local fallback; no secret key ever embedded in client-side JavaScript.
+**Why nothing is preconfigured.** Providers were researched against their live
+documentation on 2026-08-13. Piston's public API is, per its own readme, *"no
+longer freely available to the public (as of Feb 15, 2026)"*; Judge0's hosted
+offerings authenticate with a secret key, and a static site cannot hold a
+secret. No keyless, browser-callable Java service could be verified. So the
+repository ships honest and unconfigured rather than shipping something broken,
+metered, or leaking a key.
 
-Provider selection, request/response schema, rate limiting, and timeout
-behaviour are **not yet decided** and must not be assumed.
+**Neither adapter has ever contacted a live instance**, and CORS is unverified
+for every provider — it can only be established from a real browser talking to a
+real instance. Treat the first run against your own instance as the real test.
 
----
+**The security rule is absolute.** `config.js` has no field for a key, token, or
+password, because it is served verbatim to every visitor. If a provider needs a
+secret, it goes in a minimal proxy that forwards the request and nothing else —
+the one and only sanctioned reason for server-side code in this project — and
+`baseUrl` points at that proxy.
+
+**The platform is fully usable with no provider connected.** Every chapter,
+exercise, hint, solution, and predict-the-output question works; the editor
+stays editable; the local commands are always there.
 
 ## 9. Progress tracking
 
@@ -440,7 +456,7 @@ The project is being built in **6 foundation phases**. The specified phases are:
 | **2** | Website shell — HTML/CSS/JS, navigation, dark/light mode, responsive layout | Complete and verified |
 | **3** | Dashboard + 43-module metadata layer + search foundation | Complete and verified |
 | **4** | Progress tracking (localStorage) + practice / hint / predict-output UI shells | Complete and verified |
-| **5** | Java execution architecture — editor, execution-service abstraction, local fallback | Not started |
+| **5** | Java execution architecture — editor, execution-service abstraction, online adapter seam, local fallback | Complete and verified; **no online provider enabled** |
 | **6** | *Not yet specified by the project owner* | Awaiting specification |
 
 Phase 6 has **not** been defined. No agent may invent, assume, or act on a

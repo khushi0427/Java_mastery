@@ -27,12 +27,41 @@
  *   sampleOutput  string   optional
  *   edgeCases     string[] optional
  *   testCases     [{ input, expected }]  optional
+ *   starterCode   string   optional; PHASE 5 — see below
+ *   stdin         string   optional; PHASE 5 — see below
  *   hints         string[] ordered, revealed ONE AT A TIME (§20)
  *   solution      { language, code, explanation, complexity }  hidden by default
  *   isPlaceholder boolean  true only for demo scaffolding
  *
  * `solution` and every hint are hidden until the learner asks for them — the
  * master brief is explicit that solutions must not sit next to the problem.
+ *
+ * ---------------------------------------------------------------------------
+ * PHASE 5 EXTENSION — starterCode and stdin
+ * ---------------------------------------------------------------------------
+ * Phase 5 added the two optional fields above. Both are additive: every
+ * exercise written against the Phase 4 contract stays valid, and an exercise
+ * with no `starterCode` simply renders no editor.
+ *
+ *   starterCode  The skeleton the learner edits — imports, a class, a `main`,
+ *                and a marked gap. It is what the editor opens with and what
+ *                its Reset restores. Reset must NEVER restore the reference
+ *                solution: that would turn one keystroke into the answer and
+ *                undo the hint ladder.
+ *
+ *                Name the public class something meaningful. The runner reads
+ *                the source to work out the file name and the `java` target
+ *                (assets/js/execution/java-source.js), so `public class
+ *                WordCount` yields `javac WordCount.java` — commands that
+ *                actually work when pasted.
+ *
+ *   stdin        Standard input to prefill, for exercises that read input.
+ *                Its presence is also what makes the runner show the stdin
+ *                field at all.
+ *
+ * Neither field enables or requires online execution. With no provider
+ * configured — the default — the editor still opens, still holds edits, and
+ * still shows the exact local `javac` / `java` commands.
  */
 
 /** The difficulty ladder from master brief §18, in order. */
@@ -60,6 +89,17 @@ export const EXERCISES = [
     sampleOutput: '(placeholder)',
     edgeCases: ['Placeholder edge case.'],
     testCases: [],
+    // Placeholder starter code. Real, compilable Java rather than prose, so the
+    // Phase 5 editor and the derived local commands can be exercised — the
+    // public class is deliberately NOT called Main, which is what proves the
+    // file name is derived from the source instead of assumed.
+    starterCode:
+      'public class ShellCheck {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // Placeholder starter code — this is scaffolding, not an exercise.\n'
+      + '        System.out.println("The editor works. Run this locally with the commands below.");\n'
+      + '    }\n'
+      + '}\n',
     hints: [
       'Hint 1 — a small nudge. Placeholder text.',
       'Hint 2 — the approach. Placeholder text.',
@@ -67,7 +107,15 @@ export const EXERCISES = [
     ],
     solution: {
       language: 'java',
-      code: '// Placeholder. No reference solution exists, because no exercise exists.',
+      // Compilable placeholder: the reference solution is rendered in a runner
+      // too, so it has to be something that would actually run.
+      code:
+        '// Placeholder. No reference solution exists, because no exercise exists.\n'
+        + 'public class ShellCheck {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("The editor works. Run this locally with the commands below.");\n'
+        + '    }\n'
+        + '}\n',
       explanation: 'Placeholder explanation, shown only after the learner reveals it.',
       complexity: 'Not applicable to a placeholder.',
     },

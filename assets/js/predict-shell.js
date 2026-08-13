@@ -11,22 +11,20 @@
  */
 
 import { el } from './dom.js';
+import { renderCodeRunner } from './code-runner.js';
 
-/** @param {string} code @param {string} language */
+/**
+ * An editable, runnable snippet (Phase 5 — the Phase 4 placeholder button is gone).
+ *
+ * Running is deliberately available *before* the answer is revealed. That is
+ * the methodology, not a leak: predict, then run, then compare — and if the two
+ * disagree, that gap is the thing worth understanding. What stays hidden is the
+ * written answer and its explanation, because those remove the prediction.
+ *
+ * @param {string} code @param {string} language
+ */
 function codeBlock(code, language = 'java') {
-  return el('div', { class: 'code-block' }, [
-    el('div', { class: 'code-block__bar' }, [
-      el('span', { class: 'code-block__lang', text: language }),
-      el('button', {
-        class: 'code-block__action',
-        type: 'button',
-        disabled: true,
-        title: 'Running code arrives in Phase 5',
-        text: 'Run — Phase 5',
-      }),
-    ]),
-    el('pre', { class: 'code-block__pre scroll-x' }, [el('code', { text: code })]),
-  ]);
+  return renderCodeRunner({ code, language });
 }
 
 /**

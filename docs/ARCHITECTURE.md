@@ -167,7 +167,7 @@ Java_mastery/
 │   ├── css/
 │   │   ├── base.css       ← reset, non-colour tokens, typography, focus
 │   │   ├── theme.css      ← the complete colour system, light + dark
-│   │   └── layout.css     ← app shell + Phase 3 components
+│   │   └── layout.css     ← app shell + Phase 3/4/5 components
 │   └── js/
 │       ├── app.js         ← bootstrap / entry point
 │       ├── dom.js         ← element builder (no innerHTML)
@@ -178,9 +178,24 @@ Java_mastery/
 │       ├── curriculum-view.js ← all 43 modules, grouped by part
 │       ├── module-view.js ← module overview
 │       ├── search.js      ← source-based search index + UI
-│       └── progress.js    ← progress accessors (STUB until Phase 4)
+│       ├── storage.js     ← the ONLY module touching localStorage (Phase 4)
+│       ├── progress.js    ← the ONLY progress API (Phase 4)
+│       ├── practice-view.js   ← the #/practice route (Phase 4)
+│       ├── exercise-shell.js  ← one exercise, hints, solution (Phase 4)
+│       ├── predict-shell.js   ← one predict-the-output question (Phase 4)
+│       ├── code-runner.js ← editor + output + local fallback (Phase 5)
+│       └── execution/     ← Java execution, provider-agnostic (Phase 5)
+│           ├── config.js  ← THE single config point; no credential field
+│           ├── result.js  ← STATUS, baseResult, postJson
+│           ├── service.js ← executeJava(), the one entry point
+│           ├── java-source.js ← file name / run target / package from source
+│           └── providers/
+│               ├── piston.js  ← self-hosted Piston adapter
+│               └── judge0.js  ← self-hosted Judge0 adapter
 ├── data/
-│   └── modules.js         ← GENERATED module metadata (single source)
+│   ├── modules.js         ← GENERATED module metadata (single source)
+│   ├── exercises.js       ← exercise contract (Phase 4; +starterCode Phase 5)
+│   └── predict-output.js  ← predict-the-output contract (Phase 4)
 ├── tools/
 │   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
@@ -201,8 +216,8 @@ Phase 1 sketched a `site/` directory containing `index.html`, `css/`, and `js/`.
 2. It removes one level of nesting for the only entry point the project has.
 
 The Phase 1 text explicitly labelled that tree "intent, not commitments; Phase 2
-confirms them" — this is that confirmation. `content/`, `java/`, and `tools/`
-below are still intent.
+confirms them" — this is that confirmation. `content/` and `java/` below are
+still intent; `tools/` exists as of Phase 3.
 
 ### Planned — not yet implemented
 
@@ -214,12 +229,16 @@ Java_mastery/
 │           └── chapters/
 ├── java/                  ← runnable Java sources, per module
 │   └── module-01/
-└── tools/                 ← Phase 5 adds execution adapters here
 ```
 
 Note that `tools/` now exists — Phase 1 had reserved it for Phase 5 execution
-helpers, and Phase 3 put the curriculum generator there first. Both belong to
-"development tooling that is not shipped to the browser", so they share it.
+helpers, and Phase 3 put the curriculum generator there first.
+
+**Phase 5 did not use `tools/` for its adapters after all.** The execution
+adapters ship *to the browser*, so they belong under `assets/js/execution/`
+with the rest of the client code; `tools/` is for development tooling that is
+never served. The Phase 1 expectation is superseded, and this note records it
+rather than leaving the two documents disagreeing.
 
 **Naming conventions (decided now, so later phases are consistent):**
 
@@ -578,42 +597,136 @@ in step.
 
 ## 11. Compiler / execution abstraction
 
-**Status: PLANNED — not yet implemented (Phase 5).** Nothing here exists.
-Everything except the two decisions below is open.
+**Status: IMPLEMENTED (Phase 5), shipping with NO provider enabled.** The
+editor, the abstraction, both online adapters, and the local fallback exist.
+No online provider is configured or verified working — that is a deliberate,
+supported end state, not an unfinished one. See §11.6.
 
-### Decided
+### 11.1 The decisions this phase inherited — both kept
 
-1. **One interface, two adapters.** Chapter content is **never** coupled to a
-   specific execution provider. All execution goes through a single internal
-   interface with interchangeable implementations.
-2. **The local fallback always exists.** Every runnable example ships with exact
-   `javac` / `java` / Maven commands. The platform must be **fully usable with
-   online execution disabled or unavailable** — offline, no network, no third
-   party. Online execution is an enhancement, never a dependency.
+1. **One interface, many adapters.** Chapter content is never coupled to a
+   specific execution provider. Everything calls `executeJava()` in
+   `assets/js/execution/service.js`; nothing else imports an adapter, names a
+   provider, or calls `fetch`.
+2. **The local fallback always exists.** Every runnable snippet renders exact
+   `javac` / `java` commands, always — not only when something fails. The
+   platform is **fully usable with no provider connected**.
 
-### Adapters
+### 11.2 File layout
 
-| Adapter | Role |
+| File | Role |
 |---|---|
-| **Online adapter** | Sends source to a third-party Java execution service; renders `stdout`, `stderr`, exit code, and compiler diagnostics |
-| **Local fallback** | Exact commands for the learner to compile and run locally; always present |
+| `assets/js/execution/config.js` | **The single configuration point.** Chooses the provider, or `null` for none. Deliberately has no field for a secret. |
+| `assets/js/execution/result.js` | `STATUS`, `baseResult()`, `postJson()` — the shared result vocabulary. Separate from `service.js` so the service and its adapters do not import each other. |
+| `assets/js/execution/service.js` | `executeJava()`, `executionStatus()`. Validation, deadline, adapter dispatch, error classification. |
+| `assets/js/execution/java-source.js` | Derives the file name, run target, and package from the source. |
+| `assets/js/execution/providers/piston.js` | Adapter for a self-hosted Piston instance. |
+| `assets/js/execution/providers/judge0.js` | Adapter for a self-hosted Judge0 instance. |
+| `assets/js/code-runner.js` | The UI: editor, Run/Reset/Copy, output panel, local-fallback panel. |
 
-### Proxy — conditional
+### 11.3 The result contract — DECIDED
 
-If the chosen provider requires a secret key, a **minimal proxy** may be
-introduced for the sole purpose of keeping that key off the client. Constraints:
+`executeJava({ source, stdin })` resolves to an `ExecutionResult` and **never
+rejects**. A compiler error, a dead provider, and an infinite loop are all
+*results*, because to a learner they are all just outcomes of pressing Run;
+rejecting would push provider plumbing into every call site.
+
+| Field | Meaning |
+|---|---|
+| `status` | One of `success`, `compile-error`, `runtime-error`, `timeout`, `provider-unavailable`, `invalid-input`, `error`. Exhaustive. |
+| `stdout` / `stderr` | Program streams, `''` when empty |
+| `compileError` | Compiler diagnostics, or `null` |
+| `timedOut` | A deadline was hit — ours or the provider's |
+| `providerUnavailable` | No provider ran the code at all |
+| `exitCode` | When the provider reports one, else `null` |
+| `message` | One human-readable line, always safe to show |
+| `durationMs`, `provider`, `raw` | Client-observed wall time, which adapter answered, untouched provider response |
+
+`providerUnavailable` is deliberately **separate from `status`** so the UI can
+say "this is a configuration problem, not your code" without enumerating
+provider failure modes. Telling a learner their correct program failed would be
+the worst defect this platform could ship, so the output panel states in words
+that the code was not run and that nothing about the failure reflects on it.
+
+### 11.4 Failure modes — DECIDED
+
+| Condition | Result |
+|---|---|
+| No provider configured | `provider-unavailable`, with the configuration reason |
+| Provider selected but incompletely configured | `provider-unavailable`, naming the missing field |
+| Empty or oversized source | `invalid-input`, refused before sending |
+| Client deadline exceeded (`timeoutMs`) | `timeout`, `timedOut: true` |
+| Provider reports a time limit | `timeout` |
+| Compile stage failed | `compile-error`, diagnostics in `compileError` |
+| Ran, exited non-zero | `runtime-error` |
+| HTTP 401 / 403 / 429 | `provider-unavailable`, described as authorisation/rate-limit |
+| Network failure, DNS, refused connection, blocked CORS, mixed content | `provider-unavailable` |
+
+The browser reports that last row's cases as one indistinguishable `TypeError`
+by design, so the message lists the possibilities rather than guessing one and
+misleading the operator. All of them are provider problems; none is the code.
+
+### 11.5 Source analysis — DECIDED
+
+`java-source.js` derives the file name from the source rather than assuming
+`Main.java`. A public top-level type must live in a file named after it, so a
+fixed name breaks every example whose class is not `Main` — with a compiler
+error the learner did not write. It strips comments and string/text-block
+literals first, so a `// public class Ghost` cannot win.
+
+It also yields the `main`-bearing class and any `package`, so the fallback panel
+emits commands that work for packaged sources instead of ones that fail.
+
+**Verified by execution** against OpenJDK 21.0.10 — sources were generated,
+named by this logic, then actually compiled and run. See PROJECT_STATE.
+
+### 11.6 Provider status — NONE ENABLED, and why
+
+Researched 2026-08-13 against each provider's live documentation. Findings and
+sources are recorded in `docs/PROJECT_STATE.md`; the short version:
+
+- **Piston's public API at emkc.org** is, per its own readme, *"no longer
+  freely available to the public (as of Feb 15, 2026)"* and requires
+  case-by-case authorization. Not something to point learners at.
+- **Judge0's hosted offerings** authenticate with a secret (`X-Auth-Token` /
+  `X-RapidAPI-Key`). A static site cannot hold a secret.
+- No keyless, browser-callable Java service could be verified to this project's
+  standard on that date.
+
+So `provider: null` ships as the default and is a **permanent supported mode**,
+not a placeholder. Both adapters are written to wire formats read from the
+providers' live docs, and both target a **self-hosted** instance, where
+authentication is off by default and no secret exists to leak.
+
+**NOT VERIFIED BY EXECUTION:** no HTTP request has been made to any live Piston
+or Judge0 instance from this repository. The development sandbox blocks
+outbound connections to those hosts, so the adapters' wire formats follow
+documentation, not an observed round trip. **CORS behaviour in particular
+cannot be verified from a sandbox at all** — it is a browser-enforced property
+of a real page origin talking to a real instance. Anyone enabling a provider
+should treat the first run from an actual browser as the real test.
+
+### 11.7 Proxy — still conditional, still unbuilt
+
+Unchanged and deliberately not built, because nothing needs it yet. If a
+provider requires a secret, a minimal proxy may hold it, under the original
+constraints:
 
 - **No secret may ever appear in client-side JavaScript or in this repository.**
-- The proxy does nothing but forward the execution request and response.
+- The proxy forwards the execution request and response and nothing else.
 - It must not become a general backend — no database, no accounts, no rendering.
 - If no key is needed, no proxy is built.
 
-### Not yet decided — UNDECIDED
+`config.js` has no credential field at all, so the only way to use a keyed
+provider is to point `baseUrl` at such a proxy.
 
-Provider selection; request/response schema; timeout, rate-limit, and quota
-handling; error and diagnostic presentation; whether stdin input is supported;
-whether multi-file or Maven-project examples can run online at all (many
-providers accept a single file — the local fallback covers this case regardless).
+### 11.8 Still open — UNDECIDED
+
+Whether multi-file or Maven-project examples can run online (both adapters send
+a single file; the local fallback covers this regardless); whether to add
+polling for Judge0 instances that do not honour `wait=true`; whether runs should
+be recorded in progress; rate-limit and quota presentation once a real provider
+is in use.
 
 ---
 
