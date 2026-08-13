@@ -8,7 +8,7 @@
 > anything below, the repository is correct — fix this document and say that you
 > fixed it.
 
-**Last updated:** 2026-08-13 (CONTINUE #1 — Module 01, Chapter 1)
+**Last updated:** 2026-08-13 (CONTINUE #2 — Module 01, Chapter 2)
 
 ---
 
@@ -31,19 +31,19 @@ Used throughout this file. Never substitute vague words like "done" or
 
 | Field | Value |
 |---|---|
-| **Project phase** | **CONTENT — one chapter at a time via `CONTINUE`.** Foundation complete (all 6 phases); CONTINUE #1 delivered. |
-| **Current module** | `01-java-foundations-execution-model` — `IN_PROGRESS` (1 of 4 planned chapters written) |
-| **Current chapter** | `01-01` *From Source to Running Program* — `VERIFIED` |
+| **Project phase** | **CONTENT — one chapter at a time via `CONTINUE`.** Foundation complete (all 6 phases); CONTINUE #1 and #2 delivered. |
+| **Current module** | `01-java-foundations-execution-model` — `IN_PROGRESS` (2 of 4 planned chapters written) |
+| **Current chapter** | `01-02` *JVM Architecture & Class Loading* — `VERIFIED`. `01-01` also `VERIFIED`. |
 | **Completed modules** | none (0 of 43) |
-| **Completed chapters** | 1 written and verified (`01-01`). No learner has completed anything — that is per-browser. |
-| **Partially completed work** | Module 01 is partially written: chapters `01-02`, `01-03`, `01-04` are planned (see `PLANNED_CHAPTERS` in `data/chapters.js`) and `NOT_STARTED`. |
-| **Next required task** | **Next `CONTINUE`** → build chapter `01-02`, *JVM Architecture & Class Loading* (topics listed in `PLANNED_CHAPTERS`, `data/chapters.js`). Confirm from the repository first; build ONE chapter; then STOP. |
+| **Completed chapters** | 2 written and verified (`01-01`, `01-02`). No learner has completed anything — that is per-browser. |
+| **Partially completed work** | Module 01 is partially written: chapters `01-03` and `01-04` are planned (see `PLANNED_CHAPTERS` in `data/chapters.js`) and `NOT_STARTED`. |
+| **Next required task** | **Next `CONTINUE`** → build chapter `01-03`, *The Execution Engine* (topics listed in `PLANNED_CHAPTERS`, `data/chapters.js`: execution engine, interpreter, JIT compiler, HotSpot, JVM warm-up, basic JVM command-line concepts). Confirm from the repository first; build ONE chapter; then STOP. |
 | **Completed website features** | app shell; light/dark theming with persistence and no flash; responsive drawer navigation; hash routing with active state; metadata-driven sidebar listing all 43 modules; module overview and curriculum views; functional module/topic search; **real `localStorage` progress persistence**; **dashboard wired to stored progress**; **practice / progressive-hint / predict-the-output UI shells**; **editable code editor with Run, Reset and Copy**; **provider-agnostic Java execution abstraction**; **always-present local `javac`/`java` fallback derived from the actual source**; **chapter routing, rendering and per-chapter completion**; **module-local previous/next chapter navigation** |
 | **Compiler integration status** | **Architecture implemented; NO online provider enabled.** Editor, `executeJava()` abstraction, Piston + Judge0 adapters, and the local `javac`/`java` fallback all exist. `provider: null` is the shipped default and a permanently supported mode. No HTTP request has ever been made to a live provider from this repository — see [Phase 5 — provider research](#phase-5--provider-research-performed-2026-08-13). |
 | **Known bugs** | none |
-| **Learning content** | **1 chapter**, in Module 01. The other 42 modules are `NOT_STARTED`. Chapters live in `data/chapters.js` + `content/`; `data/modules.js` no longer carries chapter fields (see ARCHITECTURE §4a). |
+| **Learning content** | **2 chapters**, both in Module 01, with 12 exercises and 11 predict-the-output questions. The other 42 modules are `NOT_STARTED`. Chapters live in `data/chapters.js` + `content/`; `data/modules.js` carries no chapter fields (see ARCHITECTURE §4a). |
 | **Known limitations** | see [Known limitations](#known-limitations) below |
-| **Last verification status** | **2026-08-13 — 376 checks passing, 0 failing.** 60/60 Chapter 01-01 browser checks, plus 53/53 Phase 6 foundation checks, 32/32 Phase 5, 28/28 Java source-analysis, 63/63 Phase 4, 65/65 Phase 3, 33/33 realignment, 42/42 Phase 2. **Every Java example and every reference solution was actually compiled with `javac --release 17` and run on OpenJDK 21.0.10**, and every recorded output is real output. See [Verification](#verification-status). |
+| **Last verification status** | **2026-08-13 — 414 checks passing, 0 failing.** 38/38 Chapter 01-02, 60/60 Chapter 01-01, 53/53 Phase 6 foundation, 32/32 Phase 5, 28/28 Java source-analysis, 63/63 Phase 4, 65/65 Phase 3, 33/33 realignment, 42/42 Phase 2. **Every Java example and reference solution across both chapters was compiled with `javac --release 17` and run on OpenJDK 21.0.10 from a clean directory**, and every recorded output is real output. See [Verification](#verification-status). |
 | **Last updated** | 2026-08-13 |
 
 ---
@@ -208,11 +208,13 @@ Java_mastery/
 │           └── providers/
 │               ├── piston.js  (self-hosted Piston — never contacted a live instance)
 │               └── judge0.js  (self-hosted Judge0 — never contacted a live instance)
-├── content/                   (CONTINUE #1 — AUTHORED chapter content, no markup)
+├── content/                   (AUTHORED chapter content, no markup)
 │   └── modules/module-01/
-│       └── 01-01-from-source-to-running-program.js
-├── java/                      (CONTINUE #1 — sources actually compiled and run)
-│   └── module-01/ch01/        HelloJava, Greeter, UseGreeter + solutions/
+│       ├── 01-01-from-source-to-running-program.js
+│       └── 01-02-jvm-architecture-class-loading.js
+├── java/                      (sources actually compiled and run)
+│   ├── module-01/ch01/        HelloJava, Greeter, UseGreeter + solutions/
+│   └── module-01/ch02/        10 sources incl. CorruptClass + solutions/
 ├── data/
 │   ├── modules.js             (GENERATED from CURRICULUM.md — no chapter fields)
 │   ├── chapters.js            (CONTINUE #1 — chapter manifest + PLANNED_CHAPTERS)
@@ -273,8 +275,8 @@ Full detail in `docs/ARCHITECTURE.md` §15.
    as a `file://` path — browsers block ES module scripts on `file://`, so the
    theme toggle and navigation would not run. This is a browser constraint, not
    a build step; nothing is compiled. A `<noscript>` block says so in the page.
-2. **Almost no learning content.** One chapter exists (Module 01 Chapter 1) of
-   43 modules. Module *metadata* exists for all 43, but metadata is a coverage
+2. **Almost no learning content.** Two chapters exist (Module 01 Chapters 1
+   and 2) of 43 modules. Module *metadata* exists for all 43, but metadata is a coverage
    specification, not teaching. The other 42 modules are `NOT_STARTED`.
 
 3. **Progress records position, not achievement.** Persistence is real
@@ -336,8 +338,9 @@ Full detail in `docs/ARCHITECTURE.md` §15.
     the repository; verification is manual and agent-driven.
 
 19. **Chapter content is only as portable as the machine it was verified on.**
-    Every transcript in Module 01 Chapter 1 was captured on Linux with OpenJDK
-    21.0.10. Paths use `/`, and classpath examples use `:` rather than the `;`
+    Every transcript in Module 01 Chapters 1 and 2 was captured on Linux with
+    OpenJDK 21.0.10, and Chapter 2's loader names and `-verbose:class` output are
+    HotSpot specifics. Paths use `/`, and classpath examples use `:` rather than the `;`
     Windows needs. The chapter says so where it matters, but a Windows learner
     will have to translate.
 
@@ -602,6 +605,80 @@ never discard work you did not create (`CLAUDE.md` §8).
 ---
 
 ## Verification status
+
+### CONTINUE #2 — Module 01 Chapter 2 (performed 2026-08-13)
+
+**38/38 browser checks passed**, and all prior suites re-run green: **414 total,
+0 failing.**
+
+**Java verified by execution.** Every program was recompiled from a clean
+directory with `javac --release 17` on `javac 21.0.10` / OpenJDK 21.0.10 and run;
+the outputs recorded in the chapter are the outputs observed.
+
+| Source | Demonstrates | Verified result |
+|---|---|---|
+| `LazyLoading.java` | Lazy loading | `NeverUsed` never appears in `-verbose:class`; declaring a reference does not load |
+| `Loaders.java` | Loader hierarchy | bootstrap `null`, `PlatformClassLoader`, `AppClassLoader`; delegation chain walks to `null` |
+| `Preparation.java` | Preparation vs initialization | a field reads `0` while another initializer runs; `javap` shows one merged `<clinit>` |
+| `InitTriggers.java` | Active use | constants, array creation and inherited-field access do **not** initialize; the bytecode shows no reference to the constant's class |
+| `InitFailure.java` | Erroneous classes | `ExceptionInInitializerError` once, then `NoClassDefFoundError`, initializer not re-run |
+| `ForNameVsLoadClass.java` | Load vs initialize | `loadClass` and 3-arg `forName(…, false, …)` do not initialize; 1-arg `forName` does |
+| `ClassLiteral.java` | Class literals | `Sub.class` does not initialize; `new Sub()` initializes `Sup` then `Sub` |
+| `CorruptClass.java` + `Tiny.java` | The linking phases | `ClassFormatError`, `UnsupportedClassVersionError`, and `VerifyError` with a full frame and bytecode dump |
+| `Config.java` + `UsesConfig.java` | Constant inlining | source says 60, program prints 30 after a partial rebuild |
+| `solutions/*.java` | Four exercise solutions | all compiled and run |
+
+**Facts established by execution rather than asserted:**
+
+- Reading a compile-time constant does **not** initialize its class, and
+  `javap -c` shows the constant folded into a string literal with no reference
+  to the class remaining.
+- `static final Integer` **is** initialized — boxing makes it a non-constant.
+- Creating an array of a type does not initialize that type.
+- Reading an inherited static field initializes the **declaring** class only.
+- A class literal (`Sub.class`) does not initialize.
+- Implementing an interface initializes it **only if** the interface declares a
+  default method — verified with a matched pair of interfaces.
+- A simple-name forward read of a static field is a compile error
+  (`illegal forward reference`); a qualified read compiles and yields the
+  prepared default.
+- **`UnsupportedClassVersionError` was reproduced here**, which Chapter 1 had
+  recorded as not verified — corrupting the version byte produces it on a single
+  JDK.
+- On Java 9+, declaring a class in `java.lang` fails at **compile** time
+  (`package exists in another module: java.base`), before parent delegation is
+  even reached.
+
+**One content defect found and fixed in verification.** Backticks appeared
+literally in three places where the renderer intentionally does not apply inline
+formatting — two Java source comments and one guided-lab `expected` string, all
+rendered raw inside `<pre>`. The content was corrected (the renderer is right to
+leave command and code blocks untouched), and the repository's Java sources were
+edited to match so the chapter and the files it cites cannot diverge.
+
+**Sixteen assertions across four earlier suites were rewritten to DERIVE their
+counts** from `data/chapters.js`, `data/exercises.js` and `data/predict-output.js`
+rather than hardcoding them. Authoring Chapter 2 broke them all at once, which
+would recur on every future chapter; they now assert the relationships (written
+chapters get links, planned ones do not, denominators are real) instead of
+specific numbers.
+
+### CONTINUE #2 — not verified
+
+- **Other JVM implementations.** Not verified because: only HotSpot/OpenJDK was
+  available. Class-loading behaviour is specified, but loader class names,
+  `-verbose:class` output and the class-data-sharing archive are HotSpot
+  specifics and the chapter labels them as such.
+- **Custom class loaders** are named as Module 12's subject and not demonstrated.
+- **Thread safety of `<clinit>`** is mentioned as a JVM guarantee and
+  cross-linked to Module 15, but no concurrent test was written.
+- **The `348` byte offset** used for the `VerifyError` demonstration is specific
+  to this build of `Tiny.java`; the chapter and the source README both say how to
+  find it again rather than presenting it as a constant.
+- **Real devices, other browsers, screen-reader narration, measured colour
+  contrast** — unchanged from Phase 6; still not verified.
+
+---
 
 ### CONTINUE #1 — Module 01 Chapter 1 (performed 2026-08-13)
 
@@ -1145,7 +1222,7 @@ see the Phase 2 section above.)*
 ## Foundation Report (master brief §40)
 
 Recorded when the foundation completed, and kept current as chapters land.
-Figures below are true as of 2026-08-13, after CONTINUE #1.
+Figures below are true as of 2026-08-13, after CONTINUE #2.
 
 ```text
 Foundation complete.
@@ -1164,16 +1241,16 @@ Persistent documentation:   complete
 Current project state:
   Phase                FOUNDATION COMPLETE; content underway via CONTINUE
   Awaiting             the next CONTINUE from the project owner
-  Chapters written     1   (Module 01 Chapter 1)
+  Chapters written     2   (Module 01 Chapters 1 and 2)
   Modules with content 1 of 43 (42 NOT_STARTED)
-  Exercises (real)     6   (1 labelled placeholder, excluded from all counts)
-  Predict questions    5   (1 labelled placeholder, excluded from all counts)
-  Verification         376 checks passing, 0 failing, 2026-08-13
+  Exercises (real)     12  (1 labelled placeholder, excluded from all counts)
+  Predict questions    11  (1 labelled placeholder, excluded from all counts)
+  Verification         414 checks passing, 0 failing, 2026-08-13
   Known bugs           none
   Execution provider   none configured; both adapters unproven against a live
                        instance; CORS unverified
-  Next required task   CONTINUE -> Module 01 Chapter 2
-                       (01-02, JVM Architecture & Class Loading)
+  Next required task   CONTINUE -> Module 01 Chapter 3
+                       (01-03, The Execution Engine)
 
 Repository tree:
   Java_mastery/
@@ -1267,6 +1344,7 @@ update this file, and **STOP**.
 | Date | Phase | Change |
 |---|---|---|
 | 2026-08-11 | 1 | Created the documentation layer: `README.md` (replacing the 14-byte stub), `CLAUDE.md`, `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/CURRICULUM.md`, `docs/AI_INSTRUCTIONS.md`. Authored the 43-module curriculum with full topic lists. No code written; no website; no execution layer. |
+| 2026-08-13 | CONTINUE #2 | Wrote **Module 01, Chapter 2 — JVM Architecture & Class Loading** (id `01-02`): the loading / linking / initialization phases, the three built-in class loaders and parent delegation, what does and does not trigger initialization, constant inlining and the stale-constant trap, and the error each phase fails with. 36 sections, 6 objectives, a 6-step guided lab, 7 common mistakes, 7 interview questions, 12 revision points, 8 cross-links. Added 6 exercises and 6 predict-the-output questions — every solution compiled and run, every answer captured from real output. Ten new Java sources in `java/module-01/ch02/` including a one-byte class-file corrupter used to make the linking phases fail on demand. Reproduced `UnsupportedClassVersionError`, which Chapter 1 had recorded as unverifiable. Verified: 38/38 chapter checks, 414 total, 0 failing; all Java recompiled from a clean directory with `--release 17` on OpenJDK 21.0.10. One content defect fixed (literal backticks in raw-rendered fields). **Sixteen assertions in earlier suites were rewritten to derive their counts from the data** rather than hardcode them, so future chapters do not break them. |
 | 2026-08-13 | CONTINUE #1 | Wrote **Module 01, Chapter 1 — From Source to Running Program** (id `01-01`): the compilation and execution pipeline, JDK/JRE/JVM, `javac`, bytecode, class files, the `java` launcher, the classpath, and JAR files. 29 sections, 6 objectives, a 5-step guided lab, 6 common mistakes with real error text, 7 interview questions, 9 revision points, and 7 cross-links. Added 6 exercises across the difficulty ladder and 5 predict-the-output questions — every solution compiled and run, every answer captured from real output. Built the chapter layer to carry it: `data/chapters.js` (manifest + lazy loaders + `PLANNED_CHAPTERS`), `assets/js/chapters.js` (accessor), `assets/js/chapter-view.js` (renderer over six typed section types), the `#/chapter/<NN-MM>` route, sidebar and module chapter lists, and module-local previous/next navigation. **Removed `chapterCount`/`chapters` from the generated `data/modules.js`** — the curriculum cannot know chapter boundaries, and a generated zero would have started lying; the generator now refuses to emit them. Made the code runner Java-only so shell snippets render as static blocks. Verified: 60/60 chapter checks, 376 total across all suites, 0 failing; all Java compiled with `--release 17` and run on OpenJDK 21.0.10. One real bug found and fixed (the inline formatter mis-nested bold and code). Six superseded assertions in earlier suites updated to the new reality. |
 | 2026-08-13 | 6 | Final foundation phase — verification and documentation truth only; **no code behaviour changed**. Ran a consolidated end-to-end pass against the master brief's §38 foundation checklist: 52/52 passing, 4 items not-applicable-yet, plus all six phase suites re-run at 262/262 — **314 checks, 0 failures**. Documentation-truth audit found and fixed two false claims in this file: known limitation 3 still said progress tracking was an unpersisted stub (Phase 4 replaced it), and limitation 5 still listed Practice as a placeholder view (Phases 4–5 built it). Added limitations 17–18 (verification suites are not committed to the repo; no CI). Corrected README §7's stale status line and module count, rewrote README §13 into a self-sufficient fresh-session entry point covering the CONTINUE workflow, the read order including MASTER_BRIEF.md, and the module-id convention. Updated the site's phase labels from 'Phase 5 of 6' to 'Foundation complete'. Confirmed all 43 modules are NOT_STARTED with 0 chapters and the MASTER_BRIEF → CURRICULUM → modules.js chain is in sync. State set to FOUNDATION COMPLETE, awaiting the first CONTINUE. No chapter was created. |
 | 2026-08-13 | 5 | Built the Java execution architecture. Added `assets/js/execution/{config,result,service,java-source}.js` and `assets/js/execution/providers/{piston,judge0}.js` — a provider-agnostic `executeJava()` returning a typed result with every failure mode mapped, and one documented configuration point that deliberately has **no credential field**. Added `assets/js/code-runner.js`: an editable editor with Run / Reset / Copy, an output panel separating stdout, compiler diagnostics, runtime errors and provider-unavailable, and an always-present local `javac` / `java` panel whose commands are derived from the source actually in the editor. Replaced the disabled `Run — Phase 5` placeholders in both practice shells. Extended the exercise contract with `starterCode` and `stdin` (additive). **Researched providers against live docs and enabled none**: Piston's public API is no longer freely available (Feb 15 2026, per its readme) and Judge0's hosted offerings require a secret key a static site cannot hold. Verified in-browser 32/32, plus 28/28 source-analysis checks of which 8 really compiled and ran Java on OpenJDK 21.0.10; all prior suites re-run green (262 total). Corrected two Java claims by execution rather than asserting them. No provider was contacted; no CORS behaviour verified. |

@@ -7,8 +7,8 @@
  * Exercises appear here only when the chapter they belong to is written
  * (master brief §36, §41). Adding them ahead of that would be fake content.
  *
- * Authored so far: Module 01 Chapter 1 (`01-01`) — six exercises across the
- * difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
+ * Authored so far: Module 01 Chapters 1 and 2 (`01-01`, `01-02`) — six exercises
+ * each, across the difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
  * RUN on OpenJDK 21.0.10 with `--release 17` on 2026-08-13; the recorded
  * `sampleOutput` is real output, not expected output. Sources live in
  * `java/module-01/ch01/solutions/`.
@@ -79,6 +79,7 @@ export const DIFFICULTIES = ['Warm-up', 'Easy', 'Applied', 'Medium', 'Challenge'
 // from its module or chapter.
 const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
+const CHAPTER_01_02 = '01-02';
 
 /** @type {Array<object>} */
 export const EXERCISES = [
@@ -591,6 +592,527 @@ export const EXERCISES = [
         + 'encodings, and line endings are still yours to get right.\n\n'
         + 'A candidate who then shows the CAFEBABE header, the bytecode listing, and a staged '
         + 'NoClassDefFoundError has demonstrated the whole model in about ninety seconds.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 2 — JVM Architecture & Class Loading
+     Solutions verified by execution on OpenJDK 21.0.10, --release 17,
+     2026-08-13. Sources: java/module-01/ch02/solutions/
+     ====================================================================== */
+
+  {
+    id: '01-02-warmup-lazy-loading',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Prove that an unused class is never loaded',
+    difficulty: 'Warm-up',
+    objective:
+      'See lazy loading for yourself, so "the JVM loads classes on demand" stops being '
+      + 'a slogan and becomes something you have observed.',
+    problem:
+      'Write LazyProof.java containing a public class with main, plus two package-private '
+      + 'classes: Used, whose static block prints a marker, and Unused, whose static block '
+      + 'prints a different marker. Touch Used and never touch Unused. Run it, then confirm '
+      + 'with the JVM that Unused was never loaded at all.',
+    requirements: [
+      'Both Used and Unused must have static initializers that print something distinctive.',
+      'main must read a static field of Used, and must not mention Unused.',
+      'Confirm with `java -verbose:class LazyProof | grep Unused` that nothing is reported.',
+    ],
+    constraints: ['One file. Only the public class may be public.'],
+    sampleInput: '',
+    sampleOutput: 'before touching anything\n  >> Used initialized\nUsed.NAME = used\ndone - Unused was never loaded',
+    edgeCases: [
+      'Merely declaring a variable of type Unused does not load it either — try adding one.',
+      'Unused.class exists on disk. Compilation and loading are unrelated.',
+    ],
+    testCases: [{ input: 'java -verbose:class LazyProof | grep Unused', expected: '(no output)' }],
+    starterCode:
+      'public class LazyProof {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // Touch Used. Never mention Unused.\n'
+      + '    }\n'
+      + '}\n'
+      + '\n'
+      + 'class Used {\n'
+      + '    // a static field and a static initializer that prints\n'
+      + '}\n'
+      + '\n'
+      + 'class Unused {\n'
+      + '    // a static initializer that prints - it must never run\n'
+      + '}\n',
+    hints: [
+      'Reading a non-constant static field counts as active use. Reading a `static final int` would NOT.',
+      'Make the field `static final String NAME = makeName();` — computed, so it is not a compile-time constant.',
+      '`java -verbose:class` prints one line per class loaded. Pipe it through grep.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class LazyProof {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("before touching anything");\n'
+        + '        System.out.println("Used.NAME = " + Used.NAME);\n'
+        + '        System.out.println("done - Unused was never loaded");\n'
+        + '    }\n'
+        + '}\n'
+        + '\n'
+        + 'class Used {\n'
+        + '    static final String NAME = makeName();\n'
+        + '    static { System.out.println("  >> Used initialized"); }\n'
+        + '    static String makeName() { return "used"; }\n'
+        + '}\n'
+        + '\n'
+        + 'class Unused {\n'
+        + '    static { System.out.println("  >> Unused initialized"); }\n'
+        + '}\n',
+      explanation:
+        'Verified output:\n\n'
+        + 'before touching anything\n  >> Used initialized\nUsed.NAME = used\n'
+        + 'done - Unused was never loaded\n\n'
+        + 'Note that NAME is deliberately computed by a method call. Had it been '
+        + '`static final String NAME = "used";` it would be a compile-time constant, inlined '
+        + 'into main, and Used would never have been initialized either — the exercise would '
+        + 'have quietly proved the opposite of what it intended.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-02-easy-init-order',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Observe a field between preparation and initialization',
+    difficulty: 'Easy',
+    objective:
+      'Catch a static field holding its prepared default, and see that static blocks and '
+      + 'field initializers are one merged sequence.',
+    problem:
+      'Write a class whose static members, in source order, are: a field initialized by a '
+      + 'method call that prints; a static block that prints what it can see and then assigns '
+      + 'to a field declared BELOW it; that second field; a third field computed from the '
+      + 'first two; and a final static block that prints the result. Predict the output before '
+      + 'running it.',
+    requirements: [
+      'The first static block must read the not-yet-declared field and print its value.',
+      'Predict the full output on paper first, then run it.',
+      'Explain why the value you saw is what it is.',
+    ],
+    constraints: [
+      'A simple-name read of a field declared below is an illegal forward reference and will '
+      + 'not compile — you will need a qualified name.',
+    ],
+    sampleInput: '',
+    sampleOutput: '  initializing first to 1\n  static block A sees first=1 second=0\n  static block B sees result=21\nresult = 21',
+    edgeCases: [
+      'Try the simple-name read and read the compiler error.',
+      'Move the second field above the block and watch the output change.',
+    ],
+    testCases: [{ input: 'java InitOrder', expected: 'result = 21' }],
+    starterCode:
+      'public class InitOrder {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        System.out.println("result = " + Ordered.result);\n'
+      + '    }\n'
+      + '}\n'
+      + '\n'
+      + 'class Ordered {\n'
+      + '    // 1. a field initialized by a printing method\n'
+      + '    // 2. a static block that reads the field declared below, then writes to it\n'
+      + '    // 3. that field\n'
+      + '    // 4. result, computed from the two\n'
+      + '    // 5. a static block printing result\n'
+      + '}\n',
+    hints: [
+      'Preparation sets every static field to its default before ANY initializer runs. For an int that is 0.',
+      'The compiler merges all static field initializers and all static blocks into one <clinit> method, in source order.',
+      'Reading `second` by simple name from above its declaration will not compile. Write `Ordered.second`.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'class Ordered {\n'
+        + '    static int first = report("first", 1);\n'
+        + '\n'
+        + '    static {\n'
+        + '        // A simple-name read here is an "illegal forward reference".\n'
+        + '        // A qualified read is allowed and sees the prepared default.\n'
+        + '        System.out.println("  static block A sees first=" + first\n'
+        + '            + " second=" + Ordered.second);\n'
+        + '        second = 20;   // writing to it is fine\n'
+        + '    }\n'
+        + '\n'
+        + '    static int second;\n'
+        + '    static int result = first + second;\n'
+        + '\n'
+        + '    static {\n'
+        + '        System.out.println("  static block B sees result=" + result);\n'
+        + '    }\n'
+        + '\n'
+        + '    static int report(String label, int value) {\n'
+        + '        System.out.println("  initializing " + label + " to " + value);\n'
+        + '        return value;\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified output:\n\n'
+        + '  initializing first to 1\n  static block A sees first=1 second=0\n'
+        + '  static block B sees result=21\nresult = 21\n\n'
+        + '`second=0` is the whole point: preparation had already allocated the field and set it '
+        + 'to the int default, but its declaration line had not been reached, so no initializer '
+        + 'had run for it. The block then writes 20, the `result` initializer runs next and '
+        + 'computes 1 + 20 = 21, and block B sees it.\n\n'
+        + 'Using the simple name instead produces `error: illegal forward reference` — the '
+        + 'compiler blocks the accidental case while leaving the deliberate qualified read '
+        + 'available. Both behaviours were verified.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-02-applied-loader-report',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Report which loader loaded what, and walk the chain',
+    difficulty: 'Applied',
+    objective:
+      'Identify the three built-in loaders in a running JVM, and produce output that is '
+      + 'stable enough to compare between runs.',
+    problem:
+      'Write LoaderReport.java. For a list of class names covering a java.base class, a JDK '
+      + 'module class outside java.base, and your own class, report which loader defined each. '
+      + 'Then walk the delegation chain upwards from your own loader to the bootstrap loader, '
+      + 'indenting each level. Load the classes WITHOUT initializing them.',
+    requirements: [
+      'Include at least one bootstrap class, one platform class, and your own class.',
+      'Print `bootstrap (null)` rather than the literal `null`.',
+      'Walk the chain with getParent() until it returns null.',
+      'Output must be reproducible run to run — strip the identity hash from loader names.',
+      'Use a form of Class.forName that does not initialize.',
+    ],
+    constraints: ['Standard library only.'],
+    sampleInput: '',
+    sampleOutput: 'java.lang.Object       bootstrap (null)\njava.util.HashMap      bootstrap (null)\njavax.sql.DataSource   ClassLoaders$PlatformClassLoader\nLoaderReport           ClassLoaders$AppClassLoader',
+    edgeCases: [
+      'getClassLoader() returns null for bootstrap classes — that is not an error.',
+      'A loader toString() contains an identity hash that changes every run.',
+    ],
+    testCases: [{ input: 'java LoaderReport', expected: 'ends with a chain from AppClassLoader to bootstrap (null)' }],
+    starterCode:
+      'public class LoaderReport {\n'
+      + '    public static void main(String[] args) throws Exception {\n'
+      + '        // 1. report the defining loader of several classes\n'
+      + '        // 2. walk the delegation chain upwards, indenting\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      '`Class.forName(name, false, loader)` loads without initializing. The boolean IS the initialize flag.',
+      '`type.getClassLoader()` returns null for anything the bootstrap loader defined.',
+      'Take `loader.getClass().getName()` and cut everything before the last dot — that drops the identity hash entirely.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class LoaderReport {\n'
+        + '\n'
+        + '    public static void main(String[] args) throws Exception {\n'
+        + '        String[] names = {\n'
+        + '            "java.lang.Object",\n'
+        + '            "java.util.HashMap",\n'
+        + '            "javax.sql.DataSource",\n'
+        + '            "LoaderReport",\n'
+        + '        };\n'
+        + '\n'
+        + '        for (String name : names) {\n'
+        + '            Class<?> type = Class.forName(name, false, LoaderReport.class.getClassLoader());\n'
+        + '            ClassLoader loader = type.getClassLoader();\n'
+        + '            System.out.printf("%-22s %s%n", name,\n'
+        + '                loader == null ? "bootstrap (null)" : simpleName(loader));\n'
+        + '        }\n'
+        + '\n'
+        + '        System.out.println();\n'
+        + '        System.out.println("delegation chain upwards from this class:");\n'
+        + '        int depth = 0;\n'
+        + '        for (ClassLoader l = LoaderReport.class.getClassLoader(); l != null; l = l.getParent()) {\n'
+        + '            System.out.println("  ".repeat(++depth) + simpleName(l));\n'
+        + '        }\n'
+        + '        System.out.println("  ".repeat(++depth) + "bootstrap (null)");\n'
+        + '    }\n'
+        + '\n'
+        + '    /** The identity hash in a loader toString changes every run, so drop it. */\n'
+        + '    static String simpleName(ClassLoader loader) {\n'
+        + '        String name = loader.getClass().getName();\n'
+        + '        return name.substring(name.lastIndexOf(\'.\') + 1);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified output:\n\n'
+        + 'java.lang.Object       bootstrap (null)\n'
+        + 'java.util.HashMap      bootstrap (null)\n'
+        + 'javax.sql.DataSource   ClassLoaders$PlatformClassLoader\n'
+        + 'LoaderReport           ClassLoaders$AppClassLoader\n\n'
+        + 'delegation chain upwards from this class:\n'
+        + '  ClassLoaders$AppClassLoader\n'
+        + '    ClassLoaders$PlatformClassLoader\n'
+        + '      bootstrap (null)\n\n'
+        + 'Two details matter. The three-argument forName with `false` avoids initializing the '
+        + 'classes you are only inspecting — the one-argument form would have run their static '
+        + 'blocks. And stripping the package from the loader class name removes the identity '
+        + 'hash, so two runs produce identical output and the result can be diffed.',
+      complexity: 'O(n) in the number of class names.',
+    },
+  },
+
+  {
+    id: '01-02-medium-stale-constant',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Reproduce the stale constant, then fix it',
+    difficulty: 'Medium',
+    objective:
+      'Cause a program to print a value its own source no longer contains, and understand '
+      + 'the build failure well enough to recognise it in a real codebase.',
+    problem:
+      'Write Config.java with `public static final int TIMEOUT = 30;` and UsesConfig.java that '
+      + 'prints it. Compile both and run. Then change TIMEOUT to 60, recompile ONLY Config, and '
+      + 'run again. Explain what you see, prove it with javap, then change the design so the '
+      + 'same edit cannot go stale.',
+    requirements: [
+      'Show the three runs: both compiled, only Config recompiled, then both recompiled.',
+      'Use javap on UsesConfig to show where the value actually lives.',
+      'Produce a version where recompiling only Config DOES change the output, and explain what you changed.',
+    ],
+    constraints: ['No build tool — plain javac, so the partial rebuild is explicit.'],
+    sampleInput: '',
+    sampleOutput: 'timeout = 30\ntimeout = 30      <- Config says 60\ntimeout = 60',
+    edgeCases: [
+      'The same trap applies to String constants, and to any static final primitive with a constant initializer.',
+      'Replacing a JAR in a deployment is the same partial rebuild, at a larger scale.',
+    ],
+    testCases: [
+      { input: 'javac Config.java UsesConfig.java && java UsesConfig', expected: 'timeout = 30' },
+      { input: 'edit to 60; javac Config.java && java UsesConfig', expected: 'timeout = 30' },
+      { input: 'javac UsesConfig.java && java UsesConfig', expected: 'timeout = 60' },
+    ],
+    hints: [
+      'A static final field of a primitive or String type with a CONSTANT initializer is a compile-time constant.',
+      'Run `javap -c UsesConfig.class` and look for whether Config is referenced at all.',
+      'A field whose value is not a compile-time constant is read at run time. `static final Integer`, or a method call, both qualify.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// STALE VERSION - the value is inlined into every caller\n'
+        + 'public class Config {\n'
+        + '    public static final int TIMEOUT = 30;\n'
+        + '}\n'
+        + '\n'
+        + '// FIXED - not a compile-time constant, so it is read at run time\n'
+        + 'class ConfigFixed {\n'
+        + '    public static final Integer TIMEOUT = 30;      // boxed: not a constant\n'
+        + '    // or\n'
+        + '    public static int timeout() { return 30; }     // a call is never inlined this way\n'
+        + '}\n',
+      explanation:
+        'Verified sequence:\n\n'
+        + 'timeout = 30      (both compiled)\n'
+        + 'timeout = 30      (Config now says 60, but UsesConfig was not recompiled)\n'
+        + 'timeout = 60      (after recompiling UsesConfig)\n\n'
+        + '`javap -c UsesConfig.class` shows the cause: there is no reference to Config in the '
+        + 'bytecode at all. The compiler substituted 30 at the use site and then folded the whole '
+        + 'concatenation into a single string literal, so at run time nothing consults Config.\n\n'
+        + 'The fix is to stop it being a compile-time constant. `static final Integer` is not one, '
+        + 'because the initializer requires boxing; nor is anything computed by a method call. Both '
+        + 'are then genuine field reads or invocations at run time, so recompiling only Config is '
+        + 'enough. The cost is that you lose constant folding, which for a configuration value is '
+        + 'no cost at all.\n\n'
+        + 'In practice: do a clean build whenever a constant changes, and reserve `static final int` '
+        + 'for values that are genuinely fixed forever, like array sizes and bit masks.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-02-challenge-trigger-harness',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Build a harness that classifies initialization triggers',
+    difficulty: 'Challenge',
+    objective:
+      'Turn the JLS rules on active use into something you have tested, rather than something '
+      + 'you have read.',
+    problem:
+      'Write TriggerHarness.java that exercises six operations, each against its own otherwise '
+      + 'unused class, and reports whether the class was initialized: reading a compile-time '
+      + 'constant, reading a non-constant static final, creating an array of the type, reading '
+      + 'a static field inherited from a superclass, calling a static method, and instantiating. '
+      + 'Each class announces its own initialization.',
+    requirements: [
+      'Six distinct classes, so one initialization cannot be mistaken for another.',
+      'Each prints a distinctive marker from its static block.',
+      'Label each operation before performing it, so the output reads as a table.',
+      'Predict all six results before running.',
+    ],
+    constraints: [
+      'No reflection — the point is what ordinary code does.',
+      'Each class must be used by exactly one operation.',
+    ],
+    sampleInput: '',
+    sampleOutput: 'read a compile-time constant:\n  -> done\nread a non-constant static final:\n  INITIALIZED BoxedHolder\n  -> done\ndeclare an array type:\n  -> done\nread an inherited static field:\n  INITIALIZED Base\n  -> done\ncall a static method:\n  INITIALIZED StaticMethod\n  -> done\ninstantiate:\n  INITIALIZED Instantiated\n  -> done',
+    edgeCases: [
+      'The inherited-field case initializes the SUPERCLASS only — the subclass stays untouched.',
+      'The array case creates the array class but not the element class.',
+    ],
+    testCases: [{ input: 'java TriggerHarness', expected: 'exactly four INITIALIZED lines, from BoxedHolder, Base, StaticMethod and Instantiated' }],
+    starterCode:
+      'public class TriggerHarness {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // six labelled operations, each against its own class\n'
+      + '    }\n'
+      + '}\n'
+      + '\n'
+      + '// ConstHolder, BoxedHolder, ArrayOnly, Base, Sub extends Base,\n'
+      + '// StaticMethod, Instantiated - each with a printing static block\n',
+    hints: [
+      'Make the constant `static final int LIMIT = 10;` and the non-constant `static final Integer LIMIT = 10;` — the boxing is what makes the difference.',
+      'For the inherited case, declare the field in Base and read it through Sub.',
+      'A `Supplier<Integer>` per operation keeps main readable and forces each action to actually be evaluated.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class TriggerHarness {\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        check("read a compile-time constant", () -> use(ConstHolder.LIMIT));\n'
+        + '        check("read a non-constant static final", () -> use(BoxedHolder.LIMIT.intValue()));\n'
+        + '        check("declare an array type", () -> use(new ArrayOnly[2].length));\n'
+        + '        check("read an inherited static field", () -> use(Sub.inherited.length()));\n'
+        + '        check("call a static method", () -> { StaticMethod.ping(); return 0; });\n'
+        + '        check("instantiate", () -> { new Instantiated(); return 0; });\n'
+        + '    }\n'
+        + '\n'
+        + '    static int use(int value) { return value; }\n'
+        + '\n'
+        + '    static void check(String label, java.util.function.Supplier<Integer> action) {\n'
+        + '        System.out.println(label + ":");\n'
+        + '        action.get();\n'
+        + '        System.out.println("  -> done");\n'
+        + '    }\n'
+        + '}\n'
+        + '\n'
+        + 'class ConstHolder     { static final int LIMIT = 10;\n'
+        + '                        static { System.out.println("  INITIALIZED ConstHolder"); } }\n'
+        + 'class BoxedHolder     { static final Integer LIMIT = 10;\n'
+        + '                        static { System.out.println("  INITIALIZED BoxedHolder"); } }\n'
+        + 'class ArrayOnly       { static { System.out.println("  INITIALIZED ArrayOnly"); } }\n'
+        + 'class Base            { static String inherited = "base";\n'
+        + '                        static { System.out.println("  INITIALIZED Base"); } }\n'
+        + 'class Sub extends Base { static { System.out.println("  INITIALIZED Sub"); } }\n'
+        + 'class StaticMethod    { static void ping() { }\n'
+        + '                        static { System.out.println("  INITIALIZED StaticMethod"); } }\n'
+        + 'class Instantiated    { static { System.out.println("  INITIALIZED Instantiated"); } }\n',
+      explanation:
+        'Verified: exactly four of the six operations initialize anything.\n\n'
+        + 'NOT initialized: ConstHolder (the constant was inlined at compile time, so nothing '
+        + 'refers to the class at run time), ArrayOnly (creating an array creates the array class, '
+        + 'not the element class), and Sub (reading a field declared in Base is a use of Base).\n\n'
+        + 'Initialized: BoxedHolder (boxing means the initializer is not a constant expression, so '
+        + 'this is a real field read), Base, StaticMethod, and Instantiated.\n\n'
+        + 'The Sub/Base result is the one most people get wrong. A static field belongs to the class '
+        + 'that DECLARES it; inheriting a name does not make reading it a use of the subclass.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-02-interview-diagnose-phases',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_02,
+    title: 'Diagnose five failures by the phase they came from',
+    difficulty: 'Interview',
+    objective:
+      'Be able to hear an error name and say immediately how far the JVM got — which is what '
+      + 'turns a vague "classpath problem" into a specific next step.',
+    problem:
+      'Without notes, for each of ClassFormatError, UnsupportedClassVersionError, VerifyError, '
+      + 'NoSuchMethodError and ExceptionInInitializerError: name the phase it comes from, say '
+      + 'what it tells you, and give the first thing you would check. Then reproduce at least '
+      + 'three of them at a terminal.',
+    requirements: [
+      'Map each error to loading, verification, resolution or initialization.',
+      'Explain why NoClassDefFoundError can mean two entirely different things.',
+      'Reproduce at least three, using CorruptClass.java for the ones that need a broken class file.',
+      'Say what -verbose:class would tell you in each case.',
+    ],
+    constraints: ['JDK tools only.'],
+    sampleInput: '',
+    sampleOutput: 'A spoken answer plus a terminal session. There is no single correct transcript.',
+    edgeCases: [
+      'Being asked "is NoClassDefFoundError a missing class?" — sometimes, and sometimes the exact opposite.',
+      'Being asked why verification exists when javac already type-checked.',
+    ],
+    testCases: [],
+    hints: [
+      'Group them by phase first: loading (ClassFormatError, UnsupportedClassVersionError), verification (VerifyError), resolution (NoSuchMethodError, NoSuchFieldError), initialization (ExceptionInInitializerError).',
+      'All of them except ExceptionInInitializerError are about the class file or the environment. That one is about YOUR code throwing.',
+      'For the reproductions, offset 0 breaks the magic number and offset 7 the major version.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// Verified reproduction sequence - all captured in this chapter.\n'
+        + '//\n'
+        + '//  LOADING\n'
+        + '//    java CorruptClass Loaders.class broken/Loaders.class 0 0xDE\n'
+        + '//    java -cp broken Loaders\n'
+        + '//      -> ClassFormatError: Incompatible magic value 3741235902\n'
+        + '//\n'
+        + '//    java CorruptClass Loaders.class broken/Loaders.class 7 0xFF\n'
+        + '//    java -cp broken Loaders\n'
+        + '//      -> UnsupportedClassVersionError: ... class file version 255.0 ...\n'
+        + '//         this version of the Java Runtime only recognizes ... up to 65.0\n'
+        + '//\n'
+        + '//  VERIFICATION\n'
+        + '//    java CorruptClass Tiny.class broken/Tiny.class 348 0xAC\n'
+        + '//    java -cp broken Tiny\n'
+        + '//      -> VerifyError: Operand stack underflow, with frame and bytecode dump\n'
+        + '//\n'
+        + '//  INITIALIZATION\n'
+        + '//    java InitFailure\n'
+        + '//      -> ExceptionInInitializerError, then NoClassDefFoundError on reuse\n'
+        + 'public class DiagnosisNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Say it out loud, then run the sequence above.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'A model answer, phase by phase.\n\n'
+        + '**ClassFormatError** - loading. The bytes are not a well-formed class file; the magic '
+        + 'number or structure is wrong. Check whether the file was truncated, corrupted in '
+        + 'transit, or is not actually a class file.\n\n'
+        + '**UnsupportedClassVersionError** - loading. The file is well-formed but its major '
+        + 'version is higher than this JVM supports; the message names both numbers. Check the '
+        + 'build JDK against the runtime JDK, and use --release rather than -source/-target.\n\n'
+        + '**VerifyError** - verification. The bytecode is structurally valid but not type-safe or '
+        + 'stack-safe. In practice this means generated or transformed bytecode, a broken agent, or '
+        + 'a corrupted file - not something javac produces.\n\n'
+        + '**NoSuchMethodError** - resolution, and it is an Error rather than an exception because '
+        + 'the reference was compiled in. Because resolution may be lazy, it can surface long after '
+        + 'startup, the first time that call site executes. Check for a library version mismatch '
+        + 'between compile and run.\n\n'
+        + '**ExceptionInInitializerError** - initialization. Your static initializer threw. The '
+        + 'cause is attached; read it. The class is then permanently marked erroneous.\n\n'
+        + '**And NoClassDefFoundError sits across two of these.** It means either "a compiled-in '
+        + 'dependency is absent" (a loading failure) or "this class already failed to initialize" '
+        + '(the aftermath of the previous entry). The Caused by chain distinguishes them in one '
+        + 'line, and getting this wrong sends people to audit a classpath that was never the '
+        + 'problem.\n\n'
+        + '-verbose:class helps in every case: it shows whether the class was loaded at all and '
+        + 'from which source, which settles "is it on the classpath?" and "which copy won?" '
+        + 'immediately.',
       complexity: 'Not applicable.',
     },
   },

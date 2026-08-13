@@ -9,7 +9,7 @@ predict-output shells), Phase 5 (compiler/execution abstraction) and Phase 6
 systems which **do not exist yet** are marked accordingly. Real today: the
 documentation layer, the website shell, the module metadata layer, persisted
 progress, the practice shells, the execution abstraction with its local
-`javac`/`java` fallback, and the chapter content layer — **1 chapter written of
+`javac`/`java` fallback, and the chapter content layer — **2 chapters written of
 43 modules, and no online execution provider enabled**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
@@ -35,7 +35,7 @@ section becomes real, move it out of *Planned* — and only then.
 3. [File structure](#3-file-structure) — PARTIAL
 4. [Data architecture](#4-data-architecture) — **IMPLEMENTED** (module metadata + chapter content)
 4a. [Chapter content architecture](#4a-chapter-content-architecture) — **IMPLEMENTED**
-5. [Module & chapter architecture](#5-module--chapter-architecture) — **IMPLEMENTED** (1 of many chapters written)
+5. [Module & chapter architecture](#5-module--chapter-architecture) — **IMPLEMENTED** (2 of many chapters written)
 6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells + Chapter 01-01 content)
 7. [Interview-question architecture](#7-interview-question-architecture) — PARTIAL (in-chapter; no standalone bank)
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
@@ -101,7 +101,7 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 theming, navigation, routing, module data, search, progress, the practice
 shells, and the execution abstraction all exist and were verified in a real
 browser, along with the chapter content layer and its renderer. What remains
-is simply the writing: 1 chapter exists of 43 modules.
+is simply the writing: 2 chapters exist of 43 modules.
 
 ### Fixed constraints (decided, not negotiable)
 
@@ -204,14 +204,16 @@ Java_mastery/
 │               └── judge0.js  ← self-hosted Judge0 adapter
 ├── content/               ← AUTHORED chapter content, no markup
 │   └── modules/module-01/
-│       └── 01-01-from-source-to-running-program.js
+│       ├── 01-01-from-source-to-running-program.js
+│       └── 01-02-jvm-architecture-class-loading.js
 ├── data/
 │   ├── modules.js         ← GENERATED module metadata (no chapter fields)
 │   ├── chapters.js        ← chapter manifest + lazy loaders + PLANNED_CHAPTERS
 │   ├── exercises.js       ← exercise contract (Phase 4; +starterCode Phase 5)
 │   └── predict-output.js  ← predict-the-output contract (Phase 4)
 ├── java/                  ← runnable sources, actually compiled and run
-│   └── module-01/ch01/
+│   ├── module-01/ch01/
+│   └── module-01/ch02/
 ├── tools/
 │   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
@@ -351,7 +353,7 @@ metadata question is settled above.
 
 ## 4a. Chapter content architecture
 
-**Status: IMPLEMENTED (Module 01 Chapter 1).**
+**Status: IMPLEMENTED (Module 01 Chapters 1–2).**
 
 ### Two sources, deliberately separate
 
@@ -411,7 +413,7 @@ browser verification, and there are now direct tests for the nesting cases.
 ## 5. Module & chapter architecture
 
 **Status: IMPLEMENTED.** The module set is fixed and documented, and the
-chapter layer is built and in use — 1 chapter written of 43 modules.
+chapter layer is built and in use — 2 chapters written of 43 modules.
 
 ### Decided
 
@@ -484,9 +486,9 @@ prerequisites are enforced in navigation or advisory only.
 
 ## 6. Practice architecture
 
-**Status: IMPLEMENTED (Phase 4 shells; content from Module 01 Chapter 1).**
-Six exercises and five predict-the-output questions exist, covering the one
-chapter written so far. Every reference solution was compiled and run before it
+**Status: IMPLEMENTED (Phase 4 shells; content from Module 01 Chapters 1–2).**
+Twelve exercises and eleven predict-the-output questions exist, covering the two
+chapters written so far. Every reference solution was compiled and run before it
 was recorded, and every predict-the-output answer is captured real output.
 
 The shells were built and verified in Phase 4 against one labelled placeholder
@@ -537,7 +539,7 @@ Real exercises and questions; auto-checking answers against expected output
 ## 7. Interview-question architecture
 
 **Status: PARTIAL.** Interview questions exist *inside* chapter content — seven
-in Module 01 Chapter 1, each with a category, a reasoning-depth model answer,
+across Module 01 Chapters 1–2 (seven each), with a category, a reasoning-depth model answer,
 and a reveal that keeps the answer hidden until asked for. What does NOT exist
 is a standalone cross-module question bank or the `#/interview` view, which
 remains a placeholder. The decisions below still stand.
@@ -838,7 +840,7 @@ is in use.
 ## 12. Navigation
 
 **Status: IMPLEMENTED (Phase 2 shell, Phase 3 module tree, chapter level with
-Module 01 Chapter 1).** Chapter routes, sidebar chapter links, module chapter
+Module 01 Chapters 1–2).** Chapter routes, sidebar chapter links, module chapter
 lists, and previous/module/next chapter navigation all exist. Chapter
 navigation is **module-local**: "next" stops at the module boundary rather than
 skipping the next module's overview, where scope and prerequisites live.
