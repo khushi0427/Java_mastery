@@ -45,20 +45,22 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 
 | | |
 |---|---|
-| **Phase** | **FOUNDATION COMPLETE** (all 6 phases) — awaiting the first `CONTINUE` |
-| **What exists** | Documentation, the full website foundation, the module metadata layer, progress persistence, practice shells, and the execution abstraction |
-| **Website** | Navigation, dashboard, curriculum, module overviews, search, practice shells, code runner. **No learning content** |
-| **Module content** | Metadata only — no chapters, exercises, or examples exist |
+| **Phase** | **FOUNDATION COMPLETE** (all 6 phases). Content is now written one chapter per `CONTINUE`; the first is done. |
+| **What exists** | Documentation, the full website foundation, the module metadata layer, progress persistence, the practice system, the execution abstraction, and the chapter layer with one chapter written |
+| **Website** | Navigation, dashboard, curriculum, module overviews, chapter reading view, search, practice, code runner |
+| **Module content** | **1 chapter written** — Module 01 Chapter 1, *From Source to Running Program*. The other 42 modules are metadata only. |
 | **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
 | **Code execution / compiler** | Architecture built; **no online provider enabled**. The editor, the `executeJava()` abstraction, two adapters, and the local `javac`/`java` fallback all exist. Running code locally with a JDK needs nothing else. |
-| **Modules completed** | 0 of 43 — every module is `NOT_STARTED` with 0 chapters |
-| **Next step** | The project owner says `CONTINUE`; the agent builds the first chapter of Module 01 (`01-java-foundations-execution-model`). See §13 |
+| **Modules completed** | 0 of 43. Module 01 is `IN_PROGRESS` (1 of 4 planned chapters); the rest are `NOT_STARTED`. |
+| **Next step** | The project owner says `CONTINUE`; the agent builds Module 01 Chapter 2 (`01-02`, *JVM Architecture & Class Loading*). See §13 |
 
 The site navigates all 43 modules **as defined by
 [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
-searches module names and topics. **There is no learning content** — every module is
-`NOT_STARTED` with zero chapters, and the practice components are shells holding
-one labelled placeholder each. Progress you record is saved in this browser. See
+searches module names and topics. **One chapter has been written** — Module 01
+Chapter 1 — with six exercises and five predict-the-output questions behind it;
+every Java example in it was actually compiled and run before it was published.
+The other 42 modules are `NOT_STARTED`. Progress you record is saved in this
+browser. See
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
 ### Running it
@@ -591,8 +593,10 @@ When the project owner says **`CONTINUE`**:
 
 1. Do the reading and inspection above.
 2. **Determine the first incomplete chapter from the repository**, never from
-   conversation history. Today that is the first chapter of Module 01,
-   `01-java-foundations-execution-model`, because no chapter exists anywhere.
+   conversation history. Today that is `01-02` — Module 01's second chapter —
+   because `01-01` is written and `PLANNED_CHAPTERS` in `data/chapters.js`
+   records what follows it. Verify that against the repository rather than
+   trusting this sentence.
 3. Build **only that one chapter**, through the delivery workflow in §6.
 4. Integrate it into the website and **verify it by actually running it**.
 5. Update `docs/PROJECT_STATE.md` and any other documentation the change
@@ -613,6 +617,12 @@ Renaming or renumbering one **silently destroys stored learner progress**. The
 `docs/MASTER_BRIEF.md` §12; `data/modules.js` is generated from that in turn.
 Never hand-edit `data/modules.js` — run `node tools/generate-modules.mjs`, and
 `node tools/generate-modules.mjs --check` to confirm the chain is in sync.
+
+**Chapter ids work the same way** and are equally permanent: `NN-MM`
+(module–chapter), e.g. `01-01`. They are *not* generated — the curriculum
+specifies what a module must cover, not how it splits into chapters, so
+chapters live in [`data/chapters.js`](data/chapters.js) with their content under
+`content/`. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §4a.
 
 ### Hard rules
 

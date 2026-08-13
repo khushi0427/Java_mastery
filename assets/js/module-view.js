@@ -10,13 +10,10 @@
  */
 
 import { MODULES } from '../../data/modules.js';
+import { PLANNED_CHAPTERS } from '../../data/chapters.js';
+import { chapterHref, chaptersForModule } from './chapters.js';
 import { el, replaceChildren } from './dom.js';
-import {
-  LEARNER_STATUS,
-  getModuleProgress,
-  recordVisit,
-  setModuleStatus,
-} from './progress.js';
+import { LEARNER_STATUS, getModuleProgress, isChapterComplete, recordVisit, setModuleStatus } from './progress.js';
 
 /** Learner-side labels — see progress.js on the two status axes. */
 const LEARNER_LABEL = {
@@ -163,11 +160,43 @@ function devProgressControl(module, progress) {
 }
 
 function chapterSection(module) {
+  const chapters = chaptersForModule(module.id);
+  const planned = PLANNED_CHAPTERS[module.id] ?? [];
+
+  // Chapters that are planned but not written are listed as such, greyed and
+  // unlinked. Showing them keeps the module's shape honest — the learner can
+  // see this chapter is one of four, not the whole module — while never
+  // implying content exists. Modules with no plan recorded show nothing extra.
+  const unwritten = planned.filter((p) => !chapters.some((c) => c.id === p.id));
+
   return el('section', { class: 'module-section' }, [
     el('h2', { class: 'module-section__title', text: 'Chapters' }),
-    module.chapterCount === 0
+
+    chapters.length === 0
       ? el('p', { class: 'empty-state', text: 'No chapters yet. This module has not been written.' })
-      : el('ul', { class: 'chapter-list' }),
+      : el('ul', { class: 'chapter-list' }, chapters.map((chapter) => el('li', { class: 'chapter-row' }, [
+        el('a', { class: 'chapter-row__link', href: chapterHref(chapter.id) }, [
+          el('span', { class: 'chapter-row__number', text: String(chapter.number) }),
+          el('span', { class: 'chapter-row__body' }, [
+            el('span', { class: 'chapter-row__title', text: chapter.title }),
+            el('span', { class: 'chapter-row__summary', text: chapter.summary }),
+          ]),
+        ]),
+        isChapterComplete(module.id, chapter.id)
+          ? el('span', { class: 'chapter-row__done', text: 'Completed' })
+          : null,
+      ]))),
+
+    unwritten.length > 0
+      ? el('ul', { class: 'chapter-list chapter-list--planned' }, unwritten.map((p) => el('li', {
+        class: 'chapter-row chapter-row--planned',
+      }, [
+        el('span', { class: 'chapter-row__number', text: String(p.number) }),
+        el('span', { class: 'chapter-row__body' }, [
+          el('span', { class: 'chapter-row__title', text: p.title }),
+          el('span', { class: 'chapter-row__summary', text: 'Planned — not written yet' }),
+        ]),
+      ]))) : null,
   ]);
 }
 
@@ -208,7 +237,7 @@ export function renderModule(id) {
           title: 'Your progress',
         }),
         el('span', { class: 'badge', text: contentLabel, title: 'What exists in the repository' }),
-        el('span', { class: 'badge', text: `${module.chapterCount} chapters` }),
+        el('span', { class: 'badge', text: `${chaptersForModule(module.id).length} chapters` }),
         el('span', { class: 'badge', text: `${topicCount} topics` }),
       ]),
     ]),

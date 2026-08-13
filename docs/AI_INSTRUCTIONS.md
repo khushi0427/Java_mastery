@@ -324,8 +324,9 @@ you did.
 
 - Do exactly the phase or chapter requested — nothing more.
 - Do not start the next phase because the current one finished early.
-- Do not build website UI, module content, or execution integration ahead of
-  their phase.
-- Phases 3, 4, and 6 are **not specified**. Do not invent scope for them.
+- Do not build module content ahead of the `CONTINUE` that asks for it.
+- All six foundation phases are complete. Work now arrives one chapter at a
+  time through `CONTINUE` (§8) — never a batch, never the next chapter
+  unprompted.
 - Finish by reporting what you did, what you verified, what you did not verify
   and why — then **STOP** and wait for explicit instruction.

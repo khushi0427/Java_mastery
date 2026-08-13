@@ -11,22 +11,36 @@
 
 import { DIFFICULTIES, EXERCISES, realExerciseCount } from '../../data/exercises.js';
 import { PREDICTIONS, realPredictionCount } from '../../data/predict-output.js';
+import { totalChapterCount } from './chapters.js';
 import { el, replaceChildren } from './dom.js';
 import { renderExercise } from './exercise-shell.js';
 import { renderPrediction } from './predict-shell.js';
 
-/** Honest banner: say plainly that these are shells with no content behind them. */
+/**
+ * Honest banner. The counts come from the data, so this text cannot drift out
+ * of step with what is actually in the repository the way a hardcoded
+ * sentence would.
+ */
 function statusBanner() {
   const realExercises = realExerciseCount();
   const realPredictions = realPredictionCount();
+  const chaptersWritten = totalChapterCount();
+
+  if (realExercises === 0 && realPredictions === 0) {
+    return el('p', { class: 'banner' }, [
+      el('strong', { text: 'Practice shells, no content yet. ' }),
+      'The items below are placeholders that exist to demonstrate the components '
+      + 'render and that hints and answers stay hidden until asked for. Real '
+      + 'practice is written per module, alongside the chapter it belongs to.',
+    ]);
+  }
 
   return el('p', { class: 'banner' }, [
-    el('strong', { text: 'Practice shells, no content yet. ' }),
-    `There are ${realExercises} real exercises and ${realPredictions} real `
-    + 'predict-the-output questions in the repository. The items below are '
-    + 'placeholders that exist to demonstrate the components render and that '
-    + 'hints and answers stay hidden until asked for. Real practice is written '
-    + 'per module, alongside the chapter it belongs to.',
+    el('strong', { text: `${realExercises} exercises and ${realPredictions} predict-the-output questions. ` }),
+    `They cover the ${chaptersWritten} chapter${chaptersWritten === 1 ? '' : 's'} written so far, `
+    + 'out of 43 modules. Every reference solution was compiled and run before it was '
+    + 'recorded here. One entry in each list is still the original shell placeholder, '
+    + 'labelled as such and excluded from those counts.',
   ]);
 }
 

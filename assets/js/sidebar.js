@@ -12,6 +12,7 @@
 
 import { MODULES } from '../../data/modules.js';
 import { el, svg } from './dom.js';
+import { chapterHref, chaptersForModule, totalChapterCount } from './chapters.js';
 import { getModuleProgress } from './progress.js';
 
 /** Top-level destinations. Routes match the view names in index.html. */
@@ -50,15 +51,27 @@ function moduleItem(module) {
   // The dot reflects what the LEARNER has done, read from stored progress.
   const statusLabel = LEARNER_LABEL[progress.learnerStatus] ?? progress.learnerStatus;
 
+  // Authored chapters, from data/chapters.js. A module with none says so
+  // rather than rendering fake links.
+  const moduleChapters = chaptersForModule(module.id);
+
   const chapters = el('div', {
     class: 'module-chapters',
     id: chaptersId,
     hidden: true,
   }, [
-    // chapterCount is genuinely 0 — say so rather than rendering fake links.
-    module.chapterCount === 0
+    moduleChapters.length === 0
       ? el('p', { class: 'module-chapters__empty', text: 'No chapters yet' })
-      : el('ul', { class: 'module-chapters__list' }),
+      : el('ul', { class: 'module-chapters__list' }, moduleChapters.map((chapter) => el('li', {}, [
+        el('a', {
+          class: 'chapter-link',
+          href: chapterHref(chapter.id),
+          dataset: { chapterId: chapter.id },
+        }, [
+          el('span', { class: 'chapter-link__number', text: String(chapter.number) }),
+          el('span', { class: 'chapter-link__title', text: chapter.title }),
+        ]),
+      ]))),
   ]);
 
   const toggle = el('button', {
@@ -139,7 +152,28 @@ function curriculumSection() {
 /* ------------------------------------------------------------------- build */
 
 /** Render the whole sidebar into its container. */
+/**
+ * Keep the sidebar footer honest about how much has actually been written.
+ * Derived from the chapter manifest rather than hardcoded, so it cannot go
+ * stale the way the phase labels did.
+ */
+function paintProgressNote() {
+  const note = document.getElementById('sidebar-progress-note');
+  if (!note) return;
+
+  const chapters = totalChapterCount();
+  const modulesWithContent = new Set(
+    MODULES.filter((m) => chaptersForModule(m.id).length > 0).map((m) => m.id),
+  ).size;
+
+  note.textContent = chapters === 0
+    ? 'No chapters written yet · 43 modules'
+    : `${chapters} chapter${chapters === 1 ? '' : 's'} written · `
+      + `${modulesWithContent} of 43 modules started`;
+}
+
 export function initSidebar() {
+  paintProgressNote();
   const container = document.getElementById('sidebar-nav');
   if (!container) {
     console.warn('sidebar.js: #sidebar-nav not found — sidebar not built.');

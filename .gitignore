@@ -1,0 +1,4 @@
+# Compiled output from running the chapter examples locally.
+# Sources are committed; build artefacts are not.
+*.class
+*.jar
