@@ -195,6 +195,31 @@ function localFallbackPanel(getSource) {
 }
 
 /**
+ * A read-only code block with a copy button. Used for anything that is not
+ * Java, where "Run" and the local `javac` commands would both be wrong.
+ */
+function staticCodeBlock(code, language) {
+  return el('div', { class: 'code-block' }, [
+    el('div', { class: 'code-block__bar' }, [
+      el('span', { class: 'code-block__lang', text: language }),
+      el('span', { class: 'runner__spacer' }),
+      el('button', {
+        class: 'button button--subtle code-block__action',
+        type: 'button',
+        text: 'Copy',
+        on: {
+          click: async (event) => {
+            const done = await copyText(code);
+            flash(event.currentTarget, done ? 'Copied' : 'Copy failed');
+          },
+        },
+      }),
+    ]),
+    el('pre', { class: 'code-block__pre scroll-x' }, [el('code', { text: code })]),
+  ]);
+}
+
+/**
  * Build an editable, runnable code block.
  *
  * @param {object} options
@@ -212,7 +237,15 @@ export function renderCodeRunner({
   starterCode,
   stdin = '',
   allowStdin = false,
+  runnable,
 } = {}) {
+  // Execution is Java-only. A shell transcript or a snippet in another language
+  // gets a plain, copyable block instead of a Run button that would compile it
+  // as Java and report a baffling error, and instead of local javac commands
+  // that make no sense for it.
+  const canRun = runnable ?? (language === 'java');
+  if (!canRun) return staticCodeBlock(code, language);
+
   const uid = `runner-${++runnerSequence}`;
   const initial = typeof starterCode === 'string' ? starterCode : code;
   const source = typeof code === 'string' ? code : '';

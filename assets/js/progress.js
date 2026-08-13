@@ -30,6 +30,7 @@
  */
 
 import { MODULES } from '../../data/modules.js';
+import { chapterCountForModule, totalChapterCount } from './chapters.js';
 import { KEY_PREFIX, isAvailable, readJSON, remove, writeJSON } from './storage.js';
 
 /** Single aggregate record. One read, one write, no key scanning. */
@@ -203,8 +204,11 @@ export function setModuleStatus(moduleId, status) {
 /**
  * Mark a chapter complete or not.
  *
- * No chapters exist yet, so nothing calls this in Phase 4 — it is the path real
- * completion will take once chapters land, and it is exercised by the tests.
+ * This is the real completion path, and as of Module 01 Chapter 1 it is in use
+ * by the chapter view. Completing a chapter moves a NOT_STARTED module to
+ * IN_PROGRESS; it deliberately never moves a module to COMPLETED, because
+ * "all authored chapters done" is not the same as "the module is finished" —
+ * most modules have chapters still unwritten.
  *
  * @param {string} moduleId
  * @param {string} chapterId
@@ -226,6 +230,12 @@ export function setChapterComplete(moduleId, chapterId, complete = true) {
 
   persist();
   return true;
+}
+
+/** Has this chapter been marked complete? @param {string} moduleId @param {string} chapterId */
+export function isChapterComplete(moduleId, chapterId) {
+  if (!isKnownModule(moduleId)) return false;
+  return Boolean(load().modules[moduleId]?.chapters?.[chapterId]);
 }
 
 /** Flip a chapter's completion. @returns {boolean} its new state */
@@ -360,11 +370,13 @@ export function getModuleProgress(moduleId) {
     // What the learner has done (this store).
     learnerStatus,
     completedChapters,
-    chapterCount: module.chapterCount,
+    // Authored chapters come from data/chapters.js, not from the generated
+    // module metadata — see that file for why the two are separate.
+    chapterCount: chapterCountForModule(moduleId),
     // 0 chapters means there is genuinely nothing to complete; a module the
     // learner marked COMPLETED reads 100 because that reflects a real action.
-    percent: module.chapterCount > 0
-      ? percentOf(completedChapters, module.chapterCount)
+    percent: chapterCountForModule(moduleId) > 0
+      ? percentOf(completedChapters, chapterCountForModule(moduleId))
       : (learnerStatus === LEARNER_STATUS.COMPLETED ? 100 : 0),
     solvedExercises: record ? Object.keys(record.exercises ?? {}).length : 0,
     startedAt: record?.startedAt ?? null,
@@ -399,7 +411,7 @@ export function getOverallProgress() {
     solvedExercises += Object.keys(record.exercises ?? {}).length;
   }
 
-  const totalChapters = MODULES.reduce((n, m) => n + m.chapterCount, 0);
+  const totalChapters = totalChapterCount();
 
   return {
     modulesCompleted,

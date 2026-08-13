@@ -10,6 +10,7 @@
  * Routes:
  *   #/dashboard, #/curriculum, #/practice, …   → a static view
  *   #/module/<id>                              → the module overview (Phase 3)
+ *   #/chapter/<NN-MM>                          → one chapter (Module 01 Ch.1 on)
  *
  * View sections are static markup in index.html toggled with `hidden`; the
  * dashboard and module views have their bodies filled by their own modules.
@@ -17,6 +18,7 @@
  * scripts on file:// (docs/ARCHITECTURE.md §2).
  */
 
+import { beginChapterRender, setCurrentChapter } from './chapter-view.js';
 import { renderCurriculum } from './curriculum-view.js';
 import { renderDashboard } from './dashboard.js';
 import { renderModule } from './module-view.js';
@@ -137,6 +139,7 @@ function initDrawer() {
  *   ''                → { name: 'dashboard' }
  *   '#/curriculum'    → { name: 'curriculum' }
  *   '#/module/01-foo' → { name: 'module', param: '01-foo' }
+ *   '#/chapter/01-01' → { name: 'chapter', param: '01-01' }
  *
  * @returns {{name: string, param?: string}}
  */
@@ -169,7 +172,22 @@ function showRoute(route, moveFocus) {
   let title;
   let activeKey = null;
 
-  if (route.name === 'module' && route.param) {
+  // Which chapter is current, so a slow content import that resolves after
+  // the learner has navigated away discards itself instead of overwriting.
+  setCurrentChapter(route.name === 'chapter' ? (route.param ?? null) : null);
+
+  if (route.name === 'chapter' && route.param) {
+    // Synchronous yes/no from the manifest so an unknown chapter id 404s;
+    // the body fills in when the dynamic import resolves.
+    if (beginChapterRender(route.param)) {
+      viewName = 'chapter';
+      activeKey = `chapter/${route.param}`;
+      title = document.querySelector('#chapter-body .view__title')?.textContent ?? 'Chapter';
+    } else {
+      viewName = NOT_FOUND_VIEW;
+      title = 'Not found';
+    }
+  } else if (route.name === 'module' && route.param) {
     // Render first: an unknown module id must fall through to the 404 view
     // rather than showing an empty module page.
     if (renderModule(route.param)) {

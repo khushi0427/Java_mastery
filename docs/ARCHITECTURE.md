@@ -8,9 +8,9 @@ predict-output shells), Phase 5 (compiler/execution abstraction) and Phase 6
 (foundation verification and documentation audit). Sections that still describe
 systems which **do not exist yet** are marked accordingly. Real today: the
 documentation layer, the website shell, the module metadata layer, persisted
-progress, the practice shells, and the execution abstraction with its local
-`javac`/`java` fallback — **no learning content, and no online execution
-provider enabled**.
+progress, the practice shells, the execution abstraction with its local
+`javac`/`java` fallback, and the chapter content layer — **2 chapters written of
+43 modules, and no online execution provider enabled**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -33,15 +33,16 @@ section becomes real, move it out of *Planned* — and only then.
 1. [Documentation layer](#1-documentation-layer) — **IMPLEMENTED**
 2. [Frontend architecture](#2-frontend-architecture) — **IMPLEMENTED**
 3. [File structure](#3-file-structure) — PARTIAL
-4. [Data architecture](#4-data-architecture) — PARTIAL (module metadata built)
-5. [Module & chapter architecture](#5-module--chapter-architecture) — PARTIAL (modules built, chapters not)
-6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells; no content)
-7. [Interview-question architecture](#7-interview-question-architecture) — PLANNED
+4. [Data architecture](#4-data-architecture) — **IMPLEMENTED** (module metadata + chapter content)
+4a. [Chapter content architecture](#4a-chapter-content-architecture) — **IMPLEMENTED**
+5. [Module & chapter architecture](#5-module--chapter-architecture) — **IMPLEMENTED** (2 of many chapters written)
+6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells + Chapter 01-01 content)
+7. [Interview-question architecture](#7-interview-question-architecture) — PARTIAL (in-chapter; no standalone bank)
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
 9. [Progress system](#9-progress-system) — **IMPLEMENTED**
 10. [localStorage usage](#10-localstorage-usage) — **IMPLEMENTED** (theme + progress)
 11. [Compiler / execution abstraction](#11-compiler--execution-abstraction) — **IMPLEMENTED** (Phase 5; no provider enabled)
-12. [Navigation](#12-navigation) — **IMPLEMENTED** (module level; chapter level PLANNED)
+12. [Navigation](#12-navigation) — **IMPLEMENTED** (module and chapter level)
 13. [Search](#13-search) — **IMPLEMENTED** (modules + topics)
 14. [Responsive behaviour](#14-responsive-behaviour) — **IMPLEMENTED**
 15. [Cross-cutting decisions already fixed](#15-cross-cutting-decisions-already-fixed)
@@ -99,8 +100,8 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 **Status: IMPLEMENTED (Phase 2 shell; Phases 3–5 filled it in).** Layout,
 theming, navigation, routing, module data, search, progress, the practice
 shells, and the execution abstraction all exist and were verified in a real
-browser. What is still PLANNED is **chapter content rendering** — there is no
-chapter to render.
+browser, along with the chapter content layer and its renderer. What remains
+is simply the writing: 2 chapters exist of 43 modules.
 
 ### Fixed constraints (decided, not negotiable)
 
@@ -116,8 +117,8 @@ chapter to render.
   (bootstrap), `theme.js` (theme state), `nav.js` (drawer + router),
   `sidebar.js`, `dashboard.js`, `curriculum-view.js`, `module-view.js`,
   `search.js`, `practice-view.js`, `exercise-shell.js`, `predict-shell.js`,
-  `progress.js`, `storage.js`, `code-runner.js`, the `execution/` modules, and
-  `dom.js` (element builder). No globals;
+  `progress.js`, `storage.js`, `code-runner.js`, the `execution/` modules,
+  `chapters.js`, `chapter-view.js`, and `dom.js` (element builder). No globals;
   modules communicate by import, not by shared window state.
 - **Three stylesheets** with a strict division of responsibility:
   `base.css` (reset, non-colour tokens, typography, focus primitives),
@@ -191,6 +192,8 @@ Java_mastery/
 │       ├── exercise-shell.js  ← one exercise, hints, solution (Phase 4)
 │       ├── predict-shell.js   ← one predict-the-output question (Phase 4)
 │       ├── code-runner.js ← editor + output + local fallback (Phase 5)
+│       ├── chapters.js    ← the only accessor over data/chapters.js
+│       ├── chapter-view.js ← renders a chapter from its data
 │       └── execution/     ← Java execution, provider-agnostic (Phase 5)
 │           ├── config.js  ← THE single config point; no credential field
 │           ├── result.js  ← STATUS, baseResult, postJson
@@ -199,10 +202,18 @@ Java_mastery/
 │           └── providers/
 │               ├── piston.js  ← self-hosted Piston adapter
 │               └── judge0.js  ← self-hosted Judge0 adapter
+├── content/               ← AUTHORED chapter content, no markup
+│   └── modules/module-01/
+│       ├── 01-01-from-source-to-running-program.js
+│       └── 01-02-jvm-architecture-class-loading.js
 ├── data/
-│   ├── modules.js         ← GENERATED module metadata (single source)
+│   ├── modules.js         ← GENERATED module metadata (no chapter fields)
+│   ├── chapters.js        ← chapter manifest + lazy loaders + PLANNED_CHAPTERS
 │   ├── exercises.js       ← exercise contract (Phase 4; +starterCode Phase 5)
 │   └── predict-output.js  ← predict-the-output contract (Phase 4)
+├── java/                  ← runnable sources, actually compiled and run
+│   ├── module-01/ch01/
+│   └── module-01/ch02/
 ├── tools/
 │   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
@@ -223,20 +234,17 @@ Phase 1 sketched a `site/` directory containing `index.html`, `css/`, and `js/`.
 2. It removes one level of nesting for the only entry point the project has.
 
 The Phase 1 text explicitly labelled that tree "intent, not commitments; Phase 2
-confirms them" — this is that confirmation. `content/` and `java/` below are
-still intent; `tools/` exists as of Phase 3.
+confirms them" — this is that confirmation.
 
-### Planned — not yet implemented
+### Directories once planned, now real
 
-```
-Java_mastery/
-├── content/               ← chapter content, once chapters are written
-│   └── modules/
-│       └── module-01/
-│           └── chapters/
-├── java/                  ← runnable Java sources, per module
-│   └── module-01/
-```
+Both `content/` and `java/` now exist — created when Module 01 Chapter 1 was
+authored. The final naming differs slightly from the Phase 1 sketch: chapter
+files sit directly under `content/modules/module-NN/` rather than in a nested
+`chapters/` directory, since there is nothing else in a module directory to
+disambiguate them from.
+
+Nothing is currently planned-but-absent at the directory level.
 
 Note that `tools/` now exists — Phase 1 had reserved it for Phase 5 execution
 helpers, and Phase 3 put the curriculum generator there first.
@@ -258,8 +266,10 @@ rather than leaving the two documents disagreeing.
 
 ## 4. Data architecture
 
-**Status: PARTIAL.** The module metadata layer exists (Phase 3). Chapter,
-practice, and interview data do not.
+**Status: IMPLEMENTED.** The module metadata layer exists (Phase 3), the
+practice contracts exist (Phase 4), and the chapter content layer exists as of
+Module 01 Chapter 1. Interview questions live inside chapter content rather
+than in a separate file — see §4a.
 
 ### Principle (decided)
 
@@ -341,10 +351,69 @@ metadata question is settled above.
 
 ---
 
+## 4a. Chapter content architecture
+
+**Status: IMPLEMENTED (Module 01 Chapters 1–2).**
+
+### Two sources, deliberately separate
+
+```
+docs/MASTER_BRIEF.md  →  docs/CURRICULUM.md  →  data/modules.js
+     (canonical)            (transcription)      (GENERATED: what must be covered)
+
+data/chapters.js      →  content/modules/…
+     (manifest)            (AUTHORED: what has actually been written)
+```
+
+The generator emits **no chapter field at all**. It cannot: the curriculum says
+what a module must cover, not how that coverage divides into chapters, and a
+generated `chapterCount: 0` would start lying the moment a chapter was authored.
+So `data/chapters.js` owns chapters, and `assets/js/chapters.js` is the only
+accessor the UI uses.
+
+*(This replaced the Phase 3 arrangement, where `data/modules.js` carried
+`chapterCount: 0` and `chapters: []`. Those fields are gone, and the generator
+now refuses to emit them.)*
+
+### Loading — resolves the Phase 3 open question
+
+Chapter **metadata** (id, title, summary) is static and small, so it ships with
+the app; the sidebar and module pages need it immediately. Chapter **content**
+is fetched with a dynamic `import()` only when the learner opens that chapter.
+Eagerly importing every chapter would eventually mean downloading the whole
+curriculum to render a sidebar. Dynamic import needs no bundler, so this costs
+nothing against the no-build-step constraint.
+
+### Content is data; presentation is code
+
+A chapter file contains **no markup**. It is an object with typed sections, and
+`assets/js/chapter-view.js` renders them. Consequences worth keeping:
+
+- restyling all 43 modules is one change to the renderer;
+- a chapter cannot break the page with malformed HTML, because it contains none;
+- search can index chapters later without parsing anything.
+
+The section vocabulary is `prose`, `callout`, `code`, `terminal`, `table`,
+`diagram`, documented in `data/chapters.js`. **Unknown section types are skipped
+with a console warning** rather than throwing, so a content file written against
+a newer vocabulary loses a section instead of the whole page.
+
+### Inline formatting is a tokenizer, not a regex
+
+Chapter strings support exactly two constructs: `` `code` `` and `**bold**`,
+applied by building text nodes — never `innerHTML`. It is a hand-written scanner
+rather than a regex because the two nest one way only: **bold may contain
+`code`**, while a code span must keep asterisks literal. A regex alternation
+picks one branch and treats the rest as opaque, which rendered
+`**`ClassNotFoundException`**` as bold text with two visible backticks. Caught in
+browser verification, and there are now direct tests for the nesting cases.
+
+---
+
 ## 5. Module & chapter architecture
 
-**Status: PARTIAL.** The module set is fixed and documented; chapter structure
-within modules is planned.
+**Status: IMPLEMENTED.** The module set is fixed and documented, and the
+chapter layer is built and in use — 2 chapters written of 43 modules.
 
 ### Decided
 
@@ -386,20 +455,47 @@ Module metadata is rendered in three places, all reading `data/modules.js`:
 The module overview labels its topic list as *the coverage specification*, not
 as taught content, so a long list never implies the module has been written.
 
-### Not yet decided — UNDECIDED
+### Decided when Module 01 Chapter 1 was authored
 
-Chapter counts per module (determined when each module is authored, not in
-advance); chapter granularity policy; whether prerequisites are enforced in
-navigation or advisory only.
+- **Chapter ids are `NN-MM`** (module–chapter), e.g. `01-01`. **Permanent
+  keys** — `localStorage` progress records key on them, so a chapter is never
+  renumbered for the same reason a module is never renumbered.
+- **Chapter boundaries are an authoring decision, not a curriculum one.** The
+  brief specifies what a module must COVER; how that splits into chapters is
+  decided when the module is written. This is why chapters are not generated —
+  see §4a.
+- **The plan for a module's remaining chapters is recorded** in
+  `PLANNED_CHAPTERS` (`data/chapters.js`) at the moment its first chapter is
+  authored, so the next session does not have to re-derive the split from the
+  topic list. Planned chapters render in the module overview as visibly inert,
+  unlinked rows — the module's shape stays honest without implying content
+  exists.
+- **A chapter never marks its module COMPLETED.** Completing every *authored*
+  chapter is not the same as finishing the module while chapters remain
+  unwritten, so `setChapterComplete` moves a module to IN_PROGRESS and no
+  further.
+- **Chapter navigation is module-local.** "Next" does not cross into the next
+  module, because the module overview is where scope and prerequisites live.
+
+### Still UNDECIDED
+
+Chapter counts for modules 02–43 (decided as each is authored); whether
+prerequisites are enforced in navigation or advisory only.
 
 ---
 
 ## 6. Practice architecture
 
-**Status: IMPLEMENTED as shells (Phase 4); NO content.** The components exist
-and are verified; `data/exercises.js` and `data/predict-output.js` hold one
-labelled placeholder each and nothing else. Real exercises are authored per
-module through `CONTINUE`.
+**Status: IMPLEMENTED (Phase 4 shells; content from Module 01 Chapters 1–2).**
+Twelve exercises and eleven predict-the-output questions exist, covering the two
+chapters written so far. Every reference solution was compiled and run before it
+was recorded, and every predict-the-output answer is captured real output.
+
+The shells were built and verified in Phase 4 against one labelled placeholder
+each; those placeholders remain, because they are what the UI's
+placeholder-labelling behaviour is verified against, and `realExerciseCount()`
+excludes them from every count. Further exercises are authored per chapter
+through `CONTINUE`, never ahead of it.
 
 ### Exercise contract (`data/exercises.js`)
 
@@ -442,7 +538,11 @@ Real exercises and questions; auto-checking answers against expected output
 
 ## 7. Interview-question architecture
 
-**Status: PLANNED — not yet implemented.**
+**Status: PARTIAL.** Interview questions exist *inside* chapter content — seven
+across Module 01 Chapters 1–2 (seven each), with a category, a reasoning-depth model answer,
+and a reveal that keeps the answer hidden until asked for. What does NOT exist
+is a standalone cross-module question bank or the `#/interview` view, which
+remains a placeholder. The decisions below still stand.
 
 ### Decided
 
@@ -739,8 +839,11 @@ is in use.
 
 ## 12. Navigation
 
-**Status: IMPLEMENTED (Phase 2 shell, Phase 3 module tree).** The chapter level
-does not exist because chapters do not.
+**Status: IMPLEMENTED (Phase 2 shell, Phase 3 module tree, chapter level with
+Module 01 Chapters 1–2).** Chapter routes, sidebar chapter links, module chapter
+lists, and previous/module/next chapter navigation all exist. Chapter
+navigation is **module-local**: "next" stops at the module boundary rather than
+skipping the next module's overview, where scope and prerequisites live.
 
 ### As built
 

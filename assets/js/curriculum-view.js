@@ -9,6 +9,7 @@
  */
 
 import { MODULES } from '../../data/modules.js';
+import { chapterCountForModule } from './chapters.js';
 import { el, replaceChildren } from './dom.js';
 import { getModuleProgress } from './progress.js';
 
@@ -35,7 +36,7 @@ function moduleCard(module) {
       ]),
       el('h3', { class: 'module-card__name', text: module.name }),
       el('p', { class: 'module-card__description', text: module.description }),
-      el('p', { class: 'module-card__meta', text: `${module.chapterCount} chapters · ${topicCount} topics` }),
+      el('p', { class: 'module-card__meta', text: `${chapterCountForModule(module.id)} chapters · ${topicCount} topics` }),
     ]),
   ]);
 }

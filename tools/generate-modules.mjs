@@ -171,10 +171,13 @@ function parseModules(text) {
       subsections,
       topics,
 
-      // Facts about the repository, not placeholders: no chapter content exists.
+      // The curriculum defines what a module must COVER. It does not define
+      // how that coverage is split into chapters — that is an authoring
+      // decision made when the module is written. So no chapter field is
+      // emitted here: a generated `chapterCount: 0` would start lying the
+      // moment a chapter was authored. Chapters live in `data/chapters.js`
+      // and are read through `assets/js/chapters.js`.
       status: 'NOT_STARTED',
-      chapterCount: 0,
-      chapters: [],
     };
   });
 }
@@ -194,7 +197,9 @@ function assertValid(modules) {
     if (!m.name) throw new Error(`Module ${m.number} has no name.`);
     if (m.topics.length === 0) throw new Error(`Module ${m.number} has no topics.`);
     if (m.status !== 'NOT_STARTED') throw new Error(`Module ${m.number} status must be NOT_STARTED.`);
-    if (m.chapterCount !== 0) throw new Error(`Module ${m.number} chapterCount must be 0.`);
+    if ('chapterCount' in m || 'chapters' in m) {
+      throw new Error(`Module ${m.number} must not carry chapter fields — chapters live in data/chapters.js.`);
+    }
   }
 }
 
@@ -265,8 +270,13 @@ function render(modules) {
  * depth, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's JPA-vs-Hibernate
  * framing). Those are requirements, not commentary.
  *
- * \`status\` and \`chapterCount\` describe what actually exists in this repository:
- * all 43 modules are NOT_STARTED with 0 chapters. Metadata is not content.
+ * \`status\` is the module-level content status; all 43 are NOT_STARTED, because
+ * metadata is not content.
+ *
+ * There is deliberately NO chapter field here. The curriculum specifies what a
+ * module must cover, not how it is divided into chapters — that is decided when
+ * the module is authored. Chapters live in \`data/chapters.js\` and are read
+ * through \`assets/js/chapters.js\`.
  */
 
 export const MODULES = `;

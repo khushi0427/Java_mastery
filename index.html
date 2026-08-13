@@ -135,8 +135,13 @@
       <div class="sidebar__scroll" id="sidebar-nav"></div>
 
       <div class="sidebar__footer">
+        <!--
+          Filled by assets/js/sidebar.js from the real chapter count, so this
+          line cannot drift out of date as chapters are written. The static
+          text is the no-JavaScript fallback.
+        -->
         <p class="sidebar__phase">Foundation complete</p>
-        <p class="sidebar__phase-note">Awaiting first CONTINUE · 0 of 43 modules written</p>
+        <p class="sidebar__phase-note" id="sidebar-progress-note">43 modules</p>
       </div>
     </nav>
 
@@ -179,16 +184,21 @@
         <div id="module-body"></div>
       </section>
 
+      <section class="view view--reading" id="view-chapter" data-view="chapter" hidden>
+        <!-- Filled by assets/js/chapter-view.js for #/chapter/<NN-MM>. -->
+        <div id="chapter-body"></div>
+      </section>
+
       <section class="view view--wide" id="view-practice" data-view="practice" aria-labelledby="view-practice-title" hidden>
         <header class="view__header">
-          <p class="view__eyebrow">Shells only — no content yet</p>
+          <p class="view__eyebrow">Exercises for the chapters written so far</p>
           <h1 class="view__title" id="view-practice-title">Practice</h1>
           <p class="view__lede">
-            The exercise, hint, predict-the-output, and code-runner components.
-            Real exercises are authored per module; what renders below is
-            placeholder scaffolding that demonstrates the components work.
-            No execution provider is configured — that is the default, and every
-            snippet still carries the exact <code>javac</code> / <code>java</code>
+            Exercises and predict-the-output questions, in difficulty order.
+            Hints reveal one at a time and solutions stay hidden until you ask —
+            deliberately, because reading the answer costs you the exercise.
+            No execution provider is configured, which is the default; every
+            snippet carries the exact <code>javac</code> / <code>java</code>
             commands to run it locally.
           </p>
         </header>

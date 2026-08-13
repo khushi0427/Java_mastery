@@ -27,8 +27,13 @@
  * depth, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's JPA-vs-Hibernate
  * framing). Those are requirements, not commentary.
  *
- * `status` and `chapterCount` describe what actually exists in this repository:
- * all 43 modules are NOT_STARTED with 0 chapters. Metadata is not content.
+ * `status` is the module-level content status; all 43 are NOT_STARTED, because
+ * metadata is not content.
+ *
+ * There is deliberately NO chapter field here. The curriculum specifies what a
+ * module must cover, not how it is divided into chapters — that is decided when
+ * the module is authored. Chapters live in `data/chapters.js` and are read
+ * through `assets/js/chapters.js`.
  */
 
 export const MODULES = [
@@ -86,9 +91,7 @@ export const MODULES = [
       "packages",
       "imports"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "02",
@@ -142,9 +145,7 @@ export const MODULES = [
       "inheritance vs composition",
       "Java vs C++ OOP differences"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "03",
@@ -183,9 +184,7 @@ export const MODULES = [
       "command-line arguments",
       "packages and imports"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "04",
@@ -224,9 +223,7 @@ export const MODULES = [
       "identity vs equality",
       "mutable vs immutable objects"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "05",
@@ -261,9 +258,7 @@ export const MODULES = [
       "designing useful exceptions",
       "debugging exceptions"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "06",
@@ -294,9 +289,7 @@ export const MODULES = [
       "generic API design",
       "common generic interview traps"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "07",
@@ -335,9 +328,7 @@ export const MODULES = [
       "performance characteristics",
       "implementation differences"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "08",
@@ -384,9 +375,7 @@ export const MODULES = [
       "common HashMap mistakes",
       "interview implementation questions"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "09",
@@ -415,9 +404,7 @@ export const MODULES = [
       "lambda limitations",
       "lambda vs anonymous classes"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "10",
@@ -459,9 +446,7 @@ export const MODULES = [
       "stream performance",
       "common stream mistakes"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "11",
@@ -494,9 +479,7 @@ export const MODULES = [
       "time zones",
       "modern Java API design"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "12",
@@ -526,9 +509,7 @@ export const MODULES = [
       "reflection limitations",
       "framework usage of reflection"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "13",
@@ -558,9 +539,7 @@ export const MODULES = [
       "object serialization risks",
       "resource management"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "14",
@@ -597,9 +576,7 @@ export const MODULES = [
       "memory debugging concepts",
       "JVM memory misconceptions"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "15",
@@ -628,9 +605,7 @@ export const MODULES = [
       "thread safety",
       "shared state"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "16",
@@ -661,9 +636,7 @@ export const MODULES = [
       "thread-safe design",
       "immutable objects"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "17",
@@ -696,9 +669,7 @@ export const MODULES = [
       "parallel task execution",
       "concurrency best practices"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "18",
@@ -725,9 +696,7 @@ export const MODULES = [
       "complexity analysis",
       "Java-specific performance considerations"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "19",
@@ -754,9 +723,7 @@ export const MODULES = [
       "anagram patterns",
       "Java implementation pitfalls"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "20",
@@ -781,9 +748,7 @@ export const MODULES = [
       "common incorrect approaches",
       "pattern recognition"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "21",
@@ -813,9 +778,7 @@ export const MODULES = [
       "monotonic stack",
       "monotonic queue"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "22",
@@ -848,9 +811,7 @@ export const MODULES = [
       "PriorityQueue",
       "top-K problems"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "23",
@@ -876,9 +837,7 @@ export const MODULES = [
       "union-find / DSU",
       "graph interview patterns"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "24",
@@ -904,9 +863,7 @@ export const MODULES = [
       "subsets",
       "constraint-based search"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "25",
@@ -933,9 +890,7 @@ export const MODULES = [
       "2D DP",
       "common interview DP patterns"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "26",
@@ -971,9 +926,7 @@ export const MODULES = [
       "views",
       "basic query optimization"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "27",
@@ -1002,9 +955,7 @@ export const MODULES = [
       "window functions",
       "database performance fundamentals"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "28",
@@ -1034,9 +985,7 @@ export const MODULES = [
       "resource management",
       "JDBC vs ORM"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "29",
@@ -1066,9 +1015,7 @@ export const MODULES = [
       "common Maven commands",
       "troubleshooting builds"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "30",
@@ -1104,9 +1051,7 @@ export const MODULES = [
       "lazy loading",
       "eager loading"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "31",
@@ -1137,9 +1082,7 @@ export const MODULES = [
       "common Hibernate performance problems",
       "common mapping mistakes"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "32",
@@ -1175,9 +1118,7 @@ export const MODULES = [
       "@Qualifier",
       "Spring container"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "33",
@@ -1205,9 +1146,7 @@ export const MODULES = [
       "environment-specific configuration",
       "Actuator fundamentals"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "34",
@@ -1243,9 +1182,7 @@ export const MODULES = [
       "@ControllerAdvice",
       "API design"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "35",
@@ -1272,9 +1209,7 @@ export const MODULES = [
       "repository/service/controller separation",
       "common Spring Data mistakes"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "36",
@@ -1307,9 +1242,7 @@ export const MODULES = [
       "common security mistakes",
       "secure API design"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "37",
@@ -1341,9 +1274,7 @@ export const MODULES = [
       "test organization",
       "meaningful test cases"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "38",
@@ -1373,9 +1304,7 @@ export const MODULES = [
       "performance considerations",
       "production debugging"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "39",
@@ -1409,9 +1338,7 @@ export const MODULES = [
       "reliability fundamentals",
       "common backend architecture mistakes"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "40",
@@ -1446,9 +1373,7 @@ export const MODULES = [
       "API integration",
       "frontend/backend separation"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "41",
@@ -1480,9 +1405,7 @@ export const MODULES = [
       "inefficient collections",
       "systematic debugging methodology"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "42",
@@ -1536,9 +1459,7 @@ export const MODULES = [
       "improvements",
       "interview questions"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   },
   {
     "number": "43",
@@ -1582,9 +1503,7 @@ export const MODULES = [
       "final interview discussion",
       "comprehensive mastery assessment"
     ],
-    "status": "NOT_STARTED",
-    "chapterCount": 0,
-    "chapters": []
+    "status": "NOT_STARTED"
   }
 ];
 
