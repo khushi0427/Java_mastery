@@ -10,7 +10,7 @@
  * Chapter *content* is loaded lazily — see `loadChapter`. Metadata is not.
  */
 
-import { CHAPTERS } from '../../data/chapters.js';
+import { CHAPTERS, PLANNED_CHAPTERS } from '../../data/chapters.js';
 
 /** Chapter metadata for one module, in chapter order. @param {string} moduleId */
 export function chaptersForModule(moduleId) {
@@ -32,6 +32,40 @@ export function allChapters() {
 /** Total authored chapters — the real denominator for progress. */
 export function totalChapterCount() {
   return CHAPTERS.length;
+}
+
+/**
+ * A module's CONTENT status, derived from the chapters actually written.
+ *
+ * `data/modules.js` deliberately does not carry this. It is generated from the
+ * curriculum, which describes what a module must cover and knows nothing about
+ * what has been authored — so a generated `NOT_STARTED` would have become a
+ * false claim the moment a module was finished. Same reasoning as the chapter
+ * fields (docs/ARCHITECTURE.md §4a).
+ *
+ * The mapping, using the project's status vocabulary:
+ *
+ *   no chapters written                            → NOT_STARTED
+ *   some written, or some written but not verified → IN_PROGRESS
+ *   every planned chapter written and VERIFIED     → VERIFIED
+ *   every planned chapter written, not all verified→ CONTENT_COMPLETE
+ *
+ * A module with no recorded plan is judged only on what exists: any chapter at
+ * all makes it IN_PROGRESS, because without a plan we cannot know it is done.
+ *
+ * @param {string} moduleId
+ * @returns {string} one of the five status tokens
+ */
+export function moduleContentStatus(moduleId) {
+  const written = chaptersForModule(moduleId);
+  if (written.length === 0) return 'NOT_STARTED';
+
+  const planned = PLANNED_CHAPTERS[moduleId] ?? [];
+  // No plan recorded: we know chapters exist, but not whether they are all of
+  // them. IN_PROGRESS is the honest answer.
+  if (planned.length === 0 || written.length < planned.length) return 'IN_PROGRESS';
+
+  return written.every((c) => c.status === 'VERIFIED') ? 'VERIFIED' : 'CONTENT_COMPLETE';
 }
 
 /** Metadata for one chapter, or null. @param {string} chapterId e.g. '01-01' */

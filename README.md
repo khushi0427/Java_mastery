@@ -48,19 +48,19 @@ filesystem outranks the documentation; if they disagree, fix the documentation.
 | **Phase** | **FOUNDATION COMPLETE** (all 6 phases). Content is now written one chapter per `CONTINUE`; the first is done. |
 | **What exists** | Documentation, the full website foundation, the module metadata layer, progress persistence, the practice system, the execution abstraction, and the chapter layer with one chapter written |
 | **Website** | Navigation, dashboard, curriculum, module overviews, chapter reading view, search, practice, code runner |
-| **Module content** | **3 chapters written** — Module 01 Chapters 1–3: *From Source to Running Program*, *JVM Architecture & Class Loading*, and *The Execution Engine*. The other 42 modules are metadata only. |
+| **Module content** | **Module 01 is complete** — all four chapters written and verified. The other 42 modules are metadata only. |
 | **Progress tracking** | Working — saved in this browser under `jfsm.progress` |
 | **Code execution / compiler** | Architecture built; **no online provider enabled**. The editor, the `executeJava()` abstraction, two adapters, and the local `javac`/`java` fallback all exist. Running code locally with a JDK needs nothing else. |
-| **Modules completed** | 0 of 43. Module 01 is `IN_PROGRESS` (3 of 4 planned chapters); the rest are `NOT_STARTED`. |
-| **Next step** | The project owner says `CONTINUE`; the agent builds Module 01 Chapter 4 (`01-04`, *Program Entry, Output, and Structure*), completing Module 01. See §13 |
+| **Modules completed** | **1 of 43** — Module 01 is `VERIFIED`; the rest are `NOT_STARTED`. |
+| **Next step** | The project owner says `CONTINUE`; the agent begins Module 02 (`02-oop-in-java`) — deciding its chapter split, recording it, and writing the first chapter only. See §13 |
 
 The site navigates all 43 modules **as defined by
 [`docs/MASTER_BRIEF.md`](docs/MASTER_BRIEF.md)**, shows what each will cover, and
-searches module names and topics. **Three chapters have been written** — Module 01
-Chapters 1–3 — with eighteen exercises and sixteen predict-the-output questions
-behind them. Every Java example was actually compiled and run, and every
-performance figure actually measured, before publication. The other 42 modules
-are `NOT_STARTED`. Progress you record is saved in this
+searches module names and topics. **Module 01 is complete** — four chapters,
+with twenty-four exercises and twenty-two predict-the-output questions behind
+them. Every Java example was actually compiled and run, and every performance
+figure actually measured, before publication. The other 42 modules are
+`NOT_STARTED`. Progress you record is saved in this
 browser. See
 [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) for the authoritative status.
 
@@ -594,10 +594,12 @@ When the project owner says **`CONTINUE`**:
 
 1. Do the reading and inspection above.
 2. **Determine the first incomplete chapter from the repository**, never from
-   conversation history. Today that is `01-04` — Module 01's fourth and final
-   chapter — because `01-01` through `01-03` are written and `PLANNED_CHAPTERS`
-   in `data/chapters.js` records what follows. Verify that against the
-   repository rather than trusting this sentence.
+   conversation history. Module 01 is complete, so the next work is Module 02's
+   first chapter — and because no chapter plan exists for Module 02 yet, that
+   CONTINUE must first read the module's topic list in `docs/CURRICULUM.md`,
+   decide the chapter split, and record it in `PLANNED_CHAPTERS`
+   (`data/chapters.js`) before writing chapter `02-01`. Verify all of that
+   against the repository rather than trusting this sentence.
 3. Build **only that one chapter**, through the delivery workflow in §6.
 4. Integrate it into the website and **verify it by actually running it**.
 5. Update `docs/PROJECT_STATE.md` and any other documentation the change

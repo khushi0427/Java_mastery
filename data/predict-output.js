@@ -7,8 +7,8 @@
  * Master brief §19 calls for roughly 5–8 of these in behaviour-heavy chapters.
  * They are authored alongside the chapter they belong to, never in advance.
  *
- * Authored so far: Module 01 Chapters 1–3 — five, six and five questions
- * respectively. Every
+ * Authored so far: Module 01 Chapters 1–4 (the whole module) — five, six,
+ * five and six questions respectively. Every
  * `answer` below is REAL OUTPUT captured by running the command on OpenJDK
  * 21.0.10 on 2026-08-13, not output written from memory. A predict-the-output
  * question with a guessed answer would teach the wrong thing with total
@@ -41,6 +41,7 @@ const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
 const CHAPTER_01_02 = '01-02';
 const CHAPTER_01_03 = '01-03';
+const CHAPTER_01_04 = '01-04';
 
 /** @type {Array<object>} */
 export const PREDICTIONS = [
@@ -483,6 +484,176 @@ export const PREDICTIONS = [
       + 'tier-4 version is installed for future calls.\n\n'
       + 'Asking the JVM directly with -Xlog:deoptimization=debug names the reason as `predicate` '
       + '- the type guard. This is not a failure mode; it is what makes speculating safe.',
+    isPlaceholder: false,
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 4 — Program Entry, Output, and Structure
+     Every answer captured from a real run, OpenJDK 21.0.10, 2026-08-13.
+     ====================================================================== */
+
+  {
+    id: '01-04-predict-char-array',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: 'Four prints, three arrays. What does each line show?',
+    language: 'java',
+    code: [
+      'char[] chars = { \'J\', \'a\', \'v\', \'a\' };',
+      'int[] ints = { 1, 2, 3 };',
+      'String[] strings = { "a", "b" };',
+      '',
+      'System.out.println(chars);',
+      'System.out.println(ints);',
+      'System.out.println(strings);',
+      'System.out.println("prefix " + chars);',
+    ].join('\n'),
+    answer: 'Java\n[I@1b6d3586\n[Ljava.lang.String;@4554617c\nprefix [C@74a14482\n\n(the hex identity hashes differ every run)',
+    explanation:
+      'PrintStream declares a dedicated println(char[]) overload - the ONLY array type that has '
+      + 'one. So a char[] prints its characters, while int[] and String[] fall through to '
+      + 'println(Object) and print the default toString: a type tag plus an identity hash.\n\n'
+      + 'The fourth line is the real trap. It is the SAME char[], but concatenation happens '
+      + 'before the call, so the argument reaching println is a String and you get [C@... after '
+      + 'all. Overload resolution is a compile-time decision made from the static type of the '
+      + 'argument - javap -c shows the four call sites resolving to ([C)V, (Ljava/lang/Object;)V '
+      + 'twice, and (Ljava/lang/String;)V.\n\n'
+      + 'For contents of any other array, use Arrays.toString (Module 07).',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-04-predict-main-errors',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: 'All four of these classes compile. What happens when you run each?',
+    language: 'java',
+    code: [
+      'class NoPublic { static  void main(String[] args) { System.out.println("x"); } }',
+      'class NoStatic { public  void main(String[] args) { System.out.println("x"); } }',
+      'class NotVoid  { public static int  main(String[] args) { return 0; } }',
+      'class WrongArg { public static void main(int[] args)    { System.out.println("x"); } }',
+    ].join('\n'),
+    answer: 'All four compile cleanly. All four fail at launch, with only THREE distinct messages:\n\nError: Main method not found in class NoPublic, please define the main method as:\n   public static void main(String[] args)\nError: Main method is not static in class NoStatic, ...\nError: Main method must return a value of type void in class NotVoid, ...\nError: Main method not found in class WrongArg, ...',
+    explanation:
+      'The first thing to notice is that nothing failed to compile. main is an ordinary method '
+      + 'to javac; only the launcher has an opinion about its shape.\n\n'
+      + 'Then: four failures, three messages. NoPublic and WrongArg produce the SAME error, '
+      + 'because the launcher is searching for a public method named main taking String[] - a '
+      + 'non-public one and a wrongly-typed one are both simply absent from that search, so '
+      + '"not found" is literally accurate.\n\n'
+      + 'NoStatic and NotVoid are FOUND and then rejected, so they get specific messages telling '
+      + 'you exactly what to change. Learning which message means which saves real time.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-04-predict-exit-codes',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: 'What exit status does the shell see in each case, and where does the stack trace go?',
+    language: 'shell',
+    code: 'java ExitCode          # main returns normally\njava ExitCode 3        # main calls System.exit(3)\njava Throws            # main throws IllegalStateException\n\necho $?                # after each',
+    answer: 'no args        -> exit 0\nSystem.exit(3) -> exit 3\nuncaught throw -> exit 1\n\nThe stack trace goes to STDERR:\nException in thread "main" java.lang.IllegalStateException: boom\n\tat Throws.main(Throws.java:2)',
+    explanation:
+      'Three different endings, three different statuses. Returning normally from main gives 0. '
+      + 'System.exit(n) gives exactly n and does not return. An uncaught exception gives 1 - not '
+      + 'a code of your choosing.\n\n'
+      + 'The detail that matters in practice: the stack trace goes to stderr, not stdout. Verify '
+      + 'it with `java Throws 2>/dev/null` (silence) versus `java Throws 2>&1 >/dev/null` (the '
+      + 'trace). A script that captures only stdout will see an empty result and a non-zero exit '
+      + 'code, with no explanation, unless it also captures stderr.\n\n'
+      + 'This is why main returns void in Java where C++ returns int: the exit status comes from '
+      + 'how the program ended, not from a return value.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-04-predict-import-bytecode',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: 'The same program written three ways. Do the compiled class files differ in their instructions?',
+    language: 'java',
+    code: [
+      '// A: fully qualified, no imports',
+      'java.util.List<String> list = new java.util.ArrayList<>();',
+      '',
+      '// B: import java.util.List; import java.util.ArrayList;',
+      'List<String> list = new ArrayList<>();',
+      '',
+      '// C: import java.util.*;',
+      'List<String> list = new ArrayList<>();',
+    ].join('\n'),
+    answer: 'No. The bytecode is IDENTICAL in all three cases.\n\nNoImports vs WithImports:      IDENTICAL bytecode\nWithImports vs WildcardImport: IDENTICAL bytecode\n\nOnly the class file SIZES differ (538 / 542 / 548 bytes) - by the length of the class name, nothing else.',
+    explanation:
+      'An import is a compile-time abbreviation and has no run-time existence at all. The '
+      + 'compiler ALWAYS writes fully qualified names into the constant pool; the import only '
+      + 'decided what you were allowed to type in the source.\n\n'
+      + 'So "import java.util.* is slower" is a myth, and this is the measurement that ends the '
+      + 'argument. The real reason to prefer explicit imports is ambiguity: importing both '
+      + 'java.util.* and java.awt.* and then writing List gives\n\n'
+      + '  error: reference to List is ambiguous\n'
+      + '    both class java.awt.List in java.awt and interface java.util.List in java.util match\n\n'
+      + 'A single-type import always beats a wildcard, which is how you resolve it.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-04-predict-wildcard-depth',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: 'Given only `import java.util.*;`, which of these two declarations compiles?',
+    language: 'java',
+    code: [
+      'import java.util.*;',
+      '',
+      'public class WildcardDepth {',
+      '    public static void main(String[] args) {',
+      '        List<String> ok = new ArrayList<>();   // java.util.List',
+      '        Lock notImported = null;               // java.util.concurrent.locks.Lock',
+      '    }',
+      '}',
+    ].join('\n'),
+    answer: 'Only the first. The second is a compile error:\n\nerror: cannot find symbol\n        Lock notImported = null;\n        ^\n  symbol:   class Lock',
+    explanation:
+      'A wildcard import covers exactly ONE package. It is not recursive.\n\n'
+      + 'Package names look hierarchical because of the dots, but package nesting is not a '
+      + 'containment relationship: java.util.concurrent is a completely separate package that '
+      + 'merely shares a prefix with java.util. Nothing about importing one implies the other.\n\n'
+      + 'The same applies to visibility: package-private members of java.util.concurrent are not '
+      + 'visible to java.util, and vice versa. Treating package names as a tree is one of the '
+      + 'more common wrong mental models in Java.',
+    isPlaceholder: false,
+  },
+
+  {
+    id: '01-04-predict-setout-final',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    prompt: '`javap java.lang.System` shows `public static final PrintStream out;` — so does this compile, and does it work?',
+    language: 'java',
+    code: [
+      'PrintStream original = System.out;',
+      'ByteArrayOutputStream captured = new ByteArrayOutputStream();',
+      '',
+      'System.setOut(new PrintStream(captured, true));',
+      'System.out.println("this went into the buffer");',
+      'System.setOut(original);',
+      '',
+      'System.out.println("captured was: " + captured.toString().trim());',
+    ].join('\n'),
+    answer: 'It compiles and it works:\n\ncaptured was: this went into the buffer',
+    explanation:
+      'A final field with a working setter looks impossible, and in pure Java it would be. '
+      + 'System.setOut reaches the field through native code inside the JVM, below the level '
+      + 'where final is enforced - the JVM is permitted to do things ordinary code is not.\n\n'
+      + 'Two consequences worth carrying. First, this is exactly how test frameworks assert on '
+      + 'printed output: swap in a PrintStream over a buffer, run the code, restore the original. '
+      + 'Second, and more important for design: **System.out is not guaranteed to be the '
+      + 'terminal.** Code that assumes writes are visible, cheap, or ordered relative to anything '
+      + 'else will eventually surprise someone.\n\n'
+      + 'Note also the `true` argument to the PrintStream constructor - that is autoflush, without '
+      + 'which the buffer might still be empty when you read it.',
     isPlaceholder: false,
   },
 ];

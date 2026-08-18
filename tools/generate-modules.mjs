@@ -171,13 +171,12 @@ function parseModules(text) {
       subsections,
       topics,
 
-      // The curriculum defines what a module must COVER. It does not define
-      // how that coverage is split into chapters — that is an authoring
-      // decision made when the module is written. So no chapter field is
-      // emitted here: a generated `chapterCount: 0` would start lying the
-      // moment a chapter was authored. Chapters live in `data/chapters.js`
-      // and are read through `assets/js/chapters.js`.
-      status: 'NOT_STARTED',
+      // Nothing about AUTHORED state is emitted here — no chapter fields, and
+      // no content status. The curriculum defines what a module must COVER; it
+      // knows nothing about what has been written, so any such field would have
+      // started lying the moment a chapter or a module was finished. Both are
+      // derived from `data/chapters.js` through `assets/js/chapters.js`
+      // (`chapterCountForModule`, `moduleContentStatus`).
     };
   });
 }
@@ -196,9 +195,13 @@ function assertValid(modules) {
   for (const m of modules) {
     if (!m.name) throw new Error(`Module ${m.number} has no name.`);
     if (m.topics.length === 0) throw new Error(`Module ${m.number} has no topics.`);
-    if (m.status !== 'NOT_STARTED') throw new Error(`Module ${m.number} status must be NOT_STARTED.`);
-    if ('chapterCount' in m || 'chapters' in m) {
-      throw new Error(`Module ${m.number} must not carry chapter fields — chapters live in data/chapters.js.`);
+    for (const authored of ['status', 'chapterCount', 'chapters']) {
+      if (authored in m) {
+        throw new Error(
+          `Module ${m.number} must not carry the authored-state field "${authored}" — `
+          + 'it is derived from data/chapters.js via assets/js/chapters.js.',
+        );
+      }
     }
   }
 }
@@ -270,13 +273,11 @@ function render(modules) {
  * depth, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's JPA-vs-Hibernate
  * framing). Those are requirements, not commentary.
  *
- * \`status\` is the module-level content status; all 43 are NOT_STARTED, because
- * metadata is not content.
- *
- * There is deliberately NO chapter field here. The curriculum specifies what a
- * module must cover, not how it is divided into chapters — that is decided when
- * the module is authored. Chapters live in \`data/chapters.js\` and are read
- * through \`assets/js/chapters.js\`.
+ * There is deliberately NO content-status field and NO chapter field here. The curriculum specifies what a
+ * module must COVER. It knows nothing about what has been written — not how the
+ * coverage divides into chapters, and not whether any of it exists yet. Both are
+ * derived from \`data/chapters.js\` through \`assets/js/chapters.js\`
+ * (\`chapterCountForModule\`, \`moduleContentStatus\`).
  */
 
 export const MODULES = `;

@@ -9,8 +9,8 @@ predict-output shells), Phase 5 (compiler/execution abstraction) and Phase 6
 systems which **do not exist yet** are marked accordingly. Real today: the
 documentation layer, the website shell, the module metadata layer, persisted
 progress, the practice shells, the execution abstraction with its local
-`javac`/`java` fallback, and the chapter content layer — **3 chapters written of
-43 modules, and no online execution provider enabled**.
+`javac`/`java` fallback, and the chapter content layer — **Module 01 complete
+(4 chapters) of 43 modules, and no online execution provider enabled**.
 
 **Reading rule:** a section marked *Planned — not yet implemented* is **intent,
 not fact**. Do not cite it as a description of existing behaviour, and do not
@@ -35,8 +35,8 @@ section becomes real, move it out of *Planned* — and only then.
 3. [File structure](#3-file-structure) — PARTIAL
 4. [Data architecture](#4-data-architecture) — **IMPLEMENTED** (module metadata + chapter content)
 4a. [Chapter content architecture](#4a-chapter-content-architecture) — **IMPLEMENTED**
-5. [Module & chapter architecture](#5-module--chapter-architecture) — **IMPLEMENTED** (3 of many chapters written)
-6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells + Module 01 Ch.1–3 content)
+5. [Module & chapter architecture](#5-module--chapter-architecture) — **IMPLEMENTED** (Module 01 complete)
+6. [Practice architecture](#6-practice-architecture) — **IMPLEMENTED** (shells + all Module 01 content)
 7. [Interview-question architecture](#7-interview-question-architecture) — PARTIAL (in-chapter; no standalone bank)
 8. [Assessment architecture](#8-assessment-architecture) — PLANNED
 9. [Progress system](#9-progress-system) — **IMPLEMENTED**
@@ -101,7 +101,7 @@ history. See [`AI_INSTRUCTIONS.md`](AI_INSTRUCTIONS.md) §1.
 theming, navigation, routing, module data, search, progress, the practice
 shells, and the execution abstraction all exist and were verified in a real
 browser, along with the chapter content layer and its renderer. What remains
-is simply the writing: 3 chapters exist of 43 modules.
+is simply the writing: Module 01 is complete, 42 modules remain.
 
 ### Fixed constraints (decided, not negotiable)
 
@@ -206,7 +206,8 @@ Java_mastery/
 │   └── modules/module-01/
 │       ├── 01-01-from-source-to-running-program.js
 │       ├── 01-02-jvm-architecture-class-loading.js
-│       └── 01-03-the-execution-engine.js
+│       ├── 01-03-the-execution-engine.js
+│       └── 01-04-program-entry-output-and-structure.js
 ├── data/
 │   ├── modules.js         ← GENERATED module metadata (no chapter fields)
 │   ├── chapters.js        ← chapter manifest + lazy loaders + PLANNED_CHAPTERS
@@ -215,7 +216,8 @@ Java_mastery/
 ├── java/                  ← runnable sources, actually compiled and run
 │   ├── module-01/ch01/
 │   ├── module-01/ch02/
-│   └── module-01/ch03/
+│   ├── module-01/ch03/
+│   └── module-01/ch04/
 ├── tools/
 │   └── generate-modules.mjs ← derives data/modules.js from CURRICULUM.md
 └── docs/
@@ -355,7 +357,7 @@ metadata question is settled above.
 
 ## 4a. Chapter content architecture
 
-**Status: IMPLEMENTED (Module 01 Chapters 1–3).**
+**Status: IMPLEMENTED (Module 01, all four chapters).**
 
 ### Two sources, deliberately separate
 
@@ -376,6 +378,24 @@ accessor the UI uses.
 *(This replaced the Phase 3 arrangement, where `data/modules.js` carried
 `chapterCount: 0` and `chapters: []`. Those fields are gone, and the generator
 now refuses to emit them.)*
+
+**The same applies to content status.** When Module 01 became complete, the
+generated `status: 'NOT_STARTED'` would have become a false claim, so that field
+was removed too. A module's content status is now **derived** by
+`moduleContentStatus()` in `assets/js/chapters.js`:
+
+| Chapters | Status |
+|---|---|
+| none written | `NOT_STARTED` |
+| some written, or a recorded plan not yet fulfilled | `IN_PROGRESS` |
+| every planned chapter written and `VERIFIED` | `VERIFIED` |
+| every planned chapter written, not all verified | `CONTENT_COMPLETE` |
+
+A module with no recorded plan is judged only on what exists — any chapter makes
+it `IN_PROGRESS`, because without a plan we cannot know it is finished. The
+generator now rejects `status`, `chapterCount` and `chapters` alike: **no
+authored-state field may be generated from the curriculum**, which knows only
+what a module must cover.
 
 ### Loading — resolves the Phase 3 open question
 
@@ -415,7 +435,7 @@ browser verification, and there are now direct tests for the nesting cases.
 ## 5. Module & chapter architecture
 
 **Status: IMPLEMENTED.** The module set is fixed and documented, and the
-chapter layer is built and in use — 3 chapters written of 43 modules.
+chapter layer is built and in use — Module 01 is complete (4 chapters); 42 modules remain.
 
 ### Decided
 
@@ -488,9 +508,9 @@ prerequisites are enforced in navigation or advisory only.
 
 ## 6. Practice architecture
 
-**Status: IMPLEMENTED (Phase 4 shells; content from Module 01 Chapters 1–3).**
-Eighteen exercises and sixteen predict-the-output questions exist, covering the
-three chapters written so far. Every reference solution was compiled and run before it
+**Status: IMPLEMENTED (Phase 4 shells; content from all of Module 01).**
+Twenty-four exercises and twenty-two predict-the-output questions exist, six of
+each per chapter. Every reference solution was compiled and run before it
 was recorded, and every predict-the-output answer is captured real output.
 
 The shells were built and verified in Phase 4 against one labelled placeholder
@@ -541,7 +561,7 @@ Real exercises and questions; auto-checking answers against expected output
 ## 7. Interview-question architecture
 
 **Status: PARTIAL.** Interview questions exist *inside* chapter content — seven
-across Module 01 Chapters 1–3 (seven each), with a category, a reasoning-depth model answer,
+across all four Module 01 chapters (seven each), with a category, a reasoning-depth model answer,
 and a reveal that keeps the answer hidden until asked for. What does NOT exist
 is a standalone cross-module question bank or the `#/interview` view, which
 remains a placeholder. The decisions below still stand.
@@ -842,7 +862,7 @@ is in use.
 ## 12. Navigation
 
 **Status: IMPLEMENTED (Phase 2 shell, Phase 3 module tree, chapter level with
-Module 01 Chapters 1–3).** Chapter routes, sidebar chapter links, module chapter
+all of Module 01).** Chapter routes, sidebar chapter links, module chapter
 lists, and previous/module/next chapter navigation all exist. Chapter
 navigation is **module-local**: "next" stops at the module boundary rather than
 skipping the next module's overview, where scope and prerequisites live.

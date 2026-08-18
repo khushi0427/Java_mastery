@@ -13,6 +13,7 @@
 import { MODULES } from '../../data/modules.js';
 import { el, replaceChildren } from './dom.js';
 import { realExerciseCount } from '../../data/exercises.js';
+import { chaptersForModule, totalChapterCount } from './chapters.js';
 import {
   getAssessmentProgress,
   getCurrentPosition,
@@ -262,6 +263,36 @@ function resetCard() {
   ]);
 }
 
+/**
+ * The banner, written from the data rather than fixed prose.
+ *
+ * The original text said "no chapters have been written yet" and became false
+ * the moment Module 01 Chapter 1 landed. Deriving it means it cannot go stale
+ * again — the same treatment the sidebar footer got.
+ */
+function statusBanner() {
+  const chapters = totalChapterCount();
+  const exercises = realExerciseCount();
+
+  if (chapters === 0) {
+    return el('p', { class: 'banner' }, [
+      el('strong', { text: 'Foundation phase. ' }),
+      'Progress is saved in this browser, but no chapters, exercises, or '
+      + 'assessments have been written yet — so the figures below start at zero '
+      + 'and the denominators are real, not placeholders.',
+    ]);
+  }
+
+  const modulesWithContent = MODULES.filter((m) => chaptersForModule(m.id).length > 0).length;
+
+  return el('p', { class: 'banner' }, [
+    el('strong', { text: `${chapters} chapter${chapters === 1 ? '' : 's'} written. ` }),
+    `Covering ${modulesWithContent} of 43 modules, with ${exercises} exercises. `
+    + 'Every denominator below is real rather than a placeholder, so the numbers '
+    + 'stay honest as more chapters land.',
+  ]);
+}
+
 /* ------------------------------------------------------------------ render */
 
 /** Render the dashboard into its view container. */
@@ -270,12 +301,7 @@ export function renderDashboard() {
   if (!container) return;
 
   replaceChildren(container, [
-    el('p', { class: 'banner' }, [
-      el('strong', { text: 'Foundation phase. ' }),
-      'Progress is now saved in this browser, but no chapters, exercises, or '
-      + 'assessments have been written yet — so the figures below start at zero '
-      + 'and the denominators are real, not placeholders.',
-    ]),
+    statusBanner(),
     el('div', { class: 'card-grid' }, [
       overallCard(),
       positionCard(),

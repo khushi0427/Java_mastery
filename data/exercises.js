@@ -7,8 +7,8 @@
  * Exercises appear here only when the chapter they belong to is written
  * (master brief §36, §41). Adding them ahead of that would be fake content.
  *
- * Authored so far: Module 01 Chapters 1–3 — six exercises each, across the
- * difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
+ * Authored so far: Module 01 Chapters 1–4 (the whole module) — six exercises
+ * each, across the difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
  * RUN on OpenJDK 21.0.10 with `--release 17` on 2026-08-13; the recorded
  * `sampleOutput` is real output, not expected output. Sources live in
  * `java/module-01/ch01/solutions/`.
@@ -81,6 +81,7 @@ const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
 const CHAPTER_01_02 = '01-02';
 const CHAPTER_01_03 = '01-03';
+const CHAPTER_01_04 = '01-04';
 
 /** @type {Array<object>} */
 export const EXERCISES = [
@@ -1653,6 +1654,500 @@ export const EXERCISES = [
         + 'allocation-heavy or I/O-bound code. For anything real I would use JMH."\n\n'
         + 'A candidate who volunteers the conditions before being asked has demonstrated the thing '
         + 'the question is actually testing.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 4 — Program Entry, Output, and Structure
+     Solutions verified by execution on OpenJDK 21.0.10, --release 17,
+     2026-08-13. Sources: java/module-01/ch04/solutions/
+     ====================================================================== */
+
+  {
+    id: '01-04-warmup-main-forms',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Find out what the launcher will and will not accept',
+    difficulty: 'Warm-up',
+    objective:
+      'Discover by experiment which parts of the canonical main signature are required, '
+      + 'so the three launch errors become recognisable rather than alarming.',
+    problem:
+      'Write one file containing several classes, each with a differently shaped main: the '
+      + 'canonical one, one using String... , one using C-style brackets, one missing public, '
+      + 'one missing static, one returning int, and one taking int[]. Compile once and run each. '
+      + 'Record which run and which fail, and with what message.',
+    requirements: [
+      'All variants must be in one file that compiles without errors.',
+      'Run each class and record the exact first line of output or error.',
+      'Group the failures by their message - there are three distinct ones, not four.',
+      'State in one sentence why every variant compiled.',
+    ],
+    constraints: ['Only the public class may be public; the rest are package-private.'],
+    sampleInput: '',
+    sampleOutput: 'canonical\nvarargs, and reordered modifiers\nC-style array brackets\nError: Main method not found in class NoPublic, please define the main method as:\nError: Main method is not static in class NoStatic, please define the main method as:\nError: Main method must return a value of type void in class NotVoid, please define the main method as:',
+    edgeCases: [
+      'Adding strictfp compiles but warns on Java 17+ - the keyword is now redundant.',
+      'The parameter name is arbitrary; args is convention only.',
+    ],
+    testCases: [
+      { input: 'java VarargsMain', expected: 'runs' },
+      { input: 'java NoStatic', expected: 'Error: Main method is not static' },
+      { input: 'java WrongArg', expected: 'Error: Main method not found' },
+    ],
+    starterCode:
+      'public class MainSignature {\n'
+      + '    public static void main(String[] args) { System.out.println("canonical"); }\n'
+      + '}\n'
+      + '\n'
+      + '// add: VarargsMain, CStyleMain, NoPublic, NoStatic, NotVoid, WrongArg\n',
+    hints: [
+      'Varargs compiles to an array parameter, so the launcher cannot tell String... from String[].',
+      'Two different mistakes produce the SAME message. Work out which two, and why they are indistinguishable to the launcher.',
+      'Nothing here is a compile error - main is only special to the launcher, not to javac.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class MainSignature {\n'
+        + '    public static void main(String[] args) { System.out.println("canonical"); }\n'
+        + '}\n'
+        + '\n'
+        + 'class VarargsMain    { static public void main(String... args) { System.out.println("varargs"); } }\n'
+        + 'class CStyleMain     { public static void main(String args[]) { System.out.println("C-style"); } }\n'
+        + 'class ExtraModifiers { public static final synchronized void main(String[] a) { System.out.println("modifiers"); } }\n'
+        + '\n'
+        + 'class NoPublic { static  void main(String[] args) { System.out.println("x"); } }\n'
+        + 'class NoStatic { public  void main(String[] args) { System.out.println("x"); } }\n'
+        + 'class NotVoid  { public static int  main(String[] args) { return 0; } }\n'
+        + 'class WrongArg { public static void main(int[] args)    { System.out.println("x"); } }\n',
+      explanation:
+        'Four run: the canonical form, varargs, C-style brackets, and extra modifiers. Verified '
+        + 'output for each is just its own println.\n\n'
+        + 'Four fail, with only THREE distinct messages:\n\n'
+        + '  NoPublic -> Error: Main method not found in class NoPublic\n'
+        + '  NoStatic -> Error: Main method is not static in class NoStatic\n'
+        + '  NotVoid  -> Error: Main method must return a value of type void in class NotVoid\n'
+        + '  WrongArg -> Error: Main method not found in class WrongArg\n\n'
+        + 'NoPublic and WrongArg share a message because the launcher searches for a public method '
+        + 'named main taking String[]; a non-public one and a wrongly-typed one are both simply '
+        + 'absent from that search. NoStatic and NotVoid are found and then rejected, so they get '
+        + 'specific messages.\n\n'
+        + 'And the one-sentence answer: every variant compiled because main is an ordinary method '
+        + 'to javac - only the launcher has an opinion about its shape.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-easy-out-vs-err',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Separate your program\u2019s product from its commentary',
+    difficulty: 'Easy',
+    objective:
+      'See that out and err are genuinely different destinations, and learn the redirection '
+      + 'that proves it.',
+    problem:
+      'Write a program that emits four lines alternating between System.out and System.err, '
+      + 'plus a line printed with printf. Run it three ways: normally, with stderr discarded, '
+      + 'and with stdout discarded. Explain which lines survive each time and why it matters '
+      + 'for a program whose output is piped somewhere.',
+    requirements: [
+      'Alternate out and err so the interleaving is visible on a terminal.',
+      'Include one printf call using %s, %d and %n.',
+      'Run with 2>/dev/null and with 2>&1 >/dev/null and record both.',
+      'Say in one sentence what belongs on each stream.',
+    ],
+    constraints: ['No logging library - System.out and System.err only.'],
+    sampleInput: '',
+    sampleOutput: '1 out\n2 err\n3 out\n4 err\n\n# 2>/dev/null gives only:\n1 out\n3 out\n\n# 2>&1 >/dev/null gives only:\n2 err\n4 err',
+    edgeCases: [
+      'On a terminal the two appear interleaved, so the difference is invisible until you redirect.',
+      '%n emits the platform line separator; \\n always emits a newline character.',
+    ],
+    testCases: [
+      { input: 'java Streams 2>/dev/null', expected: 'only the out lines' },
+      { input: 'java Streams 2>&1 >/dev/null', expected: 'only the err lines' },
+    ],
+    starterCode:
+      'public class Streams {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // four alternating lines, then a printf\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      '2>/dev/null discards stderr. 2>&1 >/dev/null is the trickier one - it duplicates stderr to the CURRENT stdout, then redirects stdout away.',
+      'printf takes a format string; %n is the portable newline and needs no argument.',
+      'Think about what happens if someone runs `yourprogram | grep something`.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class Streams {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("1 out");\n'
+        + '        System.err.println("2 err");\n'
+        + '        System.out.println("3 out");\n'
+        + '        System.err.println("4 err");\n'
+        + '        System.out.printf("5 printf %s %d%n", "formatted", 42);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified: all five lines on a terminal; `2>/dev/null` leaves lines 1, 3 and 5; '
+        + '`2>&1 >/dev/null` leaves lines 2 and 4.\n\n'
+        + 'The one-sentence rule: **out is the program\'s product, err is commentary about the '
+        + 'run** - progress, warnings, stack traces.\n\n'
+        + 'It matters because anything that consumes your output is reading stdout. A tool that '
+        + 'writes "Loading configuration..." to stdout corrupts the data its caller is parsing, '
+        + 'and the bug only appears once someone pipes it. Uncaught exceptions already go to err, '
+        + 'and the JVM exits 1.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-applied-println-overloads',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Work out which println you actually called',
+    difficulty: 'Applied',
+    objective:
+      'Understand that overload resolution happens at compile time from static types, by '
+      + 'predicting four prints and then confirming with the bytecode.',
+    problem:
+      'Print a char[], an int[], a String[], and the same char[] again but concatenated after '
+      + 'a string prefix. Predict all four outputs before running. Then use javap to identify '
+      + 'which println overload each call resolved to, and explain the two surprises.',
+    requirements: [
+      'Four println calls, predicted in writing before running.',
+      'Run javap -c and match each call site to its method descriptor.',
+      'Explain why the char[] prints differently in the two cases.',
+      'Show the correct way to print the contents of a non-char array.',
+    ],
+    constraints: ['No loops - the point is what a single println does.'],
+    sampleInput: '',
+    sampleOutput: 'Java\n[I@1b6d3586\n[Ljava.lang.String;@4554617c\nprefix [C@74a14482',
+    edgeCases: [
+      'The identity hashes differ every run - only their SHAPE is predictable.',
+      'char[] is the only array type with a dedicated println overload.',
+    ],
+    testCases: [{ input: 'javap -c CharArray.class | grep println', expected: 'println:([C)V, println:(Ljava/lang/Object;)V twice, println:(Ljava/lang/String;)V' }],
+    starterCode:
+      'public class CharArray {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        char[] chars = { \'J\', \'a\', \'v\', \'a\' };\n'
+      + '        // add an int[] and a String[], then the four prints\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Look at the PrintStream javadoc - count how many println overloads take an array.',
+      'String concatenation happens BEFORE the call. What is the static type of the argument by then?',
+      'javap -c shows the method descriptor of each call: ([C)V means char[], (Ljava/lang/Object;)V means Object.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'import java.util.Arrays;\n'
+        + '\n'
+        + 'public class CharArray {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        char[] chars = { \'J\', \'a\', \'v\', \'a\' };\n'
+        + '        int[] ints = { 1, 2, 3 };\n'
+        + '        String[] strings = { "a", "b" };\n'
+        + '\n'
+        + '        System.out.println(chars);            // println(char[])   -> Java\n'
+        + '        System.out.println(ints);             // println(Object)   -> [I@...\n'
+        + '        System.out.println(strings);          // println(Object)   -> [Ljava.lang.String;@...\n'
+        + '        System.out.println("prefix " + chars); // println(String)  -> prefix [C@...\n'
+        + '\n'
+        + '        // the correct way to see contents of any array:\n'
+        + '        System.out.println(Arrays.toString(ints));      // [1, 2, 3]\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified output (hashes vary per run):\n\n'
+        + '  Java\n  [I@1b6d3586\n  [Ljava.lang.String;@4554617c\n  prefix [C@74a14482\n\n'
+        + 'And javap -c confirms four calls, three different methods:\n\n'
+        + '  println:([C)V\n  println:(Ljava/lang/Object;)V\n  println:(Ljava/lang/Object;)V\n'
+        + '  println:(Ljava/lang/String;)V\n\n'
+        + 'Surprise one: char[] has a dedicated overload that prints the characters. No other '
+        + 'array type does, so int[] and String[] fall through to println(Object) and print the '
+        + 'default toString - a type tag and an identity hash.\n\n'
+        + 'Surprise two: the SAME char[] prints differently when concatenated, because '
+        + 'concatenation produces a String before println is ever called. The compiler picks the '
+        + 'overload from the static type of the argument, and by then the argument is a String.\n\n'
+        + 'Arrays.toString is the answer for contents; Arrays.deepToString for nested arrays. '
+        + 'Both are Module 07.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-medium-packages-and-layout',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Make the runtime find a packaged class - then deliberately stop it',
+    difficulty: 'Medium',
+    objective:
+      'Learn why javac is lenient about source location and java is not, by breaking the '
+      + 'layout on purpose and reading the failure.',
+    problem:
+      'Create two classes in different packages, one calling the other. Compile them with -d '
+      + 'into an output directory and run the result. Then compile one of them from a directory '
+      + 'that does NOT match its package declaration and try to run it. Explain both outcomes.',
+    requirements: [
+      'Two packages, e.g. com.example.util and com.example.app, with app calling util.',
+      'Compile with -d and show the directory structure javac produced.',
+      'Run it successfully with -cp pointing at the output root.',
+      'Then reproduce the ClassNotFoundException from a mismatched layout, and explain it.',
+      'Print the package name from inside the program.',
+    ],
+    constraints: ['No build tool - plain javac and java, so the layout is explicit.'],
+    sampleInput: '',
+    sampleOutput: 'from com.example.util\nthis class: com.example.app.App\npackage: com.example.app',
+    edgeCases: [
+      'javac does NOT require the source directory to match the package - only -d controls output.',
+      'A class in the default package cannot be imported by a class in a named package at all.',
+    ],
+    testCases: [
+      { input: 'java -cp out com.example.app.App', expected: 'from com.example.util' },
+      { input: 'java -cp wrongdir com.example.util.Helper', expected: 'ClassNotFoundException' },
+    ],
+    starterCode:
+      '// com/example/util/Helper.java\n'
+      + 'package com.example.util;\n'
+      + 'public class Helper { /* a static method returning a String */ }\n'
+      + '\n'
+      + '// com/example/app/App.java\n'
+      + 'package com.example.app;\n'
+      + '// import the helper, call it, and print App.class.getPackageName()\n',
+    hints: [
+      'javac -d out ... creates out/com/example/... for you. Look at what it built with find.',
+      'The classpath entry is the directory ABOVE the package path, not the package directory itself.',
+      'For the failure case, copy a packaged source somewhere flat and compile it there without -d.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// ---------- com/example/util/Helper.java ----------\n'
+        + 'package com.example.util;\n'
+        + '\n'
+        + 'public class Helper {\n'
+        + '    public static String greet() { return "from com.example.util"; }\n'
+        + '}\n'
+        + '\n'
+        + '// ---------- com/example/app/App.java ----------\n'
+        + 'package com.example.app;\n'
+        + '\n'
+        + 'import com.example.util.Helper;\n'
+        + '\n'
+        + 'public class App {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println(Helper.greet());\n'
+        + '        System.out.println("this class: " + App.class.getName());\n'
+        + '        System.out.println("package: " + App.class.getPackageName());\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified. With -d:\n\n'
+        + '  javac --release 17 -d out com/example/util/Helper.java com/example/app/App.java\n'
+        + '  find out -name "*.class"\n'
+        + '    out/com/example/app/App.class\n'
+        + '    out/com/example/util/Helper.class\n'
+        + '  java -cp out com.example.app.App\n'
+        + '    from com.example.util\n'
+        + '    this class: com.example.app.App\n'
+        + '    package: com.example.app\n\n'
+        + 'And the deliberate break: copying Helper.java (which declares package com.example.util) '
+        + 'into a flat directory and compiling it there SUCCEEDS - javac says nothing and writes '
+        + 'Helper.class right beside the source. Running it then fails:\n\n'
+        + '  Error: Could not find or load main class com.example.util.Helper\n'
+        + '  Caused by: java.lang.ClassNotFoundException: com.example.util.Helper\n\n'
+        + 'The class file is perfectly valid. It is in the wrong place. The runtime turns the '
+        + 'fully qualified name into the path com/example/util/Helper.class and looks for that '
+        + 'under each classpath entry; a bare Helper.class is not it.\n\n'
+        + 'So: javac is lenient about where sources live, java is not lenient about where classes '
+        + 'live. Always compile with -d and let the tool build the layout.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-challenge-imports-cost-nothing',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Prove that imports cost nothing at run time',
+    difficulty: 'Challenge',
+    objective:
+      'Settle a persistent myth with evidence rather than argument, and learn to compare '
+      + 'compiled output as a way of answering questions about the compiler.',
+    problem:
+      'Write the same tiny program three ways: with fully qualified names and no imports, with '
+      + 'explicit single-type imports, and with a wildcard import. Compile all three and prove '
+      + 'whether the bytecode differs. Then find the case where wildcard imports genuinely cause '
+      + 'a problem, and show the error.',
+    requirements: [
+      'Three source files that differ ONLY in how they name the types.',
+      'Compare the compiled output and state whether the instructions differ.',
+      'Explain what the constant pool contains in each case.',
+      'Produce the genuine wildcard problem and its exact compiler error.',
+      'Show how a single-type import resolves it.',
+    ],
+    constraints: ['javap only - no external tools.'],
+    sampleInput: '',
+    sampleOutput: 'NoImports vs WithImports:      IDENTICAL bytecode\nWithImports vs WildcardImport: IDENTICAL bytecode\n\nerror: reference to List is ambiguous\n  both class java.awt.List in java.awt and interface java.util.List in java.util match',
+    edgeCases: [
+      'Class file SIZES differ slightly - by the length of the class name, not by anything to do with imports.',
+      'A wildcard imports one package, not a package tree.',
+    ],
+    testCases: [
+      { input: 'javap -c on all three', expected: 'identical instructions' },
+      { input: 'javac Ambiguous.java', expected: 'error: reference to List is ambiguous' },
+    ],
+    starterCode:
+      '// NoImports.java      - java.util.List list = new java.util.ArrayList<>();\n'
+      + '// WithImports.java    - import java.util.List; import java.util.ArrayList;\n'
+      + '// WildcardImport.java - import java.util.*;\n'
+      + '//\n'
+      + '// then: Ambiguous.java importing BOTH java.util.* and java.awt.*\n',
+    hints: [
+      'Diff the javap -c output, but normalise the class name first or you will see a spurious difference.',
+      'Look for java/util/ArrayList in the constant pool of all three - the compiler always emits fully qualified names.',
+      'java.awt also has a List. Import both packages with wildcards and declare one.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// All three of these compile to the SAME instructions.\n'
+        + '\n'
+        + '// NoImports.java\n'
+        + 'public class NoImports {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        java.util.List<String> list = new java.util.ArrayList<>();\n'
+        + '        list.add("x");\n'
+        + '        System.out.println(list.size());\n'
+        + '    }\n'
+        + '}\n'
+        + '\n'
+        + '// WithImports.java - import java.util.ArrayList; import java.util.List;\n'
+        + '// WildcardImport.java - import java.util.*;\n'
+        + '// ...bodies identical apart from using the simple names.\n'
+        + '\n'
+        + '// And the case that actually bites:\n'
+        + 'import java.util.*;\n'
+        + 'import java.awt.*;\n'
+        + '// import java.util.List;   <- adding this single-type import fixes it\n'
+        + 'class Ambiguous {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        List list = null;   // ambiguous without the line above\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified by comparing javap -c output after normalising the class name:\n\n'
+        + '  NoImports vs WithImports:      IDENTICAL bytecode\n'
+        + '  WithImports vs WildcardImport: IDENTICAL bytecode\n\n'
+        + 'All three constant pools contain java/util/ArrayList, because **the compiler always '
+        + 'emits fully qualified names**. An import only decides what you are allowed to type in '
+        + 'the source. Class file sizes were 538, 542 and 548 bytes - differing by the length of '
+        + 'the class name, nothing else.\n\n'
+        + 'So the wildcard-import performance myth is exactly that. The real cost is ambiguity:\n\n'
+        + '  error: reference to List is ambiguous\n'
+        + '    both class java.awt.List in java.awt and interface java.util.List in java.util match\n\n'
+        + 'A single-type import always wins over any wildcard, so adding `import java.util.List;` '
+        + 'alongside both wildcards compiles and runs.\n\n'
+        + 'One more thing worth knowing: a wildcard covers ONE package, not a tree. '
+        + '`import java.util.*` does not give you java.util.concurrent.locks.Lock - '
+        + '`error: cannot find symbol`. Dotted package names look hierarchical but nesting is not '
+        + 'containment.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-interview-entry-and-structure',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Explain program entry and structure, then defend the details',
+    difficulty: 'Interview',
+    objective:
+      'Handle the deceptively simple opener that many candidates answer shallowly, and the '
+      + 'follow-ups that separate recall from understanding.',
+    problem:
+      'Without notes, answer: "Why is main declared public static void main(String[] args)?" '
+      + 'Then handle: "What does System.out.println(someCharArray) print?", "Does import java.util.* '
+      + 'slow anything down?", and "My class compiles but I get ClassNotFoundException at run '
+      + 'time - what would you check?" Demonstrate at least two answers at a terminal.',
+    requirements: [
+      'Justify each part of the main signature, and say which parts are flexible.',
+      'Name the three distinct launch errors and what each one tells you.',
+      'Answer the char[] question with the concatenation case as well.',
+      'Answer the import question with evidence, not opinion.',
+      'Give at least two plausible causes for the ClassNotFoundException.',
+    ],
+    constraints: ['JDK tools only.'],
+    sampleInput: '',
+    sampleOutput: 'A spoken answer plus a terminal session. There is no single correct transcript.',
+    edgeCases: [
+      'Being asked whether main can be overloaded - it can, and the launcher still calls the String[] one.',
+      'Being asked if System.out can be changed - it can, despite being final.',
+    ],
+    testCases: [],
+    hints: [
+      'For main: public so the launcher can reach it, static so no instance is needed, void because the exit status comes from elsewhere, String[] for the arguments.',
+      'For the imports question, compile two variants and diff the javap output live. Evidence beats assertion.',
+      'For ClassNotFoundException, remember Chapter 2 gave it a completely different cause - a class whose initialization already failed.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// Verified demonstration sequence - all captured in this chapter.\n'
+        + '//\n'
+        + '//   javac --release 17 RejectedMains.java   -> compiles cleanly\n'
+        + '//   java NoStatic  -> Error: Main method is not static in class NoStatic\n'
+        + '//   java NotVoid   -> Error: Main method must return a value of type void\n'
+        + '//   java NoPublic  -> Error: Main method not found in class NoPublic\n'
+        + '//\n'
+        + '//   java CharArray -> Java / [I@... / [Ljava.lang.String;@... / prefix [C@...\n'
+        + '//   javap -c CharArray.class | grep println\n'
+        + '//                  -> ([C)V, (Ljava/lang/Object;)V x2, (Ljava/lang/String;)V\n'
+        + '//\n'
+        + '//   javap -c NoImports.class vs WithImports.class -> IDENTICAL\n'
+        + '//\n'
+        + '//   javap java.lang.System -> public static final PrintStream out;  AND  setOut(...)\n'
+        + 'public class InterviewNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Say it out loud, then run two of these.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Model answers.\n\n'
+        + '**main.** public so the launcher can invoke it from outside; static so it can run '
+        + 'without an instance, since nothing has constructed one yet; void because the exit '
+        + 'status comes from System.exit or from how the program ended, not from a return value; '
+        + 'String[] to receive the command-line arguments. Flexible: String... works because '
+        + 'varargs compiles to an array, String args[] works, modifier order is free, and the '
+        + 'parameter name is arbitrary. Not flexible: public, static, void, String[] - and each '
+        + 'gives a different launch error. Worth adding that all of these COMPILE; main is only '
+        + 'special to the launcher.\n\n'
+        + '**char[].** It prints the characters, because PrintStream has a dedicated '
+        + 'println(char[]) overload - the only array type that does. Everything else resolves to '
+        + 'println(Object) and prints a type tag and identity hash. The sharp edge: concatenating '
+        + 'the same array into a string first gives [C@..., because the argument reaching println '
+        + 'is now a String. javap -c shows which overload each call chose.\n\n'
+        + '**Imports.** No. An import is a compile-time abbreviation with no run-time existence; '
+        + 'the compiler always emits fully qualified names. Compiling the same code with no '
+        + 'imports, explicit imports and a wildcard produces identical bytecode. The real argument '
+        + 'for explicit imports is ambiguity - two wildcards that both offer a List produce '
+        + '"reference to List is ambiguous".\n\n'
+        + '**ClassNotFoundException.** At least two causes, and they need different fixes. Most '
+        + 'likely a package-versus-directory mismatch: javac happily compiles a packaged source '
+        + 'from any directory and writes the class file beside it, while the runtime resolves the '
+        + 'fully qualified name to a path. Check where the class file actually is and recompile '
+        + 'with -d. The other cause is the one from Chapter 2 - a class that is present but whose '
+        + 'initialization already failed, which surfaces as NoClassDefFoundError caused by '
+        + 'ExceptionInInitializerError. Reading the Caused by chain distinguishes them in one line.',
       complexity: 'Not applicable.',
     },
   },
