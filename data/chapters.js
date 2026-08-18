@@ -104,6 +104,30 @@ export const CHAPTERS = [
     status: 'VERIFIED',
     load: () => import('../content/modules/module-01/01-02-jvm-architecture-class-loading.js'),
   },
+  {
+    id: '01-03',
+    moduleId: '01-java-foundations-execution-model',
+    number: 3,
+    title: 'The Execution Engine',
+    summary:
+      'Interpreter, tiered JIT compilation, on-stack replacement, warm-up, '
+      + 'speculation and deoptimisation, and the JVM command-line options that '
+      + 'make all of it observable.',
+    status: 'VERIFIED',
+    load: () => import('../content/modules/module-01/01-03-the-execution-engine.js'),
+  },
+  {
+    id: '01-04',
+    moduleId: '01-java-foundations-execution-model',
+    number: 4,
+    title: 'Program Entry, Output, and Structure',
+    summary:
+      'The main signature the launcher demands, System.out and PrintStream, '
+      + 'standard output vs standard error, packages, imports, and the naming '
+      + 'conventions the compiler does not enforce.',
+    status: 'VERIFIED',
+    load: () => import('../content/modules/module-01/01-04-program-entry-output-and-structure.js'),
+  },
 ];
 
 /**
@@ -115,31 +139,16 @@ export const CHAPTERS = [
  * because a future session with no conversation history needs it and would
  * otherwise have to re-derive the split from the topic list.
  *
- * Module 01's 45 curriculum topics divide into four chapters. Chapters 3–4 are
- * NOT_STARTED. Later modules will record their own plans the same way when
+ * Module 01's 45 curriculum topics divide into four chapters. All four are
+ * written and VERIFIED — Module 01 is the first complete module. Later modules will record their own plans the same way when
  * they are authored — no plan is invented ahead of the module being written.
  */
 export const PLANNED_CHAPTERS = {
   '01-java-foundations-execution-model': [
     { number: 1, id: '01-01', title: 'From Source to Running Program', status: 'VERIFIED' },
     { number: 2, id: '01-02', title: 'JVM Architecture & Class Loading', status: 'VERIFIED' },
-    {
-      number: 3,
-      id: '01-03',
-      title: 'The Execution Engine',
-      status: 'NOT_STARTED',
-      topics: ['execution engine', 'interpreter', 'JIT compiler', 'HotSpot',
-        'JVM warm-up', 'basic JVM command-line concepts'],
-    },
-    {
-      number: 4,
-      id: '01-04',
-      title: 'Program Entry, Output, and Structure',
-      status: 'NOT_STARTED',
-      topics: ['main()', 'public static void main(String[] args)',
-        'command-line arguments', 'System', 'System.out', 'PrintStream',
-        'standard output', 'Java naming conventions', 'packages', 'imports'],
-    },
+    { number: 3, id: '01-03', title: 'The Execution Engine', status: 'VERIFIED' },
+    { number: 4, id: '01-04', title: 'Program Entry, Output, and Structure', status: 'VERIFIED' },
   ],
 };
 

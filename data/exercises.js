@@ -7,7 +7,7 @@
  * Exercises appear here only when the chapter they belong to is written
  * (master brief §36, §41). Adding them ahead of that would be fake content.
  *
- * Authored so far: Module 01 Chapters 1 and 2 (`01-01`, `01-02`) — six exercises
+ * Authored so far: Module 01 Chapters 1–4 (the whole module) — six exercises
  * each, across the difficulty ladder. Every reference solution below was ACTUALLY COMPILED AND
  * RUN on OpenJDK 21.0.10 with `--release 17` on 2026-08-13; the recorded
  * `sampleOutput` is real output, not expected output. Sources live in
@@ -80,6 +80,8 @@ export const DIFFICULTIES = ['Warm-up', 'Easy', 'Applied', 'Medium', 'Challenge'
 const MODULE_01 = '01-java-foundations-execution-model';
 const CHAPTER_01_01 = '01-01';
 const CHAPTER_01_02 = '01-02';
+const CHAPTER_01_03 = '01-03';
+const CHAPTER_01_04 = '01-04';
 
 /** @type {Array<object>} */
 export const EXERCISES = [
@@ -1113,6 +1115,1039 @@ export const EXERCISES = [
         + '-verbose:class helps in every case: it shows whether the class was loaded at all and '
         + 'from which source, which settles "is it on the classpath?" and "which copy won?" '
         + 'immediately.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 3 — The Execution Engine
+     Solutions verified by execution on OpenJDK 21.0.10, --release 17,
+     4 vCPU Xeon @2.80GHz, 2026-08-13. Sources: java/module-01/ch03/solutions/
+     Timings are ONE machine, ONE workload - indicative shapes, not benchmarks.
+     ====================================================================== */
+
+  {
+    id: '01-03-warmup-observe-warmup',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Watch a JVM warm up',
+    difficulty: 'Warm-up',
+    objective:
+      'See with your own timings that the same work costs less after the JVM has been '
+      + 'running it for a while, so "warm-up" stops being an abstraction.',
+    problem:
+      'Write a program with a small method doing arithmetic in a loop. Call it 20,000 times '
+      + 'per batch, for 12 batches, timing each batch and printing the result. Consume the '
+      + 'result so the compiler cannot delete the work. Run it and describe the curve.',
+    requirements: [
+      'The unit of work must be small and called many times, not one huge loop.',
+      'Time each batch with System.nanoTime and report microseconds.',
+      'Accumulate and print a checksum, so the computation cannot be optimised away.',
+      'Say which batch the curve flattens at.',
+    ],
+    constraints: ['No libraries. System.nanoTime only.'],
+    sampleInput: '',
+    sampleOutput: 'batch  1:   10,224 us\nbatch  2:    8,046 us\nbatch  3:    7,984 us\n...\nbatch 12:    7,725 us',
+    edgeCases: [
+      'Drop the checksum and the loop may be deleted entirely, making every batch near-zero.',
+      'Use one giant loop instead of many calls and on-stack replacement flattens the curve almost immediately.',
+    ],
+    testCases: [{ input: 'java Warmup', expected: 'batch 1 clearly slower than the steady state' }],
+    starterCode:
+      'public class Warmup {\n'
+      + '    static long work(int n) {\n'
+      + '        // small arithmetic loop, returning a value\n'
+      + '        return 0;\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // 12 batches of 20,000 calls, timing each batch\n'
+      + '        // print a checksum at the end\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'System.nanoTime() around the batch, divided by 1_000, gives microseconds.',
+      'If every batch prints a near-zero time, the JIT deleted your loop. Accumulate the result into a variable you print.',
+      'The compiler needs a few thousand invocations before it acts - that is why the batch size matters.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class Warmup {\n'
+        + '\n'
+        + '    static long work(int n) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 1; i <= n; i++) {\n'
+        + '            total += (i % 7) * (i % 13);\n'
+        + '        }\n'
+        + '        return total;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        int batches = args.length > 0 ? Integer.parseInt(args[0]) : 12;\n'
+        + '        int callsPerBatch = 20_000;\n'
+        + '        int workSize = 200;\n'
+        + '\n'
+        + '        long checksum = 0;\n'
+        + '        for (int batch = 1; batch <= batches; batch++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            for (int call = 0; call < callsPerBatch; call++) {\n'
+        + '                checksum += work(workSize);\n'
+        + '            }\n'
+        + '            long micros = (System.nanoTime() - start) / 1_000;\n'
+        + '            System.out.printf("batch %2d: %,8d us%n", batch, micros);\n'
+        + '        }\n'
+        + '        System.out.println("checksum " + checksum);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured on 4 vCPU Xeon @2.80GHz, OpenJDK 21.0.10: batch 1 at 10,224 us, settling to '
+        + 'about 7,700 us by batch 3 - roughly a quarter cheaper once warm. A second run '
+        + 'reproduced the same shape.\n\n'
+        + 'Your absolute numbers will differ and that does not matter. What should match is the '
+        + 'shape: an expensive first batch, a short transition, then a flat line.\n\n'
+        + 'The checksum is not decoration. Without something consuming the result, the JIT can '
+        + 'prove the loop has no effect and remove it, and you end up timing an empty loop and '
+        + 'concluding arithmetic is free.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-easy-execution-modes',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Compare the execution modes, and report your method',
+    difficulty: 'Easy',
+    objective:
+      'Quantify what the JIT is worth on your machine, and practise stating a measurement '
+      + 'together with the conditions that make it meaningful.',
+    problem:
+      'Extend your warm-up program to also print the JVM execution mode it is running under, '
+      + 'read from a system property. Run it under the default, -Xint, -Xcomp and '
+      + '-XX:TieredStopAtLevel=1, and produce a small table of steady-state times. Write down '
+      + 'the machine, the JDK, and the method alongside the numbers.',
+    requirements: [
+      'Print java.vm.name and java.vm.info at startup.',
+      'Report the best of several rounds rather than a single timing.',
+      'Run all four modes and tabulate the steady-state figure.',
+      'State hardware, JDK version, workload and number of runs with the table.',
+      'Write one sentence on why these numbers must not be quoted as general Java performance.',
+    ],
+    constraints: ['Standard library only.'],
+    sampleInput: '',
+    sampleOutput: 'java.vm.info    mixed mode, sharing\nbest of 8 rounds: 7,688 us',
+    edgeCases: [
+      '-Xcomp takes noticeably longer to START even though its steady state is fine.',
+      'A shared or virtualised machine adds noise; run each mode more than once.',
+    ],
+    testCases: [
+      { input: 'java ModeReport', expected: 'java.vm.info = mixed mode' },
+      { input: 'java -Xint ModeReport', expected: 'java.vm.info = interpreted mode' },
+    ],
+    starterCode:
+      'public class ModeReport {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // print java.vm.name / java.vm.info / java.vm.version\n'
+      + '        // then time a fixed workload, best of N rounds\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'System.getProperty("java.vm.info") returns the same string java -version prints on its third line.',
+      'Best-of-N is a reasonable quick estimate because noise only ever makes a run slower, never faster.',
+      'Run each mode at least three times. If the spread between runs is bigger than the difference between modes, you have measured noise.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class ModeReport {\n'
+        + '\n'
+        + '    static long work(int n) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 1; i <= n; i++) total += (i % 7) * (i % 13);\n'
+        + '        return total;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("java.vm.name    " + System.getProperty("java.vm.name"));\n'
+        + '        System.out.println("java.vm.info    " + System.getProperty("java.vm.info"));\n'
+        + '        System.out.println("java.vm.version " + System.getProperty("java.vm.version"));\n'
+        + '\n'
+        + '        long sink = 0;\n'
+        + '        long best = Long.MAX_VALUE;\n'
+        + '        for (int round = 0; round < 8; round++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            for (int call = 0; call < 20_000; call++) sink += work(200);\n'
+        + '            best = Math.min(best, (System.nanoTime() - start) / 1_000);\n'
+        + '        }\n'
+        + '        System.out.printf("best of 8 rounds: %,d us%n", best);\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured 2026-08-13 on 4 vCPU Intel Xeon @2.80GHz, 16 GB, Linux container, OpenJDK '
+        + '21.0.10; steady state is batch 12 of 12, three runs per mode:\n\n'
+        + '  default (tiered C1+C2)        7,757 / 7,822 / 7,772 us\n'
+        + '  -XX:TieredStopAtLevel=1      14,564 / 15,711 / 14,653 us   about 1.9x slower\n'
+        + '  -Xcomp                        7,386 / 7,401 / 7,417 us     about 0.95x\n'
+        + '  -Xint                        59,406 / 56,006 / 56,205 us   about 7.2x slower\n\n'
+        + 'The sentence that matters: this is one tight-integer-arithmetic workload on one '
+        + 'shared virtual machine, which is close to the best case for a JIT. Code dominated by '
+        + 'memory access, allocation or I/O would look nothing like this, and the ratios do not '
+        + 'transfer to another machine, JDK or program. Quote the conditions or do not quote the '
+        + 'number.\n\n'
+        + 'Note also that -Xcomp came out marginally FASTER in steady state here, which is not '
+        + 'the textbook expectation. See the chapter - the prediction was wrong and is recorded '
+        + 'as such.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-applied-read-printcompilation',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Read PrintCompilation and narrate what the JIT did',
+    difficulty: 'Applied',
+    objective:
+      'Turn a wall of compiler output into a sentence about what happened to one method.',
+    problem:
+      'Run your warm-up program under -XX:+PrintCompilation, filter to your own methods, and '
+      + 'write a short narration of the life of the hot method: which tiers it reached, in what '
+      + 'order, where on-stack replacement occurred, and which compiled version was retired. '
+      + 'Then find a method that reached tier 1 and only tier 1, and explain why.',
+    requirements: [
+      'Filter the output to your own class so the JDK noise is gone.',
+      'Identify each column: time, id, flags, tier, method, size.',
+      'Point to the % line and say what bytecode index it re-entered at.',
+      'Point to the made not entrant line and say what it means.',
+      'Find a tier-1-only method somewhere in the unfiltered output and explain the decision.',
+    ],
+    constraints: ['No profiler - only PrintCompilation.'],
+    sampleInput: '',
+    sampleOutput: '32    8       3       Warmup::work (30 bytes)\n32    9 %     4       Warmup::work @ 4 (30 bytes)\n33   10       4       Warmup::work (30 bytes)\n35    8       3       Warmup::work (30 bytes)   made not entrant',
+    edgeCases: [
+      'With too few batches the method never reaches tier 4 - raise the count.',
+      'Tier numbers are HotSpot-specific and are not part of the Java specification.',
+    ],
+    testCases: [{ input: 'java -XX:+PrintCompilation Warmup 4 | grep Warmup::', expected: 'tier 3, then a % tier 4, then tier 4, then made not entrant' }],
+    hints: [
+      'grep for your class name followed by :: to drop everything from the JDK.',
+      'The % flag is on-stack replacement and the @ N that follows the method name is the bytecode index.',
+      'A one-line accessor has nothing for C2 to improve, so profiling it would cost more than it could ever save.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// This exercise is about reading output. The verified sequence for Warmup::work:\n'
+        + '//\n'
+        + '//   32    8       3       Warmup::work (30 bytes)\n'
+        + '//   32    9 %     4       Warmup::work @ 4 (30 bytes)\n'
+        + '//   33   10       4       Warmup::work (30 bytes)\n'
+        + '//   35    8       3       Warmup::work (30 bytes)   made not entrant\n'
+        + '//\n'
+        + '// and, from the unfiltered output of any run, a tier 0 native method:\n'
+        + '//   26    3     n 0       jdk.internal.misc.Unsafe::getReferenceVolatile (native)\n'
+        + 'public class NarrationNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Read the four lines above and narrate them.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'A model narration:\n\n'
+        + '"At 32 ms, work was compiled by C1 at tier 3 - native code that still collects profile '
+        + 'data. In the same millisecond it was compiled again at tier 4 by C2, and the % flag '
+        + 'says this was an on-stack replacement entering at bytecode index 4: the loop was '
+        + 'already running, so rather than wait for the next call the JVM swapped the executing '
+        + 'frame into the compiled version. At 33 ms a normal tier-4 compilation was installed for '
+        + 'future invocations. At 35 ms the tier-3 version was made not entrant - anyone already '
+        + 'inside it finishes there, but no new call will enter it."\n\n'
+        + 'The columns are: milliseconds since VM start, compilation id, flags, tier, method, '
+        + 'bytecode size.\n\n'
+        + 'For the tier-1 question: methods that reach tier 1 and stop are ones C1 can compile '
+        + 'and C2 could not meaningfully improve - trivial getters and one-line natives. '
+        + 'Profiling them would cost more than the optimisation could ever return, so the JVM '
+        + 'compiles them once without profiling and leaves them alone.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-medium-force-deoptimization',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Force a deoptimisation and get the JVM to name the reason',
+    difficulty: 'Medium',
+    objective:
+      'Make the JIT speculate, break the speculation deliberately, and confirm the discard '
+      + 'from two independent sources rather than inferring it.',
+    problem:
+      'Write a program with one interface, two implementations, and a single call site. Run '
+      + 'phase 1 with only the first implementation, long enough to be compiled at tier 4. Then '
+      + 'run phase 2 introducing the second implementation at the same call site. Print a marker '
+      + 'between phases. Show the compiled method being discarded, and get the JVM to state why.',
+    requirements: [
+      'Exactly one call site, reached with different concrete types in the two phases.',
+      'Print a phase marker so the compilation output can be lined up against it.',
+      'Show the made not entrant line arriving immediately after the phase 2 marker.',
+      'Obtain the deoptimisation reason from the JVM, not from your own inference.',
+    ],
+    constraints: ['No reflection or agents - ordinary code and JVM flags only.'],
+    sampleInput: '',
+    sampleOutput: 'phase 2: Slow appears at the same call site\n38   11       4       Deoptimization::consume (28 bytes)   made not entrant',
+    edgeCases: [
+      'Plain -Xlog:deoptimization prints nothing; the reasons are at debug level.',
+      'The exact count of deopt events varies between runs even though the reasons are stable.',
+    ],
+    testCases: [
+      { input: 'java -XX:+PrintCompilation SpeculationDemo | grep -E "Speculation|phase"', expected: 'made not entrant right after the phase 2 marker' },
+      { input: 'java -Xlog:deoptimization=debug SpeculationDemo | grep run', expected: 'a line naming reason `predicate`' },
+    ],
+    starterCode:
+      'public class SpeculationDemo {\n'
+      + '    interface Handler { int handle(int x); }\n'
+      + '    // two implementations\n'
+      + '\n'
+      + '    static void run(Handler h, int times) {\n'
+      + '        // the single call site\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // phase 1: one implementation, ~200k calls\n'
+      + '        // phase 2: both implementations, same call site\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Phase 1 needs enough calls to reach tier 4 - a few hundred thousand is ample.',
+      'Alternate the two implementations in phase 2 so the call site genuinely becomes bimorphic.',
+      '-Xlog:deoptimization on its own is silent. Add =debug.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class SpeculationDemo {\n'
+        + '\n'
+        + '    interface Handler { int handle(int x); }\n'
+        + '    static class Fast implements Handler { public int handle(int x) { return x + 1; } }\n'
+        + '    static class Slow implements Handler { public int handle(int x) { return x + 2; } }\n'
+        + '\n'
+        + '    static long sink;\n'
+        + '\n'
+        + '    static void run(Handler h, int times) {\n'
+        + '        for (int i = 0; i < times; i++) sink += h.handle(i);\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        Handler fast = new Fast();\n'
+        + '\n'
+        + '        System.out.println("phase 1: only Fast");\n'
+        + '        for (int i = 0; i < 200_000; i++) run(fast, 10);\n'
+        + '\n'
+        + '        System.out.println("phase 2: Slow appears at the same call site");\n'
+        + '        Handler slow = new Slow();\n'
+        + '        for (int i = 0; i < 200_000; i++) run(i % 2 == 0 ? fast : slow, 10);\n'
+        + '\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Two independent confirmations, both verified.\n\n'
+        + 'PrintCompilation shows the tier-4 method retired immediately after the phase 2 marker '
+        + 'prints, then recompiled - first by on-stack replacement so the loop already running can '
+        + 'continue, then normally for future calls.\n\n'
+        + '-Xlog:deoptimization=debug names the reason:\n\n'
+        + '  ... level=4 ...run(...)V trap_bci=4 predicate maybe_recompile\n'
+        + '  ... osr level=4 ...run(...)V trap_bci=2 osr_bci=2 profile_predicate maybe_recompile\n\n'
+        + '`predicate` is the guard C2 inserted around its assumption that the receiver was always '
+        + 'Fast; `profile_predicate` is the equivalent for the on-stack-replaced version. Across '
+        + 'three runs the reasons were identical every time, although the number of events varied - '
+        + 'so assert the reasons, not the counts.\n\n'
+        + 'Worth noticing: plain -Xlog:deoptimization prints nothing at all. Discovering that the '
+        + 'detail lives at debug level is part of learning to interrogate the JVM.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-challenge-call-site-shape',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Measure what a call site’s shape costs',
+    difficulty: 'Challenge',
+    objective:
+      'Predict, then measure, how the number of implementations at one call site affects its '
+      + 'cost - and discover that the answer is not a straight line.',
+    problem:
+      'Write a harness that drives the same call site with one, two, and five implementations '
+      + 'of an interface, doing identical work in each case. Warm up properly, then time each '
+      + 'shape. Predict the results before running. Explain the shape you actually get.',
+    requirements: [
+      'One driving method, called with arrays of 1, 2 and 5 implementations.',
+      'Warm up each shape before timing it.',
+      'Report best-of-N rather than a single run.',
+      'Consume the result so nothing can be optimised away.',
+      'Write your prediction down before running, then explain the difference.',
+    ],
+    constraints: ['Standard library only. No JMH - that is Module 41.'],
+    sampleInput: '',
+    sampleOutput: 'monomorphic       36,511 us (best of 5)\nbimorphic         36,508 us (best of 5)\nmegamorphic       74,155 us (best of 5)',
+    edgeCases: [
+      'Warming up with one shape and timing another measures the transition, not the shape.',
+      'The array indexing is identical in all three cases, so it cancels out of the comparison.',
+    ],
+    testCases: [{ input: 'java CallSiteShape', expected: 'monomorphic and bimorphic within noise of each other; megamorphic roughly 2x' }],
+    starterCode:
+      'public class CallSiteShape {\n'
+      + '    interface Op { int apply(int x); }\n'
+      + '    // five implementations\n'
+      + '\n'
+      + '    static void drive(Op[] ops, int iterations) {\n'
+      + '        // one call site, cycling through the array\n'
+      + '    }\n'
+      + '\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // time arrays of size 1, 2 and 5\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Cycle with ops[i % ops.length] so the same call site sees each implementation in turn.',
+      'Warm up each shape with tens of rounds before timing, so the call site is compiled in that shape.',
+      'Most people predict a steady increase from one to five. Look carefully at where the jump actually is.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class CallSiteShape {\n'
+        + '\n'
+        + '    interface Op { int apply(int x); }\n'
+        + '\n'
+        + '    static class A implements Op { public int apply(int x) { return x + 1; } }\n'
+        + '    static class B implements Op { public int apply(int x) { return x + 2; } }\n'
+        + '    static class C implements Op { public int apply(int x) { return x + 3; } }\n'
+        + '    static class D implements Op { public int apply(int x) { return x + 4; } }\n'
+        + '    static class E implements Op { public int apply(int x) { return x + 5; } }\n'
+        + '\n'
+        + '    static long sink;\n'
+        + '\n'
+        + '    static void drive(Op[] ops, int iterations) {\n'
+        + '        long total = 0;\n'
+        + '        for (int i = 0; i < iterations; i++) {\n'
+        + '            total += ops[i % ops.length].apply(i);\n'
+        + '        }\n'
+        + '        sink += total;\n'
+        + '    }\n'
+        + '\n'
+        + '    static long timeIt(String label, Op[] ops) {\n'
+        + '        for (int i = 0; i < 50; i++) drive(ops, 100_000);   // warm up in THIS shape\n'
+        + '\n'
+        + '        long best = Long.MAX_VALUE;\n'
+        + '        for (int round = 0; round < 5; round++) {\n'
+        + '            long start = System.nanoTime();\n'
+        + '            drive(ops, 20_000_000);\n'
+        + '            best = Math.min(best, (System.nanoTime() - start) / 1_000);\n'
+        + '        }\n'
+        + '        System.out.printf("%-14s %,9d us (best of 5)%n", label, best);\n'
+        + '        return best;\n'
+        + '    }\n'
+        + '\n'
+        + '    public static void main(String[] args) {\n'
+        + '        Op a = new A(), b = new B(), c = new C(), d = new D(), e = new E();\n'
+        + '        timeIt("monomorphic", new Op[] { a });\n'
+        + '        timeIt("bimorphic",   new Op[] { a, b });\n'
+        + '        timeIt("megamorphic", new Op[] { a, b, c, d, e });\n'
+        + '        System.out.println("sink " + sink);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Measured on 4 vCPU Xeon @2.80GHz, OpenJDK 21.0.10, and highly reproducible across runs:\n\n'
+        + '  monomorphic   36,511 us   (second run 36,523)\n'
+        + '  bimorphic     36,508 us   (second run 36,471)\n'
+        + '  megamorphic   74,155 us   (second run 74,409)\n\n'
+        + 'The jump is not between one and two - those are within noise of each other. It is '
+        + 'between two and three.\n\n'
+        + 'HotSpot inlines a monomorphic call site outright. For a bimorphic one it uses an inline '
+        + 'cache that checks which of two types arrived and branches to the right inlined body, '
+        + 'which is nearly as good. At three or more receivers the site becomes megamorphic and '
+        + 'falls back to a genuine virtual dispatch that cannot be inlined - and losing the inline '
+        + 'also loses every optimisation that would have followed it.\n\n'
+        + 'Practical consequence: an interface with two implementations behaves very differently '
+        + 'from one with five at the same hot call site. That is worth knowing and NOT worth '
+        + 'designing around prematurely - measure your own code before contorting it. One machine, '
+        + 'one workload; the ratio is indicative, not a constant.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-03-interview-explain-jit',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_03,
+    title: 'Explain adaptive optimisation, and defend a number',
+    difficulty: 'Interview',
+    objective:
+      'Give the spoken answer, then survive the follow-up that most candidates fail: '
+      + '"where did that number come from?"',
+    problem:
+      'Without notes, answer: "Walk me through what the JVM does with your bytecode at run '
+      + 'time, and explain why it is faster than interpreting but slower to start than a native '
+      + 'binary." Then be ready for: "You said the JIT gives roughly a sevenfold speedup - on '
+      + 'what?" Demonstrate at least two of your claims at a terminal.',
+    requirements: [
+      'Cover interpretation, profiling, tiered compilation, OSR, and deoptimisation.',
+      'Explain the startup versus steady-state trade-off in both directions.',
+      'State any number together with the hardware, JDK, workload and method behind it.',
+      'Say explicitly which parts are HotSpot behaviour rather than Java specification.',
+      'Demonstrate at least two claims live.',
+    ],
+    constraints: ['JDK tools only.'],
+    sampleInput: '',
+    sampleOutput: 'A spoken answer plus a terminal session. There is no single correct transcript.',
+    edgeCases: [
+      'Being asked "so should we use -Xcomp?" - the honest answer needs the startup measurement.',
+      'Being asked whether this is true of all JVMs. It is not.',
+    ],
+    testCases: [],
+    hints: [
+      'Structure it as: interpret to start fast, profile while running, compile the hot parts, speculate using the profile, deoptimise when the speculation breaks.',
+      'The two easiest live demonstrations are the warm-up curve and PrintCompilation on a hot method.',
+      'For the number question, the only good answer names the conditions. "About seven times, on tight integer arithmetic, on a 4 vCPU Xeon running OpenJDK 21, comparing -Xint to the default" is defensible. "About seven times" alone is not.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// Verified demonstration sequence - all captured in this chapter.\n'
+        + '//\n'
+        + '//   java -version                       -> "mixed mode": interpreter AND compiler\n'
+        + '//   java Warmup                         -> batch 1 ~10,224us settling to ~7,700us\n'
+        + '//   java -XX:+PrintCompilation Warmup 4 | grep Warmup::\n'
+        + '//                                       -> tier 3, then % tier 4 (OSR), then tier 4,\n'
+        + '//                                          then tier 3 made not entrant\n'
+        + '//   java -Xint Warmup                   -> ~56,000us steady, no warm-up curve\n'
+        + '//   time java -Xcomp Hello              -> ~1,300ms vs ~39ms default\n'
+        + '//   java -Xlog:deoptimization=debug Deoptimization | grep consume\n'
+        + '//                                       -> reason: predicate\n'
+        + 'public class InterviewNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Say it out loud, then run two of the commands above.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'A model answer:\n\n'
+        + '"The JVM starts by interpreting bytecode, so the program runs immediately with no '
+        + 'compilation cost. While interpreting it profiles - counting invocations, branch '
+        + 'outcomes, and which concrete types arrive at each call site. Once a method is clearly '
+        + 'hot, C1 compiles it quickly into native code that keeps profiling, and once it is very '
+        + 'hot C2 compiles it again using that profile, aggressively. If a method is stuck in a '
+        + 'long loop rather than being called repeatedly, on-stack replacement compiles it and '
+        + 'swaps the running frame over mid-loop.\n\n'
+        + 'It beats interpretation because it ends up executing native code. It beats an '
+        + 'ahead-of-time compiler in some ways because it optimises with evidence - it can inline '
+        + 'a virtual call it has only ever seen resolve one way, which a static compiler cannot '
+        + 'safely do. Those assumptions are guarded, and when one fails the JVM deoptimises: '
+        + 'discards the code, returns to the interpreter, recompiles.\n\n'
+        + 'It is slower to start because all of that is work done at run time, and because most '
+        + 'methods run once and compiling them buys nothing. That is the whole trade."\n\n'
+        + 'AND THE FOLLOW-UP. If asked to defend a number, the answer must carry its conditions: '
+        + '"About 7x, comparing -Xint to the default on a tight integer-arithmetic loop, on a '
+        + '4 vCPU Xeon at 2.80GHz running OpenJDK 21.0.10, steady state after warm-up, three runs "'
+        + 'per mode. It is close to the best case for a JIT and it would not transfer to '
+        + 'allocation-heavy or I/O-bound code. For anything real I would use JMH."\n\n'
+        + 'A candidate who volunteers the conditions before being asked has demonstrated the thing '
+        + 'the question is actually testing.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  /* ======================================================================
+     Module 01 · Chapter 4 — Program Entry, Output, and Structure
+     Solutions verified by execution on OpenJDK 21.0.10, --release 17,
+     2026-08-13. Sources: java/module-01/ch04/solutions/
+     ====================================================================== */
+
+  {
+    id: '01-04-warmup-main-forms',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Find out what the launcher will and will not accept',
+    difficulty: 'Warm-up',
+    objective:
+      'Discover by experiment which parts of the canonical main signature are required, '
+      + 'so the three launch errors become recognisable rather than alarming.',
+    problem:
+      'Write one file containing several classes, each with a differently shaped main: the '
+      + 'canonical one, one using String... , one using C-style brackets, one missing public, '
+      + 'one missing static, one returning int, and one taking int[]. Compile once and run each. '
+      + 'Record which run and which fail, and with what message.',
+    requirements: [
+      'All variants must be in one file that compiles without errors.',
+      'Run each class and record the exact first line of output or error.',
+      'Group the failures by their message - there are three distinct ones, not four.',
+      'State in one sentence why every variant compiled.',
+    ],
+    constraints: ['Only the public class may be public; the rest are package-private.'],
+    sampleInput: '',
+    sampleOutput: 'canonical\nvarargs, and reordered modifiers\nC-style array brackets\nError: Main method not found in class NoPublic, please define the main method as:\nError: Main method is not static in class NoStatic, please define the main method as:\nError: Main method must return a value of type void in class NotVoid, please define the main method as:',
+    edgeCases: [
+      'Adding strictfp compiles but warns on Java 17+ - the keyword is now redundant.',
+      'The parameter name is arbitrary; args is convention only.',
+    ],
+    testCases: [
+      { input: 'java VarargsMain', expected: 'runs' },
+      { input: 'java NoStatic', expected: 'Error: Main method is not static' },
+      { input: 'java WrongArg', expected: 'Error: Main method not found' },
+    ],
+    starterCode:
+      'public class MainSignature {\n'
+      + '    public static void main(String[] args) { System.out.println("canonical"); }\n'
+      + '}\n'
+      + '\n'
+      + '// add: VarargsMain, CStyleMain, NoPublic, NoStatic, NotVoid, WrongArg\n',
+    hints: [
+      'Varargs compiles to an array parameter, so the launcher cannot tell String... from String[].',
+      'Two different mistakes produce the SAME message. Work out which two, and why they are indistinguishable to the launcher.',
+      'Nothing here is a compile error - main is only special to the launcher, not to javac.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class MainSignature {\n'
+        + '    public static void main(String[] args) { System.out.println("canonical"); }\n'
+        + '}\n'
+        + '\n'
+        + 'class VarargsMain    { static public void main(String... args) { System.out.println("varargs"); } }\n'
+        + 'class CStyleMain     { public static void main(String args[]) { System.out.println("C-style"); } }\n'
+        + 'class ExtraModifiers { public static final synchronized void main(String[] a) { System.out.println("modifiers"); } }\n'
+        + '\n'
+        + 'class NoPublic { static  void main(String[] args) { System.out.println("x"); } }\n'
+        + 'class NoStatic { public  void main(String[] args) { System.out.println("x"); } }\n'
+        + 'class NotVoid  { public static int  main(String[] args) { return 0; } }\n'
+        + 'class WrongArg { public static void main(int[] args)    { System.out.println("x"); } }\n',
+      explanation:
+        'Four run: the canonical form, varargs, C-style brackets, and extra modifiers. Verified '
+        + 'output for each is just its own println.\n\n'
+        + 'Four fail, with only THREE distinct messages:\n\n'
+        + '  NoPublic -> Error: Main method not found in class NoPublic\n'
+        + '  NoStatic -> Error: Main method is not static in class NoStatic\n'
+        + '  NotVoid  -> Error: Main method must return a value of type void in class NotVoid\n'
+        + '  WrongArg -> Error: Main method not found in class WrongArg\n\n'
+        + 'NoPublic and WrongArg share a message because the launcher searches for a public method '
+        + 'named main taking String[]; a non-public one and a wrongly-typed one are both simply '
+        + 'absent from that search. NoStatic and NotVoid are found and then rejected, so they get '
+        + 'specific messages.\n\n'
+        + 'And the one-sentence answer: every variant compiled because main is an ordinary method '
+        + 'to javac - only the launcher has an opinion about its shape.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-easy-out-vs-err',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Separate your program\u2019s product from its commentary',
+    difficulty: 'Easy',
+    objective:
+      'See that out and err are genuinely different destinations, and learn the redirection '
+      + 'that proves it.',
+    problem:
+      'Write a program that emits four lines alternating between System.out and System.err, '
+      + 'plus a line printed with printf. Run it three ways: normally, with stderr discarded, '
+      + 'and with stdout discarded. Explain which lines survive each time and why it matters '
+      + 'for a program whose output is piped somewhere.',
+    requirements: [
+      'Alternate out and err so the interleaving is visible on a terminal.',
+      'Include one printf call using %s, %d and %n.',
+      'Run with 2>/dev/null and with 2>&1 >/dev/null and record both.',
+      'Say in one sentence what belongs on each stream.',
+    ],
+    constraints: ['No logging library - System.out and System.err only.'],
+    sampleInput: '',
+    sampleOutput: '1 out\n2 err\n3 out\n4 err\n\n# 2>/dev/null gives only:\n1 out\n3 out\n\n# 2>&1 >/dev/null gives only:\n2 err\n4 err',
+    edgeCases: [
+      'On a terminal the two appear interleaved, so the difference is invisible until you redirect.',
+      '%n emits the platform line separator; \\n always emits a newline character.',
+    ],
+    testCases: [
+      { input: 'java Streams 2>/dev/null', expected: 'only the out lines' },
+      { input: 'java Streams 2>&1 >/dev/null', expected: 'only the err lines' },
+    ],
+    starterCode:
+      'public class Streams {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        // four alternating lines, then a printf\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      '2>/dev/null discards stderr. 2>&1 >/dev/null is the trickier one - it duplicates stderr to the CURRENT stdout, then redirects stdout away.',
+      'printf takes a format string; %n is the portable newline and needs no argument.',
+      'Think about what happens if someone runs `yourprogram | grep something`.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'public class Streams {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("1 out");\n'
+        + '        System.err.println("2 err");\n'
+        + '        System.out.println("3 out");\n'
+        + '        System.err.println("4 err");\n'
+        + '        System.out.printf("5 printf %s %d%n", "formatted", 42);\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified: all five lines on a terminal; `2>/dev/null` leaves lines 1, 3 and 5; '
+        + '`2>&1 >/dev/null` leaves lines 2 and 4.\n\n'
+        + 'The one-sentence rule: **out is the program\'s product, err is commentary about the '
+        + 'run** - progress, warnings, stack traces.\n\n'
+        + 'It matters because anything that consumes your output is reading stdout. A tool that '
+        + 'writes "Loading configuration..." to stdout corrupts the data its caller is parsing, '
+        + 'and the bug only appears once someone pipes it. Uncaught exceptions already go to err, '
+        + 'and the JVM exits 1.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-applied-println-overloads',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Work out which println you actually called',
+    difficulty: 'Applied',
+    objective:
+      'Understand that overload resolution happens at compile time from static types, by '
+      + 'predicting four prints and then confirming with the bytecode.',
+    problem:
+      'Print a char[], an int[], a String[], and the same char[] again but concatenated after '
+      + 'a string prefix. Predict all four outputs before running. Then use javap to identify '
+      + 'which println overload each call resolved to, and explain the two surprises.',
+    requirements: [
+      'Four println calls, predicted in writing before running.',
+      'Run javap -c and match each call site to its method descriptor.',
+      'Explain why the char[] prints differently in the two cases.',
+      'Show the correct way to print the contents of a non-char array.',
+    ],
+    constraints: ['No loops - the point is what a single println does.'],
+    sampleInput: '',
+    sampleOutput: 'Java\n[I@1b6d3586\n[Ljava.lang.String;@4554617c\nprefix [C@74a14482',
+    edgeCases: [
+      'The identity hashes differ every run - only their SHAPE is predictable.',
+      'char[] is the only array type with a dedicated println overload.',
+    ],
+    testCases: [{ input: 'javap -c CharArray.class | grep println', expected: 'println:([C)V, println:(Ljava/lang/Object;)V twice, println:(Ljava/lang/String;)V' }],
+    starterCode:
+      'public class CharArray {\n'
+      + '    public static void main(String[] args) {\n'
+      + '        char[] chars = { \'J\', \'a\', \'v\', \'a\' };\n'
+      + '        // add an int[] and a String[], then the four prints\n'
+      + '    }\n'
+      + '}\n',
+    hints: [
+      'Look at the PrintStream javadoc - count how many println overloads take an array.',
+      'String concatenation happens BEFORE the call. What is the static type of the argument by then?',
+      'javap -c shows the method descriptor of each call: ([C)V means char[], (Ljava/lang/Object;)V means Object.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        'import java.util.Arrays;\n'
+        + '\n'
+        + 'public class CharArray {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        char[] chars = { \'J\', \'a\', \'v\', \'a\' };\n'
+        + '        int[] ints = { 1, 2, 3 };\n'
+        + '        String[] strings = { "a", "b" };\n'
+        + '\n'
+        + '        System.out.println(chars);            // println(char[])   -> Java\n'
+        + '        System.out.println(ints);             // println(Object)   -> [I@...\n'
+        + '        System.out.println(strings);          // println(Object)   -> [Ljava.lang.String;@...\n'
+        + '        System.out.println("prefix " + chars); // println(String)  -> prefix [C@...\n'
+        + '\n'
+        + '        // the correct way to see contents of any array:\n'
+        + '        System.out.println(Arrays.toString(ints));      // [1, 2, 3]\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified output (hashes vary per run):\n\n'
+        + '  Java\n  [I@1b6d3586\n  [Ljava.lang.String;@4554617c\n  prefix [C@74a14482\n\n'
+        + 'And javap -c confirms four calls, three different methods:\n\n'
+        + '  println:([C)V\n  println:(Ljava/lang/Object;)V\n  println:(Ljava/lang/Object;)V\n'
+        + '  println:(Ljava/lang/String;)V\n\n'
+        + 'Surprise one: char[] has a dedicated overload that prints the characters. No other '
+        + 'array type does, so int[] and String[] fall through to println(Object) and print the '
+        + 'default toString - a type tag and an identity hash.\n\n'
+        + 'Surprise two: the SAME char[] prints differently when concatenated, because '
+        + 'concatenation produces a String before println is ever called. The compiler picks the '
+        + 'overload from the static type of the argument, and by then the argument is a String.\n\n'
+        + 'Arrays.toString is the answer for contents; Arrays.deepToString for nested arrays. '
+        + 'Both are Module 07.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-medium-packages-and-layout',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Make the runtime find a packaged class - then deliberately stop it',
+    difficulty: 'Medium',
+    objective:
+      'Learn why javac is lenient about source location and java is not, by breaking the '
+      + 'layout on purpose and reading the failure.',
+    problem:
+      'Create two classes in different packages, one calling the other. Compile them with -d '
+      + 'into an output directory and run the result. Then compile one of them from a directory '
+      + 'that does NOT match its package declaration and try to run it. Explain both outcomes.',
+    requirements: [
+      'Two packages, e.g. com.example.util and com.example.app, with app calling util.',
+      'Compile with -d and show the directory structure javac produced.',
+      'Run it successfully with -cp pointing at the output root.',
+      'Then reproduce the ClassNotFoundException from a mismatched layout, and explain it.',
+      'Print the package name from inside the program.',
+    ],
+    constraints: ['No build tool - plain javac and java, so the layout is explicit.'],
+    sampleInput: '',
+    sampleOutput: 'from com.example.util\nthis class: com.example.app.App\npackage: com.example.app',
+    edgeCases: [
+      'javac does NOT require the source directory to match the package - only -d controls output.',
+      'A class in the default package cannot be imported by a class in a named package at all.',
+    ],
+    testCases: [
+      { input: 'java -cp out com.example.app.App', expected: 'from com.example.util' },
+      { input: 'java -cp wrongdir com.example.util.Helper', expected: 'ClassNotFoundException' },
+    ],
+    starterCode:
+      '// com/example/util/Helper.java\n'
+      + 'package com.example.util;\n'
+      + 'public class Helper { /* a static method returning a String */ }\n'
+      + '\n'
+      + '// com/example/app/App.java\n'
+      + 'package com.example.app;\n'
+      + '// import the helper, call it, and print App.class.getPackageName()\n',
+    hints: [
+      'javac -d out ... creates out/com/example/... for you. Look at what it built with find.',
+      'The classpath entry is the directory ABOVE the package path, not the package directory itself.',
+      'For the failure case, copy a packaged source somewhere flat and compile it there without -d.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// ---------- com/example/util/Helper.java ----------\n'
+        + 'package com.example.util;\n'
+        + '\n'
+        + 'public class Helper {\n'
+        + '    public static String greet() { return "from com.example.util"; }\n'
+        + '}\n'
+        + '\n'
+        + '// ---------- com/example/app/App.java ----------\n'
+        + 'package com.example.app;\n'
+        + '\n'
+        + 'import com.example.util.Helper;\n'
+        + '\n'
+        + 'public class App {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println(Helper.greet());\n'
+        + '        System.out.println("this class: " + App.class.getName());\n'
+        + '        System.out.println("package: " + App.class.getPackageName());\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified. With -d:\n\n'
+        + '  javac --release 17 -d out com/example/util/Helper.java com/example/app/App.java\n'
+        + '  find out -name "*.class"\n'
+        + '    out/com/example/app/App.class\n'
+        + '    out/com/example/util/Helper.class\n'
+        + '  java -cp out com.example.app.App\n'
+        + '    from com.example.util\n'
+        + '    this class: com.example.app.App\n'
+        + '    package: com.example.app\n\n'
+        + 'And the deliberate break: copying Helper.java (which declares package com.example.util) '
+        + 'into a flat directory and compiling it there SUCCEEDS - javac says nothing and writes '
+        + 'Helper.class right beside the source. Running it then fails:\n\n'
+        + '  Error: Could not find or load main class com.example.util.Helper\n'
+        + '  Caused by: java.lang.ClassNotFoundException: com.example.util.Helper\n\n'
+        + 'The class file is perfectly valid. It is in the wrong place. The runtime turns the '
+        + 'fully qualified name into the path com/example/util/Helper.class and looks for that '
+        + 'under each classpath entry; a bare Helper.class is not it.\n\n'
+        + 'So: javac is lenient about where sources live, java is not lenient about where classes '
+        + 'live. Always compile with -d and let the tool build the layout.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-challenge-imports-cost-nothing',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Prove that imports cost nothing at run time',
+    difficulty: 'Challenge',
+    objective:
+      'Settle a persistent myth with evidence rather than argument, and learn to compare '
+      + 'compiled output as a way of answering questions about the compiler.',
+    problem:
+      'Write the same tiny program three ways: with fully qualified names and no imports, with '
+      + 'explicit single-type imports, and with a wildcard import. Compile all three and prove '
+      + 'whether the bytecode differs. Then find the case where wildcard imports genuinely cause '
+      + 'a problem, and show the error.',
+    requirements: [
+      'Three source files that differ ONLY in how they name the types.',
+      'Compare the compiled output and state whether the instructions differ.',
+      'Explain what the constant pool contains in each case.',
+      'Produce the genuine wildcard problem and its exact compiler error.',
+      'Show how a single-type import resolves it.',
+    ],
+    constraints: ['javap only - no external tools.'],
+    sampleInput: '',
+    sampleOutput: 'NoImports vs WithImports:      IDENTICAL bytecode\nWithImports vs WildcardImport: IDENTICAL bytecode\n\nerror: reference to List is ambiguous\n  both class java.awt.List in java.awt and interface java.util.List in java.util match',
+    edgeCases: [
+      'Class file SIZES differ slightly - by the length of the class name, not by anything to do with imports.',
+      'A wildcard imports one package, not a package tree.',
+    ],
+    testCases: [
+      { input: 'javap -c on all three', expected: 'identical instructions' },
+      { input: 'javac Ambiguous.java', expected: 'error: reference to List is ambiguous' },
+    ],
+    starterCode:
+      '// NoImports.java      - java.util.List list = new java.util.ArrayList<>();\n'
+      + '// WithImports.java    - import java.util.List; import java.util.ArrayList;\n'
+      + '// WildcardImport.java - import java.util.*;\n'
+      + '//\n'
+      + '// then: Ambiguous.java importing BOTH java.util.* and java.awt.*\n',
+    hints: [
+      'Diff the javap -c output, but normalise the class name first or you will see a spurious difference.',
+      'Look for java/util/ArrayList in the constant pool of all three - the compiler always emits fully qualified names.',
+      'java.awt also has a List. Import both packages with wildcards and declare one.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// All three of these compile to the SAME instructions.\n'
+        + '\n'
+        + '// NoImports.java\n'
+        + 'public class NoImports {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        java.util.List<String> list = new java.util.ArrayList<>();\n'
+        + '        list.add("x");\n'
+        + '        System.out.println(list.size());\n'
+        + '    }\n'
+        + '}\n'
+        + '\n'
+        + '// WithImports.java - import java.util.ArrayList; import java.util.List;\n'
+        + '// WildcardImport.java - import java.util.*;\n'
+        + '// ...bodies identical apart from using the simple names.\n'
+        + '\n'
+        + '// And the case that actually bites:\n'
+        + 'import java.util.*;\n'
+        + 'import java.awt.*;\n'
+        + '// import java.util.List;   <- adding this single-type import fixes it\n'
+        + 'class Ambiguous {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        List list = null;   // ambiguous without the line above\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Verified by comparing javap -c output after normalising the class name:\n\n'
+        + '  NoImports vs WithImports:      IDENTICAL bytecode\n'
+        + '  WithImports vs WildcardImport: IDENTICAL bytecode\n\n'
+        + 'All three constant pools contain java/util/ArrayList, because **the compiler always '
+        + 'emits fully qualified names**. An import only decides what you are allowed to type in '
+        + 'the source. Class file sizes were 538, 542 and 548 bytes - differing by the length of '
+        + 'the class name, nothing else.\n\n'
+        + 'So the wildcard-import performance myth is exactly that. The real cost is ambiguity:\n\n'
+        + '  error: reference to List is ambiguous\n'
+        + '    both class java.awt.List in java.awt and interface java.util.List in java.util match\n\n'
+        + 'A single-type import always wins over any wildcard, so adding `import java.util.List;` '
+        + 'alongside both wildcards compiles and runs.\n\n'
+        + 'One more thing worth knowing: a wildcard covers ONE package, not a tree. '
+        + '`import java.util.*` does not give you java.util.concurrent.locks.Lock - '
+        + '`error: cannot find symbol`. Dotted package names look hierarchical but nesting is not '
+        + 'containment.',
+      complexity: 'Not applicable.',
+    },
+  },
+
+  {
+    id: '01-04-interview-entry-and-structure',
+    moduleId: MODULE_01,
+    chapterId: CHAPTER_01_04,
+    title: 'Explain program entry and structure, then defend the details',
+    difficulty: 'Interview',
+    objective:
+      'Handle the deceptively simple opener that many candidates answer shallowly, and the '
+      + 'follow-ups that separate recall from understanding.',
+    problem:
+      'Without notes, answer: "Why is main declared public static void main(String[] args)?" '
+      + 'Then handle: "What does System.out.println(someCharArray) print?", "Does import java.util.* '
+      + 'slow anything down?", and "My class compiles but I get ClassNotFoundException at run '
+      + 'time - what would you check?" Demonstrate at least two answers at a terminal.',
+    requirements: [
+      'Justify each part of the main signature, and say which parts are flexible.',
+      'Name the three distinct launch errors and what each one tells you.',
+      'Answer the char[] question with the concatenation case as well.',
+      'Answer the import question with evidence, not opinion.',
+      'Give at least two plausible causes for the ClassNotFoundException.',
+    ],
+    constraints: ['JDK tools only.'],
+    sampleInput: '',
+    sampleOutput: 'A spoken answer plus a terminal session. There is no single correct transcript.',
+    edgeCases: [
+      'Being asked whether main can be overloaded - it can, and the launcher still calls the String[] one.',
+      'Being asked if System.out can be changed - it can, despite being final.',
+    ],
+    testCases: [],
+    hints: [
+      'For main: public so the launcher can reach it, static so no instance is needed, void because the exit status comes from elsewhere, String[] for the arguments.',
+      'For the imports question, compile two variants and diff the javap output live. Evidence beats assertion.',
+      'For ClassNotFoundException, remember Chapter 2 gave it a completely different cause - a class whose initialization already failed.',
+    ],
+    solution: {
+      language: 'java',
+      code:
+        '// Verified demonstration sequence - all captured in this chapter.\n'
+        + '//\n'
+        + '//   javac --release 17 RejectedMains.java   -> compiles cleanly\n'
+        + '//   java NoStatic  -> Error: Main method is not static in class NoStatic\n'
+        + '//   java NotVoid   -> Error: Main method must return a value of type void\n'
+        + '//   java NoPublic  -> Error: Main method not found in class NoPublic\n'
+        + '//\n'
+        + '//   java CharArray -> Java / [I@... / [Ljava.lang.String;@... / prefix [C@...\n'
+        + '//   javap -c CharArray.class | grep println\n'
+        + '//                  -> ([C)V, (Ljava/lang/Object;)V x2, (Ljava/lang/String;)V\n'
+        + '//\n'
+        + '//   javap -c NoImports.class vs WithImports.class -> IDENTICAL\n'
+        + '//\n'
+        + '//   javap java.lang.System -> public static final PrintStream out;  AND  setOut(...)\n'
+        + 'public class InterviewNotes {\n'
+        + '    public static void main(String[] args) {\n'
+        + '        System.out.println("Say it out loud, then run two of these.");\n'
+        + '    }\n'
+        + '}\n',
+      explanation:
+        'Model answers.\n\n'
+        + '**main.** public so the launcher can invoke it from outside; static so it can run '
+        + 'without an instance, since nothing has constructed one yet; void because the exit '
+        + 'status comes from System.exit or from how the program ended, not from a return value; '
+        + 'String[] to receive the command-line arguments. Flexible: String... works because '
+        + 'varargs compiles to an array, String args[] works, modifier order is free, and the '
+        + 'parameter name is arbitrary. Not flexible: public, static, void, String[] - and each '
+        + 'gives a different launch error. Worth adding that all of these COMPILE; main is only '
+        + 'special to the launcher.\n\n'
+        + '**char[].** It prints the characters, because PrintStream has a dedicated '
+        + 'println(char[]) overload - the only array type that does. Everything else resolves to '
+        + 'println(Object) and prints a type tag and identity hash. The sharp edge: concatenating '
+        + 'the same array into a string first gives [C@..., because the argument reaching println '
+        + 'is now a String. javap -c shows which overload each call chose.\n\n'
+        + '**Imports.** No. An import is a compile-time abbreviation with no run-time existence; '
+        + 'the compiler always emits fully qualified names. Compiling the same code with no '
+        + 'imports, explicit imports and a wildcard produces identical bytecode. The real argument '
+        + 'for explicit imports is ambiguity - two wildcards that both offer a List produce '
+        + '"reference to List is ambiguous".\n\n'
+        + '**ClassNotFoundException.** At least two causes, and they need different fixes. Most '
+        + 'likely a package-versus-directory mismatch: javac happily compiles a packaged source '
+        + 'from any directory and writes the class file beside it, while the runtime resolves the '
+        + 'fully qualified name to a path. Check where the class file actually is and recompile '
+        + 'with -d. The other cause is the one from Chapter 2 - a class that is present but whose '
+        + 'initialization already failed, which surfaces as NoClassDefFoundError caused by '
+        + 'ExceptionInInitializerError. Reading the Caused by chain distinguishes them in one line.',
       complexity: 'Not applicable.',
     },
   },

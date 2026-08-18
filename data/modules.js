@@ -27,13 +27,11 @@
  * depth, Module 14's JVM-spec-vs-HotSpot distinction, Module 30's JPA-vs-Hibernate
  * framing). Those are requirements, not commentary.
  *
- * `status` is the module-level content status; all 43 are NOT_STARTED, because
- * metadata is not content.
- *
- * There is deliberately NO chapter field here. The curriculum specifies what a
- * module must cover, not how it is divided into chapters — that is decided when
- * the module is authored. Chapters live in `data/chapters.js` and are read
- * through `assets/js/chapters.js`.
+ * There is deliberately NO content-status field and NO chapter field here. The curriculum specifies what a
+ * module must COVER. It knows nothing about what has been written — not how the
+ * coverage divides into chapters, and not whether any of it exists yet. Both are
+ * derived from `data/chapters.js` through `assets/js/chapters.js`
+ * (`chapterCountForModule`, `moduleContentStatus`).
  */
 
 export const MODULES = [
@@ -90,8 +88,7 @@ export const MODULES = [
       "Java naming conventions",
       "packages",
       "imports"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "02",
@@ -144,8 +141,7 @@ export const MODULES = [
       "association",
       "inheritance vs composition",
       "Java vs C++ OOP differences"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "03",
@@ -183,8 +179,7 @@ export const MODULES = [
       "null-related errors",
       "command-line arguments",
       "packages and imports"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "04",
@@ -222,8 +217,7 @@ export const MODULES = [
       "Object",
       "identity vs equality",
       "mutable vs immutable objects"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "05",
@@ -257,8 +251,7 @@ export const MODULES = [
       "exception anti-patterns",
       "designing useful exceptions",
       "debugging exceptions"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "06",
@@ -288,8 +281,7 @@ export const MODULES = [
       "generic collections",
       "generic API design",
       "common generic interview traps"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "07",
@@ -327,8 +319,7 @@ export const MODULES = [
       "null handling",
       "performance characteristics",
       "implementation differences"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "08",
@@ -374,8 +365,7 @@ export const MODULES = [
       "TreeMap comparison",
       "common HashMap mistakes",
       "interview implementation questions"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "09",
@@ -403,8 +393,7 @@ export const MODULES = [
       "closures",
       "lambda limitations",
       "lambda vs anonymous classes"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "10",
@@ -445,8 +434,7 @@ export const MODULES = [
       "parallel streams",
       "stream performance",
       "common stream mistakes"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "11",
@@ -478,8 +466,7 @@ export const MODULES = [
       "parsing",
       "time zones",
       "modern Java API design"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "12",
@@ -508,8 +495,7 @@ export const MODULES = [
       "reflection use cases",
       "reflection limitations",
       "framework usage of reflection"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "13",
@@ -538,8 +524,7 @@ export const MODULES = [
       "deserialization concepts",
       "object serialization risks",
       "resource management"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "14",
@@ -575,8 +560,7 @@ export const MODULES = [
       "StackOverflowError",
       "memory debugging concepts",
       "JVM memory misconceptions"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "15",
@@ -604,8 +588,7 @@ export const MODULES = [
       "race conditions",
       "thread safety",
       "shared state"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "16",
@@ -635,8 +618,7 @@ export const MODULES = [
       "race conditions",
       "thread-safe design",
       "immutable objects"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "17",
@@ -668,8 +650,7 @@ export const MODULES = [
       "producer-consumer",
       "parallel task execution",
       "concurrency best practices"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "18",
@@ -695,8 +676,7 @@ export const MODULES = [
       "utility classes",
       "complexity analysis",
       "Java-specific performance considerations"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "19",
@@ -722,8 +702,7 @@ export const MODULES = [
       "frequency maps",
       "anagram patterns",
       "Java implementation pitfalls"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "20",
@@ -747,8 +726,7 @@ export const MODULES = [
       "subarray problems",
       "common incorrect approaches",
       "pattern recognition"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "21",
@@ -777,8 +755,7 @@ export const MODULES = [
       "deque",
       "monotonic stack",
       "monotonic queue"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "22",
@@ -810,8 +787,7 @@ export const MODULES = [
       "max heap",
       "PriorityQueue",
       "top-K problems"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "23",
@@ -836,8 +812,7 @@ export const MODULES = [
       "0-1 BFS",
       "union-find / DSU",
       "graph interview patterns"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "24",
@@ -862,8 +837,7 @@ export const MODULES = [
       "combinations",
       "subsets",
       "constraint-based search"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "25",
@@ -889,8 +863,7 @@ export const MODULES = [
       "1D DP",
       "2D DP",
       "common interview DP patterns"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "26",
@@ -925,8 +898,7 @@ export const MODULES = [
       "CASE",
       "views",
       "basic query optimization"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "27",
@@ -954,8 +926,7 @@ export const MODULES = [
       "aggregation",
       "window functions",
       "database performance fundamentals"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "28",
@@ -984,8 +955,7 @@ export const MODULES = [
       "connection pooling concepts",
       "resource management",
       "JDBC vs ORM"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "29",
@@ -1014,8 +984,7 @@ export const MODULES = [
       "multi-module Maven",
       "common Maven commands",
       "troubleshooting builds"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "30",
@@ -1050,8 +1019,7 @@ export const MODULES = [
       "fetch types",
       "lazy loading",
       "eager loading"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "31",
@@ -1081,8 +1049,7 @@ export const MODULES = [
       "transactions",
       "common Hibernate performance problems",
       "common mapping mistakes"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "32",
@@ -1117,8 +1084,7 @@ export const MODULES = [
       "@Primary",
       "@Qualifier",
       "Spring container"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "33",
@@ -1145,8 +1111,7 @@ export const MODULES = [
       "configuration properties",
       "environment-specific configuration",
       "Actuator fundamentals"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "34",
@@ -1181,8 +1146,7 @@ export const MODULES = [
       "global exception handling",
       "@ControllerAdvice",
       "API design"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "35",
@@ -1208,8 +1172,7 @@ export const MODULES = [
       "entity relationships",
       "repository/service/controller separation",
       "common Spring Data mistakes"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "36",
@@ -1241,8 +1204,7 @@ export const MODULES = [
       "CSRF",
       "common security mistakes",
       "secure API design"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "37",
@@ -1273,8 +1235,7 @@ export const MODULES = [
       "test databases",
       "test organization",
       "meaningful test cases"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "38",
@@ -1303,8 +1264,7 @@ export const MODULES = [
       "transaction boundaries",
       "performance considerations",
       "production debugging"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "39",
@@ -1337,8 +1297,7 @@ export const MODULES = [
       "concurrency considerations",
       "reliability fundamentals",
       "common backend architecture mistakes"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "40",
@@ -1372,8 +1331,7 @@ export const MODULES = [
       "loading states",
       "API integration",
       "frontend/backend separation"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "41",
@@ -1404,8 +1362,7 @@ export const MODULES = [
       "unnecessary object creation",
       "inefficient collections",
       "systematic debugging methodology"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "42",
@@ -1458,8 +1415,7 @@ export const MODULES = [
       "debugging",
       "improvements",
       "interview questions"
-    ],
-    "status": "NOT_STARTED"
+    ]
   },
   {
     "number": "43",
@@ -1502,8 +1458,7 @@ export const MODULES = [
       "production considerations",
       "final interview discussion",
       "comprehensive mastery assessment"
-    ],
-    "status": "NOT_STARTED"
+    ]
   }
 ];
 

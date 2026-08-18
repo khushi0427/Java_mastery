@@ -30,7 +30,7 @@
  */
 
 import { MODULES } from '../../data/modules.js';
-import { chapterCountForModule, totalChapterCount } from './chapters.js';
+import { chapterCountForModule, moduleContentStatus, totalChapterCount } from './chapters.js';
 import { KEY_PREFIX, isAvailable, readJSON, remove, writeJSON } from './storage.js';
 
 /** Single aggregate record. One read, one write, no key scanning. */
@@ -365,8 +365,9 @@ export function getModuleProgress(moduleId) {
   const learnerStatus = record?.status ?? LEARNER_STATUS.NOT_STARTED;
 
   return {
-    // What exists in the repository (data/modules.js).
-    contentStatus: module.status,
+    // What exists in the repository. DERIVED from the chapters actually
+    // written, not read from the generated metadata — see moduleContentStatus.
+    contentStatus: moduleContentStatus(moduleId),
     // What the learner has done (this store).
     learnerStatus,
     completedChapters,
